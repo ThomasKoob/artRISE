@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>artRISE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              rose: { DEFAULT: "#EF9595", dark: "#e27373" },
+              tealblue: { DEFAULT: "#6FB6D7", dark: "#4d9fc6" },
+            },
+            fontFamily: {
+              sans: ["Inter", "system-ui", "Segoe UI", "Arial", "sans-serif"],
+            },
+            boxShadow: {
+              soft: "0 12px 40px -12px rgba(0,0,0,.15)",
+              lift: "0 10px 24px -8px rgba(0,0,0,.18)",
+            },
+            borderRadius: { xl2: "1.25rem" },
+          },
+        },
+      };
+    </script>
+    <style>
+      .caps {
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-gradient-to-b from-slate-800 to-slate-900 text-slate-100 antialiased font-sans"
+  >
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur border-b border-slate-700"
+    >
+      <div
+        class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between"
+      >
+        <a href="#" class="flex items-center gap-3" aria-label="Startseite">
+          <div
+            class="w-8 h-8 rounded-xl bg-gradient-to-br from-rose to-tealblue shadow-soft"
+          ></div>
+          <span class="caps text-sm tracking-widest text-slate-100"
+            >artRISE</span
+          >
+        </a>
+        <nav class="hidden md:flex gap-8 text-sm caps text-slate-300/80">
+          <a href="#werke" class="hover:text-white">Werke</a>
+          <a href="#bio" class="hover:text-white">Bio</a>
+          <a href="#kontakt" class="hover:text-white">Kontakt</a>
+        </nav>
+        <a
+          href="/"
+          class="px-5 py-2 rounded-full border border-slate-600 text-slate-100 hover:bg-slate-800 shadow-soft caps text-[12px]"
+          >Zur Startseite</a
+        >
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+      <!-- Kopfbereich: Foto links, Name & Bio rechts -->
+      <section class="grid md:grid-cols-[320px,1fr] gap-10 items-start">
+        <figure
+          class="rounded-2xl overflow-hidden shadow-soft border border-slate-700 bg-slate-800"
+        >
+          <img
+            src="img/IMG_5602.jpg"
+            alt="Portrait der Künstler*in"
+            class="w-full h-full object-cover"
+          />
+        </figure>
+        <div>
+          <p class="caps text-xs text-tealblue">Künstler*in</p>
+          <h1
+            class="mt-1 text-4xl md:text-5xl font-extrabold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-rose to-tealblue"
+          >
+            Thomas Koob
+          </h1>
+          <p class="text-slate-400 mt-2">
+            Malerei • Berlin‑Neukölln • <span class="text-rose">@handle</span>
+          </p>
+          <section id="bio" class="mt-6">
+            <h2 class="sr-only">Biografie</h2>
+            <p class="text-slate-200 leading-relaxed max-w-prose">
+              Thomas, Künstler aus Berlin‑Neukölln, hat während Corona statt
+              Yoga und Sauerteig lieber den Pinsel geschwungen – und seitdem
+              nicht mehr aufgehört. 2023 knallte er seine erste Ausstellung
+              direkt ins eigene Atelier. Seine Werke bewegen sich zwischen
+              Porträts, Akt und den dunkelbunten Facetten des Berliner
+              Nachtlebens – roh, direkt und immer mit einer Portion Neuköllner
+              Straßenstaub.
+            </p>
+          </section>
+          <div id="kontakt" class="mt-6 flex flex-wrap gap-3">
+            <a
+              href="mailto:dein@mail.tld"
+              class="px-4 py-2 rounded-full border border-slate-600 hover:bg-slate-800 text-sm"
+              >E‑Mail</a
+            >
+            <a
+              href="https://instagram.com/deinhandle"
+              class="px-4 py-2 rounded-full border border-slate-600 hover:bg-slate-800 text-sm"
+              >Instagram</a
+            >
+            <a
+              href="#"
+              class="px-4 py-2 rounded-full bg-rose hover:bg-rose-dark text-sm text-white shadow-lift"
+              >Portfolio</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- Werke in Auktion -->
+      <section id="werke" class="mt-16">
+        <div class="flex items-center justify-between">
+          <h2 class="caps text-xs text-rose">Werke in Auktion</h2>
+          <span class="text-sm text-slate-400">3 Einträge</span>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+          <!-- Karte 1 -->
+          <article
+            class="rounded-2xl border border-slate-700 bg-slate-800 shadow-soft overflow-hidden hover:shadow-lift transition-shadow"
+          >
+            <img
+              src="img/ArtBook1.jpeg"
+              alt="Werk 1"
+              class="w-full aspect-[4/3] object-cover"
+            />
+            <div class="p-5">
+              <h3 class="font-semibold text-rose">«Werktitel 1»</h3>
+              <p class="text-sm text-slate-400">Medium, Maße (Jahr)</p>
+              <p class="text-sm text-slate-300 mt-2">
+                Aktuelles Gebot: — • Endet: —
+              </p>
+            </div>
+          </article>
+          <!-- Karte 2 -->
+          <article
+            class="rounded-2xl border border-slate-700 bg-slate-800 shadow-soft overflow-hidden hover:shadow-lift transition-shadow"
+          >
+            <img
+              src="img/ArtBook2.jpeg"
+              alt="Werk 2"
+              class="w-full aspect-[4/3] object-cover"
+            />
+            <div class="p-5">
+              <h3 class="font-semibold text-tealblue">«Werktitel 2»</h3>
+              <p class="text-sm text-slate-400">Medium, Maße (Jahr)</p>
+              <p class="text-sm text-slate-300 mt-2">
+                Startpreis: — • Endet: —
+              </p>
+            </div>
+          </article>
+          <!-- Karte 3 -->
+          <article
+            class="rounded-2xl border border-slate-700 bg-slate-800 shadow-soft overflow-hidden hover:shadow-lift transition-shadow"
+          >
+            <img
+              src="img/ArtBook3.jpeg"
+              alt="Werk 3"
+              class="w-full aspect-[4/3] object-cover"
+            />
+            <div class="p-5">
+              <h3 class="font-semibold text-rose">«Werktitel 3»</h3>
+              <p class="text-sm text-slate-400">Medium, Maße (Jahr)</p>
+              <p class="text-sm text-slate-300 mt-2">
+                Aktuelles Gebot: — • Endet: —
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer
+      class="bg-slate-900/80 backdrop-blur border-t border-slate-700 py-8"
+    >
+      <div
+        class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400"
+      >
+        <div>© 2025 artRISE</div>
+        <nav class="flex gap-6 mt-4 md:mt-0 caps text-[12px]">
+          <a href="#" class="hover:text-white">AGB</a>
+          <a href="#" class="hover:text-white">Datenschutz</a>
+          <a href="#" class="hover:text-white">Impressum</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>
