@@ -5,7 +5,7 @@ import auctionRoutes from "./auctionRoutes.js";
 import artworkRoutes from "./artworkRoutes.js";
 import offersRoutes from "./offersRoutes.js";
 import ordersRoutes from "./ordersRoutes.js";
-// import paymentsRoutes from "./paymentsRoutes.js";
+import paymentsRoutes from "./paymentsRoutes.js";
 
 const router = Router();
 
@@ -19,6 +19,6 @@ router.use("/auctions", auctionRoutes);
 router.use("/artworks", artworkRoutes);
 router.use("/offers", offersRoutes);
 router.use("/orders", ordersRoutes);
-// router.use("/payments", paymentsRoutes);
+router.use("/payments", paymentsRoutes);
 
 export default router;
