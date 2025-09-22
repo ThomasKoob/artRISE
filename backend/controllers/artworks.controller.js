@@ -1,8 +1,8 @@
-import { Artwork } from "../models/Artwork.js";
+import Artwork from "../models/Artwork.js";
 
 export const getArtworks = async (req, res) => {
   try {
-    const artworks = await Artwork.findAll();
+    const artworks = await Artwork.find();
     res.json(artworks);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -11,10 +11,8 @@ export const getArtworks = async (req, res) => {
 
 export const getArtworkById = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req;
-    const artwork = await Artwork.findByPk(id);
+    const { id } = req.params;
+    const artwork = await Artwork.findById(id);
     if (!artwork)
       return res.status(404).json({ error: `Artwork with ID:${id} not found` });
     res.json(artwork);
@@ -23,47 +21,20 @@ export const getArtworkById = async (req, res) => {
   }
 };
 
-export const createArtwork = async (req, res) => {
+export const getArtworksByAuction = async (req, res) => {
   try {
-    const {
-      body: {
-        title,
-        description,
-        price,
-        currency,
-        images,
-        startPrice,
-        endPrice,
-        status,
-        endDate,
-      },
-    } = req;
-    if (
-      !title ||
-      !description ||
-      !price ||
-      !currency ||
-      !images ||
-      !startPrice ||
-      !endPrice ||
-      !status ||
-      !endDate
-    )
-      throw new Error(
-        "Title, description, price, currency, images, startPrice, endPrice, status and endDate are required"
-      );
-    const found = await Artwork.findOne({ where: { endDate } });
-    if (found) throw new Error("End date already exists");
-    const artwork = await Artwork.create(req.body);
-    res.json(artwork);
+    const { auctionId } = req.params;
+    const artworks = await Artwork.find({ auctionId });
+    res.json(artworks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const updateArtwork = async (req, res) => {
-  const {
-    body: {
+export const createArtwork = async (req, res) => {
+  try {
+    const {
+      auctionId,
       title,
       description,
       price,
@@ -73,12 +44,9 @@ export const updateArtwork = async (req, res) => {
       endPrice,
       status,
       endDate,
-    },
-    params: { id },
-  } = req;
-  try {
+    } = req.body;
     if (
-      !id ||
+      !auctionId ||
       !title ||
       !description ||
       !price ||
@@ -86,17 +54,27 @@ export const updateArtwork = async (req, res) => {
       !images ||
       !startPrice ||
       !endPrice ||
-      !status ||
       !endDate
-    ) {
-      throw new Error(
-        "Title, description, price, currency, images, startPrice, endPrice, status and endDate are required"
-      );
-    }
-    const artwork = await Artwork.findByPk(id);
-    if (!artwork) return res.status(404).json({ error: "Artwork not found" });
-    await artwork.update(req.body);
-    res.json(artwork);
+    )
+      throw new Error("All required fields must be provided");
+
+    const artwork = await Artwork.create(req.body);
+    res.status(201).json(artwork);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateArtwork = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const artwork = await Artwork.findById(id);
+    if (!artwork)
+      return res.status(404).json({ error: `Artwork with ID:${id} not found` });
+
+    await Artwork.findByIdAndUpdate(id, req.body, { new: true });
+    res.json(await Artwork.findById(id));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -104,13 +82,12 @@ export const updateArtwork = async (req, res) => {
 
 export const deleteArtwork = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req;
-    const artwork = await Artwork.findByPk(id);
+    const { id } = req.params;
+    const artwork = await Artwork.findById(id);
     if (!artwork)
       return res.status(404).json({ error: `Artwork with ID:${id} not found` });
-    await artwork.destroy();
+
+    await Artwork.findByIdAndDelete(id);
     res.json({ message: "Artwork deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message });
