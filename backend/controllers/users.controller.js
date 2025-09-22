@@ -1,73 +1,83 @@
 import User from "../models/User.js";
 
+// Alle User holen
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find();
-    res.json(users);
+    res.json(users); // Array zurückgeben
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// User erstellen
 export const createUser = async (req, res) => {
   try {
-    const {
-      body: { userName, email, password, avatarUrl },
-    } = req;
-    if (!userName || !email || !password || !avatarUrl)
-      throw new Error("Name, email, password and avatar are required");
-    const found = await User.findOne({ where: { email } });
-    if (found) throw new Error("Mail already exists");
-    const user = await User.create(req.body);
-    res.json(user);
+    const { userName, email, password, avatarUrl } = req.body;
+
+    if (!userName || !email || !password || !avatarUrl) {
+      return res.status(400).json({
+        message: "userName, email, password und avatarUrl sind erforderlich",
+      });
+    }
+
+    // prüfen, ob E-Mail schon existiert
+    const found = await User.findOne({ email });
+    if (found) {
+      return res.status(400).json({ message: "E-Mail existiert bereits" });
+    }
+
+    // neuen User anlegen
+    const user = new User({ userName, email, password, avatarUrl });
+    await user.save();
+
+    res.status(201).json(user); // gespeicherten User zurückgeben
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// User nach ID holen
 export const getUserById = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req;
+    const { id } = req.params;
     const user = await User.findById(id);
     if (!user)
-      return res.status(404).json({ error: `User with ID:${id} not found` });
+      return res
+        .status(404)
+        .json({ message: `User mit ID ${id} nicht gefunden` });
     res.json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// User updaten
 export const updateUser = async (req, res) => {
-  const {
-    body: { userName, email, password, avatarUrl },
-    params: { id },
-  } = req;
   try {
-    if (!id || !userName || !email || !password || !avatarUrl) {
-      throw new Error("Name, email and password are required");
+    const { id } = req.params;
+    const updated = await User.findByIdAndUpdate(id, req.body, { new: true });
+    if (!updated) {
+      return res.status(404).json({ message: "User nicht gefunden" });
     }
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-    await user.update(req.body);
-    res.json(user);
+    res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
+// User löschen
 export const deleteUser = async (req, res) => {
   try {
-    const {
-      params: { id },
-    } = req;
-    const user = await User.findById(id);
-    if (!user)
-      return res.status(404).json({ error: `User with ID:${id} not found` });
-    await user.destroy();
-    res.json({ message: "User deleted" });
+    const { id } = req.params;
+    const deleted = await User.findByIdAndDelete(id);
+    if (!deleted) {
+      return res
+        .status(404)
+        .json({ message: `User mit ID ${id} nicht gefunden` });
+    }
+    res.json({ message: "User gelöscht" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
