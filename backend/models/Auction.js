@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const { Schema } = mongoose;
+
 const auctionSchema = new Schema(
   {
     title: {
@@ -36,6 +38,6 @@ const auctionSchema = new Schema(
   { timestamps: true }
 );
 
-AuctionSchema.index({ artistId: 1 }, { unique: true });
+auctionSchema.index({ artistId: 1 }, { unique: true });
 
 export default mongoose.model("Auction", auctionSchema);
