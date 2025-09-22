@@ -30,7 +30,7 @@ export const getUserById = async (req, res) => {
     const {
       params: { id },
     } = req;
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
     if (!user)
       return res.status(404).json({ error: `User with ID:${id} not found` });
     res.json(user);
@@ -48,7 +48,7 @@ export const updateUser = async (req, res) => {
     if (!id || !userName || !email || !password || !avatarUrl) {
       throw new Error("Name, email and password are required");
     }
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
     if (!user) return res.status(404).json({ error: "User not found" });
     await user.update(req.body);
     res.json(user);
@@ -62,7 +62,7 @@ export const deleteUser = async (req, res) => {
     const {
       params: { id },
     } = req;
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
     if (!user)
       return res.status(404).json({ error: `User with ID:${id} not found` });
     await user.destroy();

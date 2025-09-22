@@ -1,4 +1,3 @@
-
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -79,7 +78,6 @@ const logout = (req, res) => {
 
 const me = async (req, res, next) => {
   try {
-   
     if (!req.user?._id)
       return res.status(401).json({ message: "Not authenticated" });
 
@@ -92,4 +90,4 @@ const me = async (req, res, next) => {
   }
 };
 
-export { me ,register, login, logout };
+export { me, register, login, logout };
