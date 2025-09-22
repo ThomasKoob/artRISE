@@ -19,4 +19,4 @@ r.use("/artworks", offersRoutes);
 r.use("/orders", ordersRoutes);
 r.use("/payments", paymentsRoutes);
 
-export default authRouter;
+export default router;
