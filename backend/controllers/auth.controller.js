@@ -1,4 +1,4 @@
-// Modul_10-Auth\01-Backend
+
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -77,4 +77,19 @@ const logout = (req, res) => {
   res.json({ msg: "User logged out" });
 };
 
-export { register, login, logout };
+const me = async (req, res, next) => {
+  try {
+   
+    if (!req.user?._id)
+      return res.status(401).json({ message: "Not authenticated" });
+
+    const u = await User.findById(req.user._id).select("-passwordHash -__v");
+    if (!u) return res.status(404).json({ message: "User not found" });
+
+    res.json(u);
+  } catch (e) {
+    next(e);
+  }
+};
+
+export { me ,register, login, logout };
