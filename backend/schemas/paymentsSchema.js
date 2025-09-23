@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-export const createOfferSchema = z.object({
-  artworkId: z.string(), 
+export const paymentSchema = z.object({
+  artworkId: z.string(),
   userId: z.string(),
   amount: z.number().positive(),
 });
 
-export const updateOfferSchema = z.object({
+export const updatePaymentSchema = z.object({
   amount: z.number().positive(),
-});
+}); 

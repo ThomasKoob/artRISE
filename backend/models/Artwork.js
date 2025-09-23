@@ -32,7 +32,7 @@ const ArtworkSchema = new mongoose.Schema({
     required: true,
   },
   images: {
-    type: [imageSchema],
+    type: String,
     required: true,
   },
   startPrice: {
