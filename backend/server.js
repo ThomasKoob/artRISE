@@ -9,22 +9,21 @@ import cookieParser from "cookie-parser";
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(express.json());
-app.use(cors());
-
+// Middleware
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 
 // Routes
 app.use("/api", api);
 
-// Middlewares
+// Error & Not Found Middleware
 app.use(errorHandler);
 app.use(notFound);
 
