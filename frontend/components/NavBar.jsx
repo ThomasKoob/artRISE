@@ -1,6 +1,10 @@
+import React from "react";
 import { Link } from "react-router";
+import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const NavBar = () => {
+  const { openLogin } = useLoginModal();
+
   return (
     <nav className="w-full bg-slate-900/80 sticky top-0 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 flex flex-col items-center py-2 relative">
@@ -36,12 +40,13 @@ const NavBar = () => {
               </Link>
             </li>
             <li>
-              <Link
+              <button
+                type="button"
+                onClick={openLogin}
                 className="text-2xl hover:text-slate-500 transition duration-400"
-                to="/login"
               >
                 Login
-              </Link>
+              </button>
             </li>
           </ul>
         </div>

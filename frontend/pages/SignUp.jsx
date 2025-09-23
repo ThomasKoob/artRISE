@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { openLogin } = useLoginModal();
   const [formData, setFormData] = useState({
     userName: "",
     email: "",
@@ -152,9 +154,13 @@ const SignUp = () => {
 
         <p className="mt-4 text-center">
           Bereits ein Konto?{" "}
-          <a href="/login" className="text-blue-500 hover:underline">
-            Login
-          </a>
+          <button
+            type="button"
+            onClick={openLogin}
+            className="text-blue-500 hover:underline"
+          >
+            LogIn
+          </button>
         </p>
       </form>
     </div>
