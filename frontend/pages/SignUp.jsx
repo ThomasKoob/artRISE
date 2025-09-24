@@ -43,14 +43,41 @@ const SignUp = () => {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Erfolg - zur Home weiterleiten
-      navigate("/");
+      // Erfolg - je nach Rolle weiterleiten
+      if (formData.role === "seller") {
+        navigate("/create-auction");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  // Button Text und Style basierend auf der Rolle
+  const getButtonConfig = () => {
+    if (formData.role === "buyer") {
+      return {
+        text: loading
+          ? "Intressent-Account wird erstellt..."
+          : "Als Interessent registrieren",
+        bgColor: "bg-blue-500",
+        hoverColor: "hover:bg-blue-600",
+      };
+    } else {
+      return {
+        text: loading
+          ? "Künstler-Account wird erstellt..."
+          : "Als Künstler registrieren",
+        bgColor: "bg-green-500",
+        hoverColor: "hover:bg-green-600",
+      };
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
 
   return (
     <div className="flex flex-wrap flex-col max-w-[1400px] mx-auto">
@@ -130,7 +157,7 @@ const SignUp = () => {
 
         <div className="mb-6">
           <label className="block mb-2" htmlFor="role">
-            Ich möchte...
+            Ich bin...
           </label>
           <select
             id="role"
@@ -139,17 +166,17 @@ const SignUp = () => {
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
           >
-            <option value="buyer">Kaufen</option>
-            <option value="seller">Verkaufen</option>
+            <option value="buyer">Intressent</option>
+            <option value="seller">Künstler</option>
           </select>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+          className={`w-full ${buttonConfig.bgColor} ${buttonConfig.hoverColor} text-white py-2 px-4 rounded-lg disabled:opacity-50 transition-colors`}
         >
-          {loading ? "Creating Account..." : "Sign Up"}
+          {buttonConfig.text}
         </button>
 
         <p className="mt-4 text-center">
