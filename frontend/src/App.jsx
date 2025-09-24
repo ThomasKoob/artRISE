@@ -3,7 +3,7 @@ import Home from "../pages/Home";
 import Auction from "../pages/Auction.jsx";
 import Layout from "../Layout/Layout.jsx";
 import SignUp from "../pages/SignUp.jsx";
-import CreateAuction from "../pages/CreateAuction.jsx"
+//import CreateAuction from "../pages/CreateAuction.jsx"
 
 const App = () => {
   return (
