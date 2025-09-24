@@ -1,9 +1,9 @@
 import React from "react";
-import { Link } from "react-router";
+import { Link } from "react-router"; // oder 'react-router-dom'
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const NavBar = () => {
-  const { openLogin } = useLoginModal();
+  const { openLogin, user, logout } = useLoginModal();
 
   return (
     <nav className="w-full bg-slate-900/80 sticky top-0 backdrop-blur">
@@ -13,41 +13,51 @@ const NavBar = () => {
         <div className="w-full relative flex justify-center items-center">
           <ul className="flex space-x-6">
             <li>
-              <Link
-                className="text-2xl hover:text-slate-500 transition duration-400"
-                to="/"
-              >
+              <Link className="text-2xl hover:text-slate-500" to="/">
                 Home
               </Link>
             </li>
             <li>
-              <Link
-                className="text-2xl hover:text-slate-500 transition duration-400"
-                to="/auction"
-              >
+              <Link className="text-2xl hover:text-slate-500" to="/auction">
                 Auction
               </Link>
             </li>
           </ul>
 
-          <ul className="flex space-x-6 absolute right-0">
-            <li>
-              <Link
-                className="text-2xl hover:text-slate-500 transition duration-400"
-                to="/signup"
-              >
-                Sign Up
-              </Link>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={openLogin}
-                className="text-2xl hover:text-slate-500 transition duration-400"
-              >
-                Login
-              </button>
-            </li>
+          <ul className="flex space-x-6 absolute right-0 items-center">
+            {!user ? (
+              <>
+                <li>
+                  <Link className="text-2xl hover:text-slate-500" to="/signup">
+                    SignUp
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="text-2xl hover:text-slate-500"
+                  >
+                    LogIn
+                  </button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="text-sm text-slate-300">
+                  {user.email ?? "Eingeloggt"}
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="text-2xl hover:text-slate-500"
+                  >
+                    LogOut
+                  </button>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
@@ -56,38 +66,3 @@ const NavBar = () => {
 };
 
 export default NavBar;
-
-// import { Link } from "react-router";
-// export default function Navbar({ user, onLogout }) {
-//   return (
-//     <nav className="flex items-center justify-between p-4 bg-gray-900 text-white">
-//       <div className="flex gap-6">
-//         {/* Links according to role */}
-//         {!user && (
-//           <>
-//             <Link to="/">Home</Link>
-//             <Link to="/help">Help</Link>
-//             <Link to="/login">Login</Link>
-//             <Link to="/register">Register</Link>
-//           </>
-//         )}
-//         {user && user.role === "seller" && (
-//           <>
-//             <Link to="/dashboard">Dashboard</Link>
-//             <Link to="/">Home</Link>
-//             <Link to="/help">Help</Link>
-//             <button onClick={onLogout}>Logout</button>
-//           </>
-//         )}
-//         {user && user.role === "buyer" && (
-//           <>
-//             <Link to="/warenkorb">Warenkorb</Link>
-//             <Link to="/">Home</Link>
-//             <Link to="/help">Help</Link>
-//             <button onClick={onLogout}>Logout</button>
-//           </>
-//         )}
-//       </div>
-//     </nav>
-//   );
-// }
