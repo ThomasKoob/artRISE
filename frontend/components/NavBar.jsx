@@ -1,64 +1,71 @@
 import React from "react";
-import { Link } from "react-router"; // oder 'react-router-dom'
+import { Link } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const NavBar = () => {
   const { openLogin, user, logout } = useLoginModal();
 
   return (
-    <nav className="w-full bg-slate-900/80 sticky top-0 backdrop-blur">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col items-center py-2 relative">
-        <p className="text-4xl font-bold mb-2">artRise</p>
+    <nav className="bg-gray-400  my-2 shadow-md  font-bold sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        
+      <Link to="/" className="flex items-center">
+      <img
+        src="/Logo-removebg-preview.png"
+        alt="artRise Logo"
+        className="h-50 w-auto"  
+      />
+    </Link>
 
-        <div className="w-full relative flex justify-center items-center">
-          <ul className="flex space-x-6">
-            <li>
-              <Link className="text-2xl hover:text-slate-500" to="/">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link className="text-2xl hover:text-slate-500" to="/auction">
-                Auction
-              </Link>
-            </li>
-          </ul>
+        {/* Links */}
+        <div className="flex space-x-8 text-lg">
+          <Link
+            to="/"
+            className="hover:text-orange-600 tetx-black transition-colors duration-200"
+          >
+            Home
+          </Link>
+          <Link
+            to="/auction"
+            className="hover:text-orange-600 transition-colors duration-200"
+          >
+            Auction
+          </Link>
+        </div>
 
-          <ul className="flex space-x-6 absolute right-0 items-center">
-            {!user ? (
-              <>
-                <li>
-                  <Link className="text-2xl hover:text-slate-500" to="/signup">
-                    SignUp
-                  </Link>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={openLogin}
-                    className="text-2xl hover:text-slate-500"
-                  >
-                    LogIn
-                  </button>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="text-sm text-slate-300">
-                  {user.email ?? "Eingeloggt"}
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={logout}
-                    className="text-2xl hover:text-slate-500"
-                  >
-                    LogOut
-                  </button>
-                </li>
-              </>
-            )}
-          </ul>
+        {/* Auth / User Menu */}
+        <div className="flex space-x-4">
+          {!user ? (
+            <>
+              <Link
+                to="/signup"
+                className="px-4 py-2 rounded-lg bg-blue-300 hover:bg-indigo-600 transition"
+              >
+                SignUp
+              </Link>
+              <button
+                onClick={openLogin}
+                className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 transition"
+              >
+                LogIn
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/dashboard"
+                className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={logout}
+                className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-red-600 transition"
+              >
+                LogOut
+              </button>
+            </>
+          )}
         </div>
       </div>
     </nav>
