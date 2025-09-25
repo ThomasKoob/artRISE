@@ -3,25 +3,24 @@ import { Link } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const NavBar = () => {
-  const { openLogin, user, logout } = useLoginModal();
+  const { openLogin, user, logout, isInitializing } = useLoginModal();
 
   return (
-    <nav className="bg-gray-400  my-2 shadow-md  font-bold sticky top-0 z-50">
+    <nav className="bg-gray-400 my-2 shadow-md font-bold sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        
-      <Link to="/" className="flex items-center">
-      <img
-        src="/Logo-removebg-preview.png"
-        alt="artRise Logo"
-        className="h-50 w-auto"  
-      />
-    </Link>
+        <Link to="/" className="flex items-center">
+          <img
+            src="/Logo-removebg-preview.png"
+            alt="artRise Logo"
+            className="h-50 w-auto"
+          />
+        </Link>
 
         {/* Links */}
         <div className="flex space-x-8 text-lg">
           <Link
             to="/"
-            className="hover:text-orange-600 tetx-black transition-colors duration-200"
+            className="hover:text-orange-600 text-black transition-colors duration-200"
           >
             Home
           </Link>
@@ -35,7 +34,11 @@ const NavBar = () => {
 
         {/* Auth / User Menu */}
         <div className="flex space-x-4">
-          {!user ? (
+          {isInitializing ? (
+            // Loading-State während der Auth-Überprüfung
+            <div className="px-4 py-2 text-gray-600">Laden...</div>
+          ) : !user ? (
+            // Nicht eingeloggt
             <>
               <Link
                 to="/signup"
@@ -51,7 +54,11 @@ const NavBar = () => {
               </button>
             </>
           ) : (
+            // Eingeloggt
             <>
+              <span className="px-4 py-2 text-sm text-gray-700">
+                Hallo, {user.userName || user.email}!
+              </span>
               <Link
                 to="/dashboard"
                 className="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 transition"
@@ -60,7 +67,7 @@ const NavBar = () => {
               </Link>
               <button
                 onClick={logout}
-                className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-red-600 transition"
+                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
               >
                 LogOut
               </button>
