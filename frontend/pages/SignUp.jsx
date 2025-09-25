@@ -80,117 +80,127 @@ const SignUp = () => {
   const buttonConfig = getButtonConfig();
 
   return (
-    <div className="flex flex-wrap flex-col max-w-[1400px] mx-auto">
-      <div className="text-2xl flex flex-wrap mx-auto m-4">
-        Erstelle dein Konto
+  <div className="flex justify-center bg-gray-50 px-4 pt-24">
+  <div className="w-full max-w-md bg-white shadow-md rounded-xl p-8">
+    <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
+      Erstelle dein Konto
+    </h2>
+
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Username */}
+      <div>
+        <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
+          Benutzer
+        </label>
+        <input
+          type="text"
+          id="userName"
+          name="userName"
+          value={formData.userName}
+          onChange={handleChange}
+          required
+          minLength="3"
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+        />
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto w-full p-6">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+      {/* Email */}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+        />
+      </div>
 
-        <div className="mb-4">
-          <label className="block mb-2" htmlFor="userName">
-            Benutzer
-          </label>
-          <input
-            type="text"
-            id="userName"
-            name="userName"
-            value={formData.userName}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-            required
-            minLength="3"
-          />
-        </div>
+      {/* Password */}
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          Passwort
+        </label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+          minLength="6"
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+        />
+      </div>
 
-        <div className="mb-4">
-          <label className="block mb-2" htmlFor="email">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-            required
-          />
-        </div>
+      {/* Avatar URL */}
+      <div>
+        <label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-700 mb-1">
+          Avatar URL
+        </label>
+        <input
+          type="url"
+          id="avatarUrl"
+          name="avatarUrl"
+          value={formData.avatarUrl}
+          onChange={handleChange}
+          placeholder="https://example.com/avatar.jpg"
+          required
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+        />
+      </div>
 
-        <div className="mb-4">
-          <label className="block mb-2" htmlFor="password">
-            Passwort
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-            required
-            minLength="6"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block mb-2" htmlFor="avatarUrl">
-            Avatar URL
-          </label>
-          <input
-            type="url"
-            id="avatarUrl"
-            name="avatarUrl"
-            value={formData.avatarUrl}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-            placeholder="https://example.com/avatar.jpg"
-            required
-          />
-        </div>
-
-        <div className="mb-6">
-          <label className="block mb-2" htmlFor="role">
-            Ich bin...
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-          >
-            <option value="buyer">Intressent</option>
-            <option value="seller">Künstler</option>
-          </select>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full ${buttonConfig.bgColor} ${buttonConfig.hoverColor} text-white py-2 px-4 rounded-lg disabled:opacity-50 transition-colors`}
+      {/* Role */}
+      <div>
+        <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+          Ich bin...
+        </label>
+        <select
+          id="role"
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition bg-white"
         >
-          {buttonConfig.text}
-        </button>
+          <option value="buyer">Intressent</option>
+          <option value="seller">Künstler</option>
+        </select>
+      </div>
 
-        <p className="mt-4 text-center">
-          Bereits ein Konto?{" "}
-          <button
-            type="button"
-            onClick={openLogin}
-            className="text-blue-500 hover:underline"
-          >
-            LogIn
-          </button>
-        </p>
-      </form>
-    </div>
+      {/* Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg shadow-sm disabled:opacity-50 transition-colors"
+      >
+        {buttonConfig.text}
+      </button>
+
+      <p className="text-center text-sm text-gray-600">
+        Bereits ein Konto?{" "}
+        <button
+          type="button"
+          onClick={openLogin}
+          className="text-blue-600 font-medium hover:underline"
+        >
+          LogIn
+        </button>
+      </p>
+    </form>
+  </div>
+</div>
+
+
   );
 };
 

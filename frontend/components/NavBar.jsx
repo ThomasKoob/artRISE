@@ -7,7 +7,7 @@ const NavBar = () => {
 
   return (
     <nav className="bg-gray-400  my-2 shadow-md  font-bold sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-8xl mx-auto px-0 h-16 flex items-center justify-between">
         
       <Link to="/" className="flex items-center">
       <img
@@ -18,7 +18,7 @@ const NavBar = () => {
     </Link>
 
         {/* Links */}
-        <div className="flex space-x-8 text-lg">
+        <div className="flex space-x-8  text-lg">
           <Link
             to="/"
             className="hover:text-orange-600 tetx-black transition-colors duration-200"
@@ -34,7 +34,7 @@ const NavBar = () => {
         </div>
 
         {/* Auth / User Menu */}
-        <div className="flex space-x-4">
+        <div className="flex mr-3 space-x-4">
           {!user ? (
             <>
               <Link
