@@ -1,16 +1,18 @@
 import { Route, Routes } from "react-router";
 import Home from "../pages/Home";
 import Auction from "../pages/Auction.jsx";
+import AuctionsList from "../pages/AuctionsList.jsx"; // Neue Seite für alle Auktionen
 import Layout from "../Layout/Layout.jsx";
 import SignUp from "../pages/SignUp.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
-// import CreateAuction from "../pages/CreateAuction.jsx"
+
 const App = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        <Route path="auction" element={<Auction />} />
+        <Route path="auction" element={<AuctionsList />} />
+        <Route path="auction/:auctionId" element={<Auction />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="signup" element={<SignUp />} />
       </Route>
@@ -18,4 +20,5 @@ const App = () => {
     </Routes>
   );
 };
+
 export default App;
