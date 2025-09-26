@@ -232,6 +232,7 @@ const Home = () => {
             (artworks: {allArtworks.length} | slideshow: {slideshowItems.length})
           </span>
         </div>
+        </section>
        
 
       {/* Live Auctions */}
