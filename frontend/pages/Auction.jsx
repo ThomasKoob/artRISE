@@ -71,7 +71,7 @@ const Auction = () => {
         <div className="alert alert-error mb-4">
           <span>Error loading auction: {error}</span>
         </div>
-        <Link to="/auctions" className="btn btn-secondary">
+        <Link to="/auction" className="btn btn-secondary">
           ← Back to All Auctions
         </Link>
       </div>
@@ -82,7 +82,7 @@ const Auction = () => {
     <div className="p-8">
       {/* Back Navigation */}
       <div className="mb-6">
-        <Link to="/auctions" className="btn btn-ghost btn-sm">
+        <Link to="/auction" className="btn btn-ghost btn-sm">
           ← Back to All Auctions
         </Link>
       </div>
@@ -93,25 +93,33 @@ const Auction = () => {
           {/* Banner Image */}
           {auction.bannerImageUrl && (
             <div className="mb-6">
-              <img
-                src={auction.bannerImageUrl}
-                alt={auction.title}
-                className="w-full h-64 md:h-80 object-cover rounded-lg shadow-lg"
-                onError={(e) => {
-                  e.target.src =
-                    "https://via.placeholder.com/800x300?text=Auction+Banner";
-                }}
-              />
+              <div className="flex flex-row">
+                <img
+                  src={auction.bannerImageUrl}
+                  alt={auction.title}
+                  className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-lg shadow-lg"
+                  onError={(e) => {
+                    e.target.src =
+                      "https://via.placeholder.com/800x300?text=Auction+Banner";
+                  }}
+                />
+                <div className="flex flex-col ml-10">
+                  <h1 className="text-3xl md:text-4xl font-bold">
+                    {auction.title}
+                  </h1>
+                  {auction.description && (
+                    <p className="text-gray-600 mb-4 text-lg leading-relaxed">
+                      {auction.description}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-2">
-                <h1 className="text-3xl md:text-4xl font-bold">
-                  {auction.title}
-                </h1>
-
                 {/* Status Badge */}
                 {auction.status === "live" && (
                   <span className="badge badge-success badge-lg">🔴 Live</span>
@@ -123,12 +131,6 @@ const Auction = () => {
                   <span className="badge badge-error badge-lg">🏁 Ended</span>
                 )}
               </div>
-
-              {auction.description && (
-                <p className="text-gray-600 mb-4 text-lg leading-relaxed">
-                  {auction.description}
-                </p>
-              )}
             </div>
 
             {/* Countdown Timer - Prominent Display */}
