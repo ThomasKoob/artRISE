@@ -10,9 +10,9 @@ const NavBar = () => {
       <div className="max-w-8xl mx-auto px-0 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center">
           <img
-            src="/Logo-removebg-preview.png"
+            src="/Logo-removebg-preview2.png"
             alt="artRise Logo"
-            className="h-50 w-auto"
+            className="h-10 ml-8"
           />
         </Link>
 
@@ -20,7 +20,7 @@ const NavBar = () => {
         <div className="flex space-x-8  text-lg">
           <Link
             to="/"
-            className="hover:text-orange-600 text-black transition-colors duration-200"
+            className="hover:text-orange-600 transition-colors duration-200"
           >
             Home
           </Link>
@@ -48,7 +48,7 @@ const NavBar = () => {
               </Link>
               <button
                 onClick={openLogin}
-                className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 transition"
+                className="cursor-pointer px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 transition"
               >
                 LogIn
               </button>
@@ -67,7 +67,7 @@ const NavBar = () => {
               </Link>
               <button
                 onClick={logout}
-                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
+                className="cursor-pointer px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition"
               >
                 LogOut
               </button>
