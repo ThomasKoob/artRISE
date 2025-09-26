@@ -190,45 +190,55 @@ const Home = () => {
     );
   };
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-      {/* Hero */}
-      <section className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-10 shadow-lg">
-        <h1 className="text-3xl md:text-4xl font-bold">
-          Willkommen bei Art Auctions
-        </h1>
-        <p className="mt-2 text-white/90">
-          Entdecke einzigartige Kunstwerke & nimm an Live-Auktionen teil.
-        </p>
+       <div className="mx-auto px-6 py-10 space-y-10">
+      {/* HERO with compact slideshow */}
+      <section className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-8 md:p-10 shadow-lg">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
+          {/* Text side */}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold">
+              Willkommen bei Art Auctions
+            </h1>
+            <p className="mt-2 text-white/90">
+              Entdecke einzigartige Kunstwerke &amp; nimm an Live-Auktionen teil.
+            </p>
+          </div>
+
+          {/* Compact slideshow side */}
+          <div className="md:justify-self-end w-full">
+            {loading ? (
+              <div className="h-40 md:h-48 rounded-xl bg-white/20 animate-pulse" />
+            ) : slideshowItems.length ? (
+              <ArtworkSlideshow
+                items={slideshowItems}
+                onItemClick={handleSlideshowClick}
+                variant="compact"         // <— see component below
+                className="w-full max-w-xl ml-auto"
+              />
+            ) : (
+              <div className="text-white/80">
+                Keine Kunstwerke verfügbar oder keine zugehörige Auktion gefunden.
+              </div>
+            )}
+          </div>
+        </div>
       </section>
-      {/* Slideshow */}
-      <section className="my-4">
-        <div className="flex items-center gap-3 mb-4">
+
+      {/* “Entdecke Kunstwerke” (optional small strip under hero) */}
+      <section className="my-2">
+        <div className="flex items-center gap-3 mb-3">
           <h2 className="text-2xl font-bold">Entdecke Kunstwerke</h2>
-          {/* Debug counters */}
           <span className="text-xs text-gray-500">
-            (artworks: {allArtworks.length} | slideshow: {slideshowItems.length}
-            )
+            (artworks: {allArtworks.length} | slideshow: {slideshowItems.length})
           </span>
         </div>
-        {loading ? (
-          <div className="h-80 md:h-[420px] rounded-2xl bg-gray-100 animate-pulse" />
-        ) : slideshowItems.length ? (
-          <ArtworkSlideshow
-            items={slideshowItems}
-            onItemClick={handleSlideshowClick}
-          />
-        ) : (
-          <div className="text-gray-600">
-            Keine Kunstwerke verfügbar oder keine zugehörige Auktion gefunden.
-          </div>
-        )}
-      </section>
+       
+
       {/* Live Auctions */}
-      <section className="space-y-4">
+      <section className="max-w-7xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold">Live Auktionen</h2>
-            {/* Debug counters */}
             <span className="text-xs text-gray-500">
               (auctions: {allAuctions.length} | live: {liveAuctions.length})
             </span>
@@ -240,13 +250,11 @@ const Home = () => {
             Alle ansehen
           </button>
         </div>
+
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-56 bg-gray-100 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-56 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : liveAuctions.length ? (
@@ -262,4 +270,5 @@ const Home = () => {
     </div>
   );
 };
+
 export default Home;
