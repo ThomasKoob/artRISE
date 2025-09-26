@@ -190,7 +190,7 @@ const Home = () => {
     );
   };
   return (
-       <div className="mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* HERO with compact slideshow */}
       <section className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-8 md:p-10 shadow-lg">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
@@ -200,7 +200,8 @@ const Home = () => {
               Willkommen bei Art Auctions
             </h1>
             <p className="mt-2 text-white/90">
-              Entdecke einzigartige Kunstwerke &amp; nimm an Live-Auktionen teil.
+              Entdecke einzigartige Kunstwerke &amp; nimm an Live-Auktionen
+              teil.
             </p>
           </div>
 
@@ -212,12 +213,13 @@ const Home = () => {
               <ArtworkSlideshow
                 items={slideshowItems}
                 onItemClick={handleSlideshowClick}
-                variant="compact"         // <— see component below
+                variant="compact" // <— see component below
                 className="w-full max-w-xl ml-auto"
               />
             ) : (
               <div className="text-white/80">
-                Keine Kunstwerke verfügbar oder keine zugehörige Auktion gefunden.
+                Keine Kunstwerke verfügbar oder keine zugehörige Auktion
+                gefunden.
               </div>
             )}
           </div>
@@ -229,11 +231,11 @@ const Home = () => {
         <div className="flex items-center gap-3 mb-3">
           <h2 className="text-2xl font-bold">Entdecke Kunstwerke</h2>
           <span className="text-xs text-gray-500">
-            (artworks: {allArtworks.length} | slideshow: {slideshowItems.length})
+            (artworks: {allArtworks.length} | slideshow: {slideshowItems.length}
+            )
           </span>
         </div>
-        </section>
-       
+      </section>
 
       {/* Live Auctions */}
       <section className="max-w-7xl mx-auto space-y-4">
@@ -255,7 +257,10 @@ const Home = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-56 bg-gray-100 rounded-xl animate-pulse" />
+              <div
+                key={i}
+                className="h-56 bg-gray-100 rounded-xl animate-pulse"
+              />
             ))}
           </div>
         ) : liveAuctions.length ? (

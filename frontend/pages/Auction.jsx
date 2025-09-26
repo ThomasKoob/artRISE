@@ -79,7 +79,7 @@ const Auction = () => {
   }
 
   return (
-    <div className="p-8">
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* Back Navigation */}
       <div className="mb-6">
         <Link to="/auction" className="btn btn-ghost btn-sm">
