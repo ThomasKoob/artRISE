@@ -5,7 +5,7 @@ import {
   createAuction,
   updateAuction,
   deleteAuction,
-  getAuctionArtworks, // Neue Funktion
+  getAuctionArtworks,
 } from "../controllers/auctions.controller.js";
 import auth from "../middlewares/auth.js";
 

@@ -6,6 +6,7 @@ import artworkRoutes from "./artworkRoutes.js";
 import offersRoutes from "./offersRoutes.js";
 import ordersRoutes from "./ordersRoutes.js";
 import paymentsRoutes from "./paymentsRoutes.js";
+import uploadRoutes from "./uploadRoutes.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/artworks", artworkRoutes);
 router.use("/offers", offersRoutes);
 router.use("/orders", ordersRoutes);
 router.use("/payments", paymentsRoutes);
+router.use("/upload", uploadRoutes);
 
 export default router;

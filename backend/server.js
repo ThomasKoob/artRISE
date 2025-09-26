@@ -5,6 +5,11 @@ import connectDB from "./db/index.js";
 import notFound from "./middlewares/notFound.js";
 import api from "./routes/index.js";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -26,6 +31,7 @@ app.use("/api", api);
 // Error & Not Found Middleware
 app.use(errorHandler);
 app.use(notFound);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Start server
 connectDB()
