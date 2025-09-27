@@ -1,21 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
-export default function ArtworkCard({ artwork }) {
+export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
+  const [artwork, setArtwork] = useState(initialArtwork);
+  const [offers, setOffers] = useState([]);
   const [open, setOpen] = useState(false);
   const [bidAmount, setBidAmount] = useState("");
   const [showBidForm, setShowBidForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [bidError, setBidError] = useState("");
+  const [loadingOffers, setLoadingOffers] = useState(false);
 
   const { user, openLogin } = useLoginModal();
 
   // Aktueller Preis (höchstes Gebot oder Startpreis)
   const currentPrice = artwork.price || artwork.startPrice || 0;
+  const highestBid = offers.length > 0 ? offers[0].amount : 0;
+  const displayPrice = Math.max(currentPrice, highestBid);
 
   // Mindest-Gebot berechnen
-  const minBid = currentPrice + (artwork.minIncrement || 5);
+  const minBid = displayPrice + (artwork.minIncrement || 5);
+
+  // Aktuelle Gebote laden
+  const fetchOffers = async () => {
+    if (!artwork._id) return;
+
+    setLoadingOffers(true);
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/offers/artwork/${artwork._id}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setOffers(data.offers || []);
+
+          // Update artwork price if we got new info
+          if (data.stats?.highestBid > 0) {
+            setArtwork((prev) => ({
+              ...prev,
+              price: data.stats.highestBid,
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  // Lade Gebote beim ersten Mount
+  useEffect(() => {
+    fetchOffers();
+  }, [artwork._id]);
+
+  // Check if current user has already bid
+  const userBid = user
+    ? offers.find(
+        (offer) => offer.userId?._id === user._id || offer.userId === user._id
+      )
+    : null;
 
   const handleBidSubmit = async (e) => {
     e.preventDefault();
@@ -66,6 +117,14 @@ export default function ArtworkCard({ artwork }) {
       setBidSuccess(true);
       setBidAmount("");
       setShowBidForm(false);
+
+      // Reload offers to show updated state
+      await fetchOffers();
+
+      // Call parent callback if provided
+      if (onBidSuccess) {
+        onBidSuccess(data.offer, artwork);
+      }
 
       // Erfolgsmeldung nach 3 Sekunden ausblenden
       setTimeout(() => {
@@ -131,17 +190,42 @@ export default function ArtworkCard({ artwork }) {
                 Aktueller Preis:
               </span>
               <span className="badge badge-outline font-bold text-lg">
-                {currentPrice.toLocaleString("de-DE")}{" "}
+                {displayPrice.toLocaleString("de-DE")}{" "}
                 {artwork.currency || "EUR"}
               </span>
             </div>
 
-            {artwork.startPrice && artwork.endPrice && (
-              <div className="text-xs text-gray-500">
-                Start: {artwork.startPrice} € • Max: {artwork.endPrice} €
+            {/* Gebots-Statistiken */}
+            <div className="text-xs text-gray-500 space-y-1">
+              <div className="flex justify-between">
+                <span>Start: {artwork.startPrice} €</span>
+                <span>Max: {artwork.endPrice} €</span>
               </div>
-            )}
+              <div className="flex justify-between">
+                <span>Gebote: {offers.length}</span>
+                {userBid && (
+                  <span className="text-blue-600 font-medium">
+                    Dein Gebot: {userBid.amount} €
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Höchstes Gebot Anzeige */}
+          {offers.length > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-green-700 font-medium">
+                  Höchstes Gebot:
+                </span>
+                <span className="text-green-800 font-bold">
+                  {offers[0].amount} € von{" "}
+                  {offers[0].userId?.userName || "Anonym"}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Erfolgs- oder Fehlermeldung */}
           {bidSuccess && (
@@ -189,6 +273,8 @@ export default function ArtworkCard({ artwork }) {
                 >
                   {submitting ? (
                     <span className="loading loading-spinner loading-xs"></span>
+                  ) : userBid ? (
+                    "Gebot erhöhen"
                   ) : (
                     "Bieten"
                   )}
@@ -218,6 +304,20 @@ export default function ArtworkCard({ artwork }) {
               Ansehen
             </button>
 
+            {/* Refresh Button */}
+            <button
+              onClick={fetchOffers}
+              disabled={loadingOffers}
+              className="btn btn-ghost btn-sm"
+              title="Gebote aktualisieren"
+            >
+              {loadingOffers ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                "🔄"
+              )}
+            </button>
+
             {/* Bid Button */}
             {isAuctionActive && !showBidForm && (
               <button
@@ -234,10 +334,11 @@ export default function ArtworkCard({ artwork }) {
                   }
                   setShowBidForm(true);
                   setBidError("");
+                  setBidAmount(minBid.toString());
                 }}
                 className="btn btn-primary btn-sm"
               >
-                Bieten
+                {userBid ? "Gebot erhöhen" : "Bieten"}
               </button>
             )}
 
@@ -279,12 +380,17 @@ export default function ArtworkCard({ artwork }) {
               <p className="text-sm opacity-90 mb-2">{artwork.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold">
-                  {currentPrice.toLocaleString("de-DE")}{" "}
+                  {displayPrice.toLocaleString("de-DE")}{" "}
                   {artwork.currency || "EUR"}
                 </span>
-                <span className={`badge ${getStatusColor(artwork.status)}`}>
-                  {artwork.status}
-                </span>
+                <div className="flex gap-2 items-center">
+                  <span className="text-sm">
+                    {offers.length} Gebot{offers.length !== 1 ? "e" : ""}
+                  </span>
+                  <span className={`badge ${getStatusColor(artwork.status)}`}>
+                    {artwork.status}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

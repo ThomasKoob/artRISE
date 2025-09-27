@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router";
 import ArtworkCard from "../components/ArtworkCard";
 import CountdownTimer from "../components/CountdownTimer";
@@ -8,54 +8,80 @@ const Auction = () => {
   const [auction, setAuction] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
   const { auctionId } = useParams();
 
-  useEffect(() => {
-    const fetchAuctionData = async () => {
-      try {
-        setLoading(true);
+  const fetchAuctionData = useCallback(async () => {
+    try {
+      setLoading(true);
 
-        // Fetch auction details and artworks in parallel
-        const [auctionResponse, artworksResponse] = await Promise.all([
-          fetch(`http://localhost:3001/api/auctions/${auctionId}`),
-          fetch(`http://localhost:3001/api/auctions/${auctionId}/artworks`),
-        ]);
+      // Fetch auction details and artworks in parallel
+      const [auctionResponse, artworksResponse] = await Promise.all([
+        fetch(`http://localhost:3001/api/auctions/${auctionId}`),
+        fetch(`http://localhost:3001/api/auctions/${auctionId}/artworks`),
+      ]);
 
-        if (!auctionResponse.ok) {
-          throw new Error(`Auction not found (${auctionResponse.status})`);
-        }
-
-        if (!artworksResponse.ok) {
-          throw new Error(
-            `Failed to load artworks (${artworksResponse.status})`
-          );
-        }
-
-        const auctionResult = await auctionResponse.json();
-        const artworksResult = await artworksResponse.json();
-
-        // Berücksichtigung der API Response Struktur
-        const auctionData = auctionResult.success
-          ? auctionResult.data
-          : auctionResult;
-        const artworksData = artworksResult.success
-          ? artworksResult.data
-          : artworksResult;
-
-        setAuction(auctionData);
-        setArtworks(artworksData);
-      } catch (err) {
-        setError(err.message);
-        console.error("Error fetching auction data:", err);
-      } finally {
-        setLoading(false);
+      if (!auctionResponse.ok) {
+        throw new Error(`Auction not found (${auctionResponse.status})`);
       }
-    };
 
+      if (!artworksResponse.ok) {
+        throw new Error(`Failed to load artworks (${artworksResponse.status})`);
+      }
+
+      const auctionResult = await auctionResponse.json();
+      const artworksResult = await artworksResponse.json();
+
+      // Berücksichtigung der API Response Struktur
+      const auctionData = auctionResult.success
+        ? auctionResult.data
+        : auctionResult;
+      const artworksData = artworksResult.success
+        ? artworksResult.data
+        : artworksResult;
+
+      setAuction(auctionData);
+      setArtworks(artworksData);
+      setLastUpdate(new Date());
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching auction data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [auctionId]);
+
+  useEffect(() => {
     if (auctionId) {
       fetchAuctionData();
     }
-  }, [auctionId]);
+  }, [auctionId, fetchAuctionData]);
+
+  // Auto-refresh every 30 seconds for live auctions
+  useEffect(() => {
+    if (!auction || auction.status !== "live") return;
+
+    const interval = setInterval(() => {
+      fetchAuctionData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [auction, fetchAuctionData]);
+
+  // Handle successful bid from ArtworkCard
+  const handleBidSuccess = useCallback((offer, artwork) => {
+    console.log("Bid success:", offer, artwork);
+
+    // Update the specific artwork in the list
+    setArtworks((prev) =>
+      prev.map((art) =>
+        art._id === artwork._id ? { ...art, price: offer.amount } : art
+      )
+    );
+
+    // Optional: Show a toast notification
+    // toast.success(`Gebot von ${offer.amount}€ erfolgreich abgegeben!`);
+  }, []);
 
   if (loading) {
     return (
@@ -130,6 +156,14 @@ const Auction = () => {
                 {auction.status === "ended" && (
                   <span className="badge badge-error badge-lg">🏁 Ended</span>
                 )}
+
+                {/* Live Update Indicator */}
+                {auction.status === "live" && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Auto-Update aktiv</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -144,7 +178,8 @@ const Auction = () => {
                   size="lg"
                   onExpired={() => {
                     console.log(`Auction ${auction._id} has ended`);
-                    // Optional: Refresh page or update status
+                    // Refresh auction data when timer expires
+                    fetchAuctionData();
                   }}
                 />
               </div>
@@ -172,6 +207,28 @@ const Auction = () => {
               <p className="text-sm text-gray-600">{artworks.length} pieces</p>
             </div>
           </div>
+
+          {/* Refresh Controls */}
+          <div className="flex justify-between items-center mt-4 p-3 bg-blue-50 rounded-lg">
+            <div className="text-sm text-gray-600">
+              <span>Letzte Aktualisierung: </span>
+              <span className="font-medium">
+                {lastUpdate.toLocaleTimeString("de-DE")}
+              </span>
+            </div>
+            <button
+              onClick={fetchAuctionData}
+              disabled={loading}
+              className="btn btn-outline btn-sm"
+              title="Daten aktualisieren"
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                <>🔄 Aktualisieren</>
+              )}
+            </button>
+          </div>
         </div>
       )}
 
@@ -179,7 +236,11 @@ const Auction = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {artworks.length > 0 ? (
           artworks.map((artwork) => (
-            <ArtworkCard key={artwork._id} artwork={artwork} />
+            <ArtworkCard
+              key={artwork._id}
+              artwork={artwork}
+              onBidSuccess={handleBidSuccess}
+            />
           ))
         ) : (
           <div className="col-span-full text-center text-gray-500 py-16">
@@ -187,6 +248,48 @@ const Auction = () => {
           </div>
         )}
       </div>
+
+      {/* Live Stats */}
+      {auction?.status === "live" && artworks.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6 mt-8">
+          <h3 className="text-lg font-semibold mb-4">
+            Live Auktions-Statistiken
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">
+                {artworks.length}
+              </div>
+              <div className="text-sm text-green-700">Aktive Kunstwerke</div>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">
+                {artworks
+                  .reduce(
+                    (sum, art) => sum + (art.price || art.startPrice || 0),
+                    0
+                  )
+                  .toLocaleString("de-DE")}{" "}
+                €
+              </div>
+              <div className="text-sm text-blue-700">
+                Gesamtwert aktueller Gebote
+              </div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-2xl font-bold text-purple-600">
+                {Math.max(
+                  ...artworks.map((art) => art.price || art.startPrice || 0)
+                ).toLocaleString("de-DE")}{" "}
+                €
+              </div>
+              <div className="text-sm text-purple-700">
+                Höchstes einzelnes Gebot
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
