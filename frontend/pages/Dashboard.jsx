@@ -1,19 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import {
-  Plus,
-  Users,
-  Gavel,
-  Palette,
-  BarChart3,
-  Settings,
-  Eye,
-  Trash2,
-  Images,
-} from "lucide-react";
+import { useLoginModal } from "../context/LoginModalContext.jsx";
 import CreateAuctionModal from "../components/CreateAuctionModal.jsx";
 import CreateArtworkModal from "../components/CreateArtworkModal.jsx";
-import { useLoginModal } from "../context/LoginModalContext.jsx";
+
+// Import the new dashboard components
+import AdminDashboard from "../components/AdminDashboard.jsx";
+import SellerDashboard from "../components/SellerDashboard.jsx";
+import BuyerDashboard from "../components/BuyerDashboard.jsx";
 
 const API_BASE = "http://localhost:3001";
 
@@ -23,55 +16,17 @@ const fetchJson = async (url, opts) => {
   if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
   return json;
 };
+
 const listFromApi = (p) => {
   if (Array.isArray(p)) return p;
   if (Array.isArray(p?.data)) return p.data;
   if (Array.isArray(p?.items)) return p.items;
   return [];
 };
-const idOf = (v) =>
-  v?._id || v?.id || (typeof v === "string" ? v : null);
 
-const avatarFallback =
-  "https://api.dicebear.com/7.x/initials/svg?radius=50&seed=User";
-
-const UserHeader = ({ user }) => {
-  const created =
-    user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—";
-  const avatar = user?.avatarUrl || avatarFallback;
-  return (
-    <div className="bg-white rounded-xl shadow p-4 mb-6 flex items-center gap-4">
-      <img
-        src={avatar}
-        alt={user?.userName || user?.email || "User"}
-        className="w-12 h-12 rounded-full object-cover"
-        onError={(e) => (e.currentTarget.src = avatarFallback)}
-      />
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-black">
-            {user?.userName || user?.email || "User"}
-          </h2>
-          <span
-            className={`px-2 py-0.5 rounded-full text-xs ${
-              user?.role === "admin"
-                ? "bg-red-100 text-red-700"
-                : user?.role === "seller" || user?.role === "artist"
-                ? "bg-green-100 text-green-700"
-                : "bg-blue-100 text-blue-700"
-            }`}
-          >
-            {user?.role || "—"}
-          </span>
-        </div>
-        <p className="text-xs text-gray-600">Mitglied seit: {created}</p>
-      </div>
-    </div>
-  );
-};
+const idOf = (v) => v?._id || v?.id || (typeof v === "string" ? v : null);
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const { user, isInitializing } = useLoginModal();
 
   const [loading, setLoading] = useState(true);
@@ -171,7 +126,8 @@ export default function Dashboard() {
       })
       .sort(
         (a, b) =>
-          new Date(a.endDate || 0).getTime() - new Date(b.endDate || 0).getTime()
+          new Date(a.endDate || 0).getTime() -
+          new Date(b.endDate || 0).getTime()
       );
     return actives[0] || null;
   }, [myAuctions, now]);
@@ -246,240 +202,7 @@ export default function Dashboard() {
     alert("✅ Kunstwerk(e) hinzugefügt");
   };
 
-  const AdminView = () => (
-    <div className="space-y-6">
-      <UserHeader user={user} />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
-          <div className="flex items-center gap-3">
-            <Users className="text-blue-600" size={24} />
-            <div>
-              <h3 className="text-lg font-semibold text-black">Benutzer</h3>
-              <p className="text-2xl font-bold text-blue-600">
-                {allUsers.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
-          <div className="flex items-center gap-3">
-            <Gavel className="text-green-600" size={24} />
-            <div>
-              <h3 className="text-lg font-semibold text-black">Auktionen</h3>
-              <p className="text-2xl font-bold text-green-600">
-                {allAuctions.length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-purple-50 p-6 rounded-lg border-l-4 border-purple-500">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="text-purple-600" size={24} />
-            <div>
-              <h3 className="text-lg font-semibold text-black">Aktivität</h3>
-              <p className="text-2xl font-bold text-purple-600">Live</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4 text-black">
-          Benutzer verwalten
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-2 text-black font-semibold">Name</th>
-                <th className="text-left p-2 text-black font-semibold">
-                  E-Mail
-                </th>
-                <th className="text-left p-2 text-black font-semibold">
-                  Rolle
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {allUsers.slice(0, 20).map((u) => (
-                <tr key={u._id} className="border-b hover:bg-gray-50">
-                  <td className="p-2 text-black">{u.userName}</td>
-                  <td className="p-2 text-black">{u.email}</td>
-                  <td className="p-2">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        u.role === "admin"
-                          ? "bg-red-100 text-red-800"
-                          : u.role === "seller" || u.role === "artist"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {u.role}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {!allUsers.length && (
-                <tr>
-                  <td colSpan={3} className="p-4 text-gray-500">
-                    Keine Benutzer gefunden.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-
-  const SellerView = () => (
-    <div className="space-y-6">
-      <UserHeader user={user} />
-
-      {!activeMyAuction ? (
-        <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-green-800">
-                Neue Auktion
-              </h3>
-              <p className="text-green-700">
-                Erstellen Sie eine neue Auktion. Sie können später Kunstwerke
-                hinzufügen.
-              </p>
-            </div>
-            <button
-              onClick={() => setShowCreateAuction(true)}
-              className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Plus size={20} />
-              Auktion erstellen
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {activeMyAuction.bannerImageUrl && (
-            <img
-              src={activeMyAuction.bannerImageUrl}
-              alt={activeMyAuction.title}
-              className="w-full h-44 object-cover"
-              onError={(e) => {
-                e.currentTarget.src =
-                  "https://via.placeholder.com/800x300?text=Auction";
-              }}
-            />
-          )}
-
-          <div className="p-5">
-            <h2 className="text-xl font-semibold text-black">
-              {activeMyAuction.title}
-            </h2>
-            <p className="text-gray-700 mt-1 line-clamp-3">
-              {activeMyAuction.description}
-            </p>
-            {activeMyAuction.endDate && (
-              <p className="text-sm text-gray-600 mt-2">
-                Ende: {new Date(activeMyAuction.endDate).toLocaleString()}
-              </p>
-            )}
-
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
-                onClick={() => navigate(`/auction/${activeMyAuction._id}`)}
-              >
-                <Eye size={16} /> Ansehen
-              </button>
-              <button
-                className="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
-                onClick={() => setShowCreateArtwork(true)}
-              >
-                <Images size={16} /> Kunstwerk hinzufügen
-              </button>
-              <button
-                className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
-                onClick={() => handleDeleteAuction(activeMyAuction)}
-              >
-                <Trash2 size={16} /> Löschen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const BuyerView = () => (
-    <div className="space-y-6">
-      <UserHeader user={user} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
-          <h3 className="text-lg font-semibold text-blue-800">Meine Gebote</h3>
-          <p className="text-3xl font-bold text-blue-600">
-            {Array.isArray(myOffers) ? myOffers.length : 0}
-          </p>
-          <p className="text-blue-700 text-sm">Aktive/letzte Gebote</p>
-        </div>
-
-        <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
-          <h3 className="text-lg font-semibold text-green-800">
-            Gewonnene Auktionen
-          </h3>
-          <p className="text-3xl font-bold text-green-600">0</p>
-          <p className="text-green-700 text-sm">Erfolgreich ersteigert</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4 text-black">Meine Gebote</h2>
-        {Array.isArray(myOffers) && myOffers.length > 0 ? (
-          <div className="space-y-3">
-            {myOffers.map((offer) => (
-              <div
-                key={offer._id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-              >
-                <div>
-                  <h3 className="font-medium text-black">
-                    Kunstwerk #{offer.artworkId}
-                  </h3>
-                  <p className="text-sm text-gray-700">
-                    Gebot: {offer.amount}€
-                  </p>
-                  {offer.createdAt && (
-                    <p className="text-xs text-gray-500">
-                      {new Date(offer.createdAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                    Aktiv
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-600">
-            <Gavel size={48} className="mx-auto mb-3 opacity-50" />
-            <p className="text-black font-medium">Noch keine Gebote abgegeben</p>
-            <p className="text-sm text-gray-700">
-              Besuchen Sie die Auktionsseite um Gebote abzugeben
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
+  // Loading and Authentication States
   if (isInitializing) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -487,6 +210,7 @@ export default function Dashboard() {
       </div>
     );
   }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -494,6 +218,7 @@ export default function Dashboard() {
       </div>
     );
   }
+
   if (!user) {
     return (
       <div className="text-center py-8">
@@ -507,23 +232,41 @@ export default function Dashboard() {
     );
   }
 
-  const renderByRole = () => {
+  // Render appropriate dashboard based on user role
+  const renderDashboardByRole = () => {
     switch (user.role) {
       case "admin":
-        return <AdminView />;
+        return (
+          <AdminDashboard
+            user={user}
+            allUsers={allUsers}
+            allAuctions={allAuctions}
+          />
+        );
       case "seller":
       case "artist":
-        return <SellerView />;
+        return (
+          <SellerDashboard
+            user={user}
+            activeMyAuction={activeMyAuction}
+            onCreateAuction={() => setShowCreateAuction(true)}
+            onCreateArtwork={() => setShowCreateArtwork(true)}
+            onDeleteAuction={handleDeleteAuction}
+          />
+        );
       case "buyer":
       default:
-        return <BuyerView />;
+        return <BuyerDashboard user={user} myOffers={myOffers} />;
     }
   };
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-6 py-8">{renderByRole()}</div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {renderDashboardByRole()}
+      </div>
 
+      {/* Modals for Seller/Artist */}
       {(user.role === "seller" || user.role === "artist") && (
         <>
           <CreateAuctionModal
