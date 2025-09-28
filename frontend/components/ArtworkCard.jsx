@@ -159,7 +159,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
   return (
     <>
       {/* Card */}
-      <div className="card bg-base-100 w-80 shadow-md">
+      <div className="card  bg-black/50 border-20 border-black/50 w-80 shadow-md rounded-2xl">
         <figure>
           <img
             src={artwork.images || "https://via.placeholder.com/400x300"}
@@ -168,8 +168,8 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
           />
         </figure>
 
-        <div className="card-body">
-          <h2 className="card-title text-lg font-bold">
+        <div className="card-body ">
+          <h2 className="card-title text-lg font-extralight font-sans">
             {artwork.title}
             <span className={`badge ${getStatusColor(artwork.status)}`}>
               {artwork.status === "live" && "Live"}
@@ -299,7 +299,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
           <div className="card-actions justify-end mt-4">
             <button
               onClick={() => setOpen(true)}
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline btn-sm font-sans font-extralight rounded-2xl"
             >
               Ansehen
             </button>
@@ -336,7 +336,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
                   setBidError("");
                   setBidAmount(minBid.toString());
                 }}
-                className="btn btn-primary btn-sm"
+                className="btn rounded-2xl btn-primary bg-coldYellow text-darkBackground hover:bg-coldYellow/80 font-extralight btn-l"
               >
                 {userBid ? "Gebot erhöhen" : "Bieten"}
               </button>
@@ -356,7 +356,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
       {/* Modal für Vollbild-Ansicht */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          className="fixed border-2 inset-0 bg-black/70 flex items-center justify-center z-50"
           onClick={() => setOpen(false)}
         >
           <div className="max-w-4xl max-h-[90vh] p-4 relative">
@@ -375,7 +375,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
             </button>
 
             {/* Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white rounded-b-lg">
+            <div className="absolute bottom-0 left-0 right-0 bg from-black/80 to-transparent p-6 text-white rounded-b-lg">
               <h3 className="text-xl font-bold mb-2">{artwork.title}</h3>
               <p className="text-sm opacity-90 mb-2">{artwork.description}</p>
               <div className="flex justify-between items-center">

@@ -153,7 +153,7 @@ const Home = () => {
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="text-left border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300"
+        className="text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
         title="Zur Auktion"
       >
         <div className="relative">
@@ -192,16 +192,17 @@ const Home = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* HERO with compact slideshow */}
-      <section className="rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-8 md:p-10 shadow-lg">
+      <section className=" bg-darkBackground/90 rounded-2xl border-2 border-coldYellow text-white p-8 md:p-10 shadow-lg">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           {/* Text side */}
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">
-              Willkommen bei Art Auctions
+            <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
+              A stage for every artist, everywhere.
             </h1>
-            <p className="mt-2 text-white/90">
-              Entdecke einzigartige Kunstwerke &amp; nimm an Live-Auktionen
-              teil.
+            <p className="m-10 font- text-xl font-extralight text-white/90">
+              On artRise, creativity has no boundaries. From first steps to
+              established work – upload your art, start your auction, and share
+              it with the world.
             </p>
           </div>
 
