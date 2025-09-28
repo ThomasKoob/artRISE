@@ -41,7 +41,7 @@ export default function ArtworkSlideshow({
     if (typeof onItemClick === "function") onItemClick(cur);
   };
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden shadow-lg bg-black/5">
+    <div className="relative h-full w-full rounded-2xl overflow-hidden shadow-lg bg-black/5">
       <button
         type="button"
         onClick={handleClick}

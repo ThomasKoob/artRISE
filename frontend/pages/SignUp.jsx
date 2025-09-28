@@ -146,16 +146,16 @@ const SignUp = () => {
     if (formData.role === "buyer") {
       return {
         text: loading
-          ? "Intressent-Account wird erstellt..."
-          : "Als Interessent registrieren",
+          ? "Art lover account is being created..."
+          : "Register as an art lover",
         bgColor: "bg-blue-500",
         hoverColor: "hover:bg-blue-600",
       };
     } else {
       return {
         text: loading
-          ? "Künstler-Account wird erstellt..."
-          : "Als Künstler registrieren",
+          ? "Artist account is being created..."
+          : "Register as an artist",
         bgColor: "bg-green-500",
         hoverColor: "hover:bg-green-600",
       };
@@ -166,9 +166,9 @@ const SignUp = () => {
 
   return (
     <div className="flex justify-center px-4 pt-24 pb-8">
-      <div className="w-full max-w-md bg-white shadow-md rounded-xl p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Erstelle dein Konto
+      <div className="w-full bg-darkBackground/30 max-w-md border-1 border-coldYellow/40 shadow-md rounded-xl p-8">
+        <h2 className="text-2xl font-light font-sans text-center text-whiteLetter mb-6">
+          Create your account{" "}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,9 +182,9 @@ const SignUp = () => {
           <div>
             <label
               htmlFor="userName"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-whiteLetter/70 mb-1"
             >
-              Benutzer
+              Username
             </label>
             <input
               type="text"
@@ -194,7 +194,7 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength="3"
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
@@ -202,7 +202,7 @@ const SignUp = () => {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-whiteLetter/70 mb-1"
             >
               Email
             </label>
@@ -213,7 +213,7 @@ const SignUp = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
@@ -221,9 +221,9 @@ const SignUp = () => {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-whiteLetter/70 mb-1"
             >
-              Passwort
+              Password
             </label>
             <input
               type="password"
@@ -233,7 +233,7 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength="6"
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
@@ -272,8 +272,8 @@ const SignUp = () => {
                     />
                   </svg>
                   <p className="mb-1 text-sm text-gray-500">
-                    <span className="font-semibold">Klicke zum Hochladen</span>{" "}
-                    oder ziehe eine Datei hierher
+                    <span className="font-semibold">Choose a file</span> or drag
+                    & drop it here
                   </p>
                   <p className="text-xs text-gray-500">
                     PNG, JPG, GIF oder WebP (MAX. 5MB)
@@ -300,19 +300,19 @@ const SignUp = () => {
           <div>
             <label
               htmlFor="role"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm  font-extralight font-sans text-whiteLetter/70 mb-1"
             >
-              Ich bin...
+              I am an...
             </label>
             <select
               id="role"
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition bg-white"
+              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
             >
-              <option value="buyer">Intressent</option>
-              <option value="seller">Künstler</option>
+              <option value="buyer">Art lover</option>
+              <option value="seller">Artist</option>
             </select>
           </div>
 
@@ -320,17 +320,17 @@ const SignUp = () => {
           <button
             type="submit"
             disabled={loading || uploadingAvatar}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg shadow-sm disabled:opacity-50 transition-colors"
+            className="w-full cursor-pointer bg-lightRedButton/80 hover:bg-lightRedButton text-darkBackground font-medium py-2.5 px-4 rounded-lg shadow-sm disabled:opacity-50 transition-colors"
           >
             {uploadingAvatar ? "Bild wird hochgeladen..." : buttonConfig.text}
           </button>
 
-          <p className="text-center text-sm text-gray-600">
-            Bereits ein Konto?{" "}
+          <p className="text-center font text-sm text-gray-600">
+            Already have an account?{" "}
             <button
               type="button"
               onClick={openLogin}
-              className="text-blue-600 font-medium hover:underline"
+              className="cursor-pointer text-greenButton/80 hover:text-greenButton hover:text-xl font-medium hover:underline"
             >
               LogIn
             </button>

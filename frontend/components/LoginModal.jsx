@@ -41,11 +41,16 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-md rounded-2xl bg-white shadow-xl p-6 mx-4"
+        className="relative w-full max-w-md rounded-2xl bg-darkBackground/20 border-1 border-coldYellow/40 shadow-xl p-6 mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h2 className="text-xl text-gray-500 font-semibold">LogIn</h2>
+          <h2
+            className="text-xl font-sans text-whiteLetter
+           font-extralight mb-1"
+          >
+            LogIn
+          </h2>
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"
@@ -71,7 +76,7 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm text-gray-500 font-medium mb-1"
+              className="text-sm font-sans text-whiteLetter font-extralight mb-1"
             >
               E-Mail
             </label>
@@ -79,8 +84,8 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
               ref={emailRef}
               id="email"
               type="email"
-              className={`w-full text-gray-500 rounded-xl border px-3 py-2 ${
-                errors.email ? "border-red-500" : "border-gray-300"
+              className={`w-full text-whiteLetter/70 rounded-xl border-1 border-darkBackground/30 px-3 py-2 ${
+                errors.email ? "border-red-500" : "border-violetHeader"
               }`}
               value={values.email}
               onChange={(e) => setValues({ ...values, email: e.target.value })}
@@ -94,19 +99,19 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm text-gray-500 font-medium mb-1"
+              className="block text-sm font-sans text-whiteLetter font-extralight mb-1"
             >
               Passwort
             </label>
             <div
               className={`flex items-center rounded-xl border ${
-                errors.password ? "border-red-500" : "border-gray-300"
+                errors.password ? "border-red-500" : "border-violetHeader"
               }`}
             >
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                className="w-full text-gray-500 rounded-xl px-3 py-2"
+                className="w-full text-whiteLetter/70 rounded-xl px-3 py-2"
                 value={values.password}
                 onChange={(e) =>
                   setValues({ ...values, password: e.target.value })
@@ -116,7 +121,7 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
               <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
-                className="px-3 py-2 text-sm text-gray-600"
+                className="px-3 py-2 text-sm text-whiteLetter/50"
               >
                 {showPassword ? "Verbergen" : "Anzeigen"}
               </button>
@@ -129,9 +134,9 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-black text-white py-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full font-sans rounded-xl border-1 border-darkBackground hover:border-0 bg-buttonPink/70 hover:bg-buttonPink text-whtieLetter/80 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Einloggen…" : "LogIn"}
+            {loading ? "Einloggen…" : "submit"}
           </button>
         </form>
       </div>

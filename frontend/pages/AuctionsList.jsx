@@ -70,7 +70,7 @@ const AuctionsList = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4">
       <h1 className="text-3xl font-bold mb-8">All Auctions</h1>
 
       <div className="mb-4 text-sm text-gray-600">

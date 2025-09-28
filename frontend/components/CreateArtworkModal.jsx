@@ -110,15 +110,22 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Kunstwerke hinzufügen</h2>
-            <p className="text-sm text-gray-500">Mehrere Einträge möglich (max. 10)</p>
+            <h2 className="text-xl font-bold text-gray-800">
+              Kunstwerke hinzufügen
+            </h2>
+            <p className="text-sm text-gray-500">
+              Mehrere Einträge möglich (max. 10)
+            </p>
           </div>
           <button
             onClick={onClose}
@@ -146,7 +153,10 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
           </div>
 
           {items.map((aw, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+            <div
+              key={idx}
+              className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3"
+            >
               <div className="flex items-center justify-between">
                 <h4 className="font-medium text-gray-800">
                   Kunstwerk {idx + 1}

@@ -1,2 +1,20 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+@theme {
+  --color-*: initial;
+  --color-violetHeader: #2e2739;
+  --color-coldYellow: #ff82d7;
+  --color-buttonPink: #ff79c6;
+  --color-darkBackground: #3f354e;
+  --color-modalGray: #f8ffdf;
+  --color-whiteWarm: #282a37;
+  --color-hoverYellow: #cbc029;
+  --color-whiteLetter: #f0f5f0;
+  --color-greenButton: #8482fc;
+  --color-lightRedButton: #f5839a;
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}

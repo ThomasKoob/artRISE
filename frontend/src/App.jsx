@@ -8,16 +8,18 @@ import Dashboard from "../pages/Dashboard.jsx";
 
 const App = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="auction" element={<AuctionsList />} />
-        <Route path="auction/:auctionId" element={<Auction />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="signup" element={<SignUp />} />
-      </Route>
-      <Route path="*" element={<h1>Page not found</h1>} />
-    </Routes>
+    <div className="flex flex-col h-screen bg-whiteWarm">
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="auction" element={<AuctionsList />} />
+          <Route path="auction/:auctionId" element={<Auction />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="signup" element={<SignUp />} />
+        </Route>
+        <Route path="*" element={<h1>Page not found</h1>} />
+      </Routes>
+    </div>
   );
 };
 
