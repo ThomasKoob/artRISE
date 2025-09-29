@@ -1,10 +1,12 @@
+// pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { openLogin } = useLoginModal();
+  const { openLogin, login } = useLoginModal(); // DE: login aus dem Context für Auto-Login
+
   const [formData, setFormData] = useState({
     userName: "",
     email: "",
@@ -19,74 +21,45 @@ const SignUp = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  // Handle Datei-Auswahl
+  // DE: Avatar-Auswahl + Preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    if (!file) return;
 
-    if (file) {
-      // Validierung
-      const validTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-      ];
-      if (!validTypes.includes(file.type)) {
-        setError(
-          "Bitte wähle ein gültiges Bildformat (JPEG, PNG, GIF oder WebP)"
-        );
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB
-        setError("Die Datei ist zu groß. Maximum 5MB erlaubt.");
-        return;
-      }
-
-      setAvatarFile(file);
-
-      // Preview erstellen
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-
-      setError("");
+    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    if (!valid.includes(file.type)) {
+      setError("Bitte wähle ein gültiges Bildformat (JPEG, PNG, GIF oder WebP)");
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Die Datei ist zu groß. Maximum 5MB erlaubt.");
+      return;
+    }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+    setError("");
   };
 
-  // Avatar Upload
+  // DE: Avatar hochladen (falls Datei gewählt)
   const uploadAvatar = async () => {
     if (!avatarFile) return null;
-
     setUploadingAvatar(true);
-    const formData = new FormData();
-    formData.append("avatar", avatarFile);
-
+    const data = new FormData();
+    data.append("avatar", avatarFile);
     try {
-      const response = await fetch("http://localhost:3001/api/upload/avatar", {
+      const res = await fetch("http://localhost:3001/api/upload/avatar", {
         method: "POST",
-        body: formData,
+        body: data,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Upload failed");
-      }
-
-      return data.data.url;
-    } catch (err) {
-      throw new Error(`Avatar Upload fehlgeschlagen: ${err.message}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Upload failed");
+      return json?.data?.url;
     } finally {
       setUploadingAvatar(false);
     }
@@ -98,77 +71,59 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      // Erst Avatar hochladen
+      // 1) Avatar ggf. hochladen
       let avatarUrl = formData.avatarUrl;
-
       if (avatarFile) {
         avatarUrl = await uploadAvatar();
       }
-
       if (!avatarUrl) {
         throw new Error("Bitte wähle ein Profilbild aus");
       }
 
-      // Dann User registrieren
-      const response = await fetch("http://localhost:3001/api/auth/register", {
+      // 2) Registrierung
+      const res = await fetch("http://localhost:3001/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          ...formData,
-          avatarUrl: avatarUrl,
-        }),
+        body: JSON.stringify({ ...formData, avatarUrl }),
       });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || "Registration failed");
 
-      const data = await response.json();
+      // 3) **Auto-Login** direkt nach erfolgreicher Registrierung
+      // DE: Wir nutzen denselben Login-Flow wie im Modal-Context,
+      // damit Cookies/Session korrekt gesetzt werden.
+      await login({ email: formData.email, password: formData.password });
 
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
-
-      // Erfolg - je nach Rolle weiterleiten
-      if (formData.role === "seller") {
-        navigate("/");
-      } else {
-        navigate("/");
-      }
+      // 4) Weiterleiten (Rolle egal – خليه يمشي للـ Home ولا Dashboard)
+      navigate("/dashboard"); // تنجم تبدّلها إلى "/" إذا تحب تمشي للـ Home
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unbekannter Fehler");
     } finally {
       setLoading(false);
     }
   };
 
-  // Button Text und Style basierend auf der Rolle
+  // DE: Button-Text dynamisch nach Rolle
   const getButtonConfig = () => {
     if (formData.role === "buyer") {
       return {
         text: loading
           ? "Art lover account is being created..."
           : "Register as an art lover",
-        bgColor: "bg-blue-500",
-        hoverColor: "hover:bg-blue-600",
-      };
-    } else {
-      return {
-        text: loading
-          ? "Artist account is being created..."
-          : "Register as an artist",
-        bgColor: "bg-green-500",
-        hoverColor: "hover:bg-green-600",
       };
     }
+    return {
+      text: loading ? "Artist account is being created..." : "Register as an artist",
+    };
   };
-
   const buttonConfig = getButtonConfig();
 
   return (
     <div className="flex justify-center px-4 pt-24 pb-8">
       <div className="w-full bg-darkBackground/30 max-w-md border-1 border-coldYellow/40 shadow-md rounded-xl p-8">
         <h2 className="text-2xl font-light font-sans text-center text-whiteLetter mb-6">
-          Create your account{" "}
+          Create your account
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -180,35 +135,27 @@ const SignUp = () => {
 
           {/* Username */}
           <div>
-            <label
-              htmlFor="userName"
-              className="block text-sm font-medium text-whiteLetter/70 mb-1"
-            >
+            <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
               Username
             </label>
             <input
               type="text"
-              id="userName"
               name="userName"
               value={formData.userName}
               onChange={handleChange}
               required
-              minLength="3"
+              minLength={3}
               className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-whiteLetter/70 mb-1"
-            >
+            <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
               Email
             </label>
             <input
               type="email"
-              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
@@ -219,20 +166,16 @@ const SignUp = () => {
 
           {/* Password */}
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-whiteLetter/70 mb-1"
-            >
+            <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
               Password
             </label>
             <input
               type="password"
-              id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               required
-              minLength="6"
+              minLength={6}
               className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
@@ -243,7 +186,6 @@ const SignUp = () => {
               Profilbild
             </label>
 
-            {/* Preview */}
             {avatarPreview && (
               <div className="mb-3 flex justify-center">
                 <img
@@ -254,30 +196,17 @@ const SignUp = () => {
               </div>
             )}
 
-            {/* File Input */}
             <div className="flex items-center justify-center w-full">
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-2 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
+                  <svg className="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <p className="mb-1 text-sm text-gray-500">
-                    <span className="font-semibold">Choose a file</span> or drag
-                    & drop it here
+                    <span className="font-semibold">Choose a file</span> or drag & drop it here
                   </p>
-                  <p className="text-xs text-gray-500">
-                    PNG, JPG, GIF oder WebP (MAX. 5MB)
-                  </p>
+                  <p className="text-xs text-gray-500">PNG, JPG, GIF oder WebP (MAX. 5MB)</p>
                 </div>
                 <input
                   type="file"
@@ -290,22 +219,16 @@ const SignUp = () => {
             </div>
 
             {avatarFile && (
-              <p className="mt-2 text-sm text-green-600">
-                ✓ {avatarFile.name} ausgewählt
-              </p>
+              <p className="mt-2 text-sm text-green-600">✓ {avatarFile.name} ausgewählt</p>
             )}
           </div>
 
           {/* Role */}
           <div>
-            <label
-              htmlFor="role"
-              className="block text-sm  font-extralight font-sans text-whiteLetter/70 mb-1"
-            >
+            <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
               I am an...
             </label>
             <select
-              id="role"
               name="role"
               value={formData.role}
               onChange={handleChange}
@@ -316,7 +239,7 @@ const SignUp = () => {
             </select>
           </div>
 
-          {/* Button */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={loading || uploadingAvatar}
@@ -325,12 +248,12 @@ const SignUp = () => {
             {uploadingAvatar ? "Bild wird hochgeladen..." : buttonConfig.text}
           </button>
 
-          <p className="text-center font text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-600">
             Already have an account?{" "}
             <button
               type="button"
               onClick={openLogin}
-              className="cursor-pointer text-greenButton/80 hover:text-greenButton hover:text-xl font-medium hover:underline"
+              className="cursor-pointer text-greenButton/80 hover:text-greenButton hover:underline"
             >
               LogIn
             </button>

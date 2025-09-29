@@ -1,7 +1,38 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
+import { useLoginModal } from "../context/LoginModalContext.jsx";
+
 const API_BASE = "http://localhost:3001";
+
+// --- FAVORITES (Auktionen) lokal ---
+const LS_AUCTION_FAV_KEY = "ar_favorites_auctions";
+function readFavAuctions() {
+  try {
+    const raw = localStorage.getItem(LS_AUCTION_FAV_KEY);
+    const arr = JSON.parse(raw || "[]");
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+function writeFavAuctions(arr) {
+  try {
+    localStorage.setItem(LS_AUCTION_FAV_KEY, JSON.stringify(arr));
+  } catch {}
+}
+function isFavAuction(id) {
+  const ids = readFavAuctions();
+  return ids.includes(id);
+}
+function toggleFavAuction(id) {
+  const ids = readFavAuctions();
+  const has = ids.includes(id);
+  const next = has ? ids.filter((x) => x !== id) : [...ids, id];
+  writeFavAuctions(next);
+  return !has;
+}
+
 const smartList = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
@@ -57,11 +88,16 @@ const statusPill = (status = "draft") => {
       return "bg-amber-100 text-amber-800";
   }
 };
+
 const Home = () => {
   const navigate = useNavigate();
+  const { user } = useLoginModal();
+  const isBuyer = !!user && user.role === "buyer";
+
   const [allArtworks, setAllArtworks] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -69,16 +105,12 @@ const Home = () => {
         fetchJson(`${API_BASE}/api/artworks`),
         fetchJson(`${API_BASE}/api/auctions`),
       ]);
-      const artworks = smartList(artsRaw);
-      const auctions = smartList(auctionsRaw);
-      // Debug
-      console.debug("[Home] artworks raw:", artworks);
-      console.debug("[Home] auctions raw:", auctions);
-      setAllArtworks(artworks);
-      setAllAuctions(auctions);
+      setAllArtworks(smartList(artsRaw));
+      setAllAuctions(smartList(auctionsRaw));
       setLoading(false);
     })();
   }, []);
+
   const auctionById = useMemo(() => {
     const m = new Map();
     for (const a of allAuctions) {
@@ -87,6 +119,7 @@ const Home = () => {
     }
     return m;
   }, [allAuctions]);
+
   const normalizedArtworks = useMemo(() => {
     return allArtworks.map((a) => {
       const aid =
@@ -101,12 +134,10 @@ const Home = () => {
         const maybe = a.auction._id || a.auction.id;
         if (maybe) fallbackAid = maybe;
       }
-      return {
-        ...a,
-        auctionId: fallbackAid,
-      };
+      return { ...a, auctionId: fallbackAid };
     });
   }, [allArtworks]);
+
   const slideshowItems = useMemo(() => {
     return normalizedArtworks.filter((a) => {
       const hasAuction = !!a.auctionId;
@@ -122,6 +153,7 @@ const Home = () => {
       return hasAuction && hasAnyImage;
     });
   }, [normalizedArtworks]);
+
   const liveAuctions = useMemo(() => {
     const now = Date.now();
     const liveNames = new Set(["live", "active", "open"]);
@@ -137,9 +169,11 @@ const Home = () => {
     });
     return result;
   }, [allAuctions]);
+
   const handleSlideshowClick = (item) => {
     if (item?.auctionId) navigate(`/auction/${item.auctionId}`);
   };
+
   const AuctionCard = ({ auction }) => {
     const cover =
       auction?.bannerImageUrl ||
@@ -149,13 +183,47 @@ const Home = () => {
       auction?.coverUrl ||
       "https://via.placeholder.com/800x400?text=Auction+Banner";
     const { label } = getTimeLeft(auction?.endDate);
+
+    // Favorit-Status pro Auktion (nur Buyer)
+    const [favA, setFavA] = React.useState(() =>
+      isFavAuction(auction._id || auction.id)
+    );
+    const [favBusy, setFavBusy] = React.useState(false);
+    const toggleA = async (e) => {
+      e.stopPropagation();
+      if (!isBuyer) return;
+      try {
+        setFavBusy(true);
+        const now = toggleFavAuction(auction._id || auction.id);
+        setFavA(now);
+      } finally {
+        setFavBusy(false);
+      }
+    };
+
     return (
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
+        className="relative text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
         title="Zur Auktion"
       >
+        {/* Herz oben rechts – nur Buyer */}
+        {isBuyer && (
+          <span className="absolute top-2 right-2 z-10">
+            <button
+              onClick={toggleA}
+              disabled={favBusy}
+              className="w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center"
+              title={favA ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+            >
+              <span className={`text-xl ${favA ? "text-rose-600" : "text-gray-700"}`}>
+                {favA ? "♥" : "♡"}
+              </span>
+            </button>
+          </span>
+        )}
+
         <div className="relative">
           <img
             src={cover}
@@ -167,7 +235,7 @@ const Home = () => {
             }}
           />
           <span
-            className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${statusPill(
+            className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${statusPill(
               auction?.status
             )}`}
           >
@@ -189,12 +257,12 @@ const Home = () => {
       </button>
     );
   };
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-      {/* HERO with compact slideshow */}
+      {/* HERO */}
       <section className=" bg-darkBackground/90 rounded-2xl border-2 border-coldYellow text-white p-8 md:p-10 shadow-lg">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
-          {/* Text side */}
           <div>
             <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
               A stage for every artist, everywhere.
@@ -206,7 +274,6 @@ const Home = () => {
             </p>
           </div>
 
-          {/* Compact slideshow side */}
           <div className="md:justify-self-end w-full">
             {loading ? (
               <div className="h-40 md:h-48 rounded-xl bg-white/20 animate-pulse" />
@@ -214,7 +281,7 @@ const Home = () => {
               <ArtworkSlideshow
                 items={slideshowItems}
                 onItemClick={handleSlideshowClick}
-                variant="compact" // <— see component below
+                variant="compact"
                 className="w-full max-w-xl ml-auto"
               />
             ) : (
@@ -227,41 +294,18 @@ const Home = () => {
         </div>
       </section>
 
-      {/* “Entdecke Kunstwerke” (optional small strip under hero) */}
-      <section className="my-2">
-        <div className="flex items-center gap-3 mb-3">
-          <h2 className="text-2xl font-bold">Entdecke Kunstwerke</h2>
-          <span className="text-xs text-gray-500">
-            (artworks: {allArtworks.length} | slideshow: {slideshowItems.length}
-            )
-          </span>
-        </div>
-      </section>
-
       {/* Live Auctions */}
       <section className="max-w-7xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold">Live Auktionen</h2>
-            <span className="text-xs text-gray-500">
-              (auctions: {allAuctions.length} | live: {liveAuctions.length})
-            </span>
           </div>
-          <button
-            className="text-indigo-600 hover:underline"
-            onClick={() => navigate("/auctions")}
-          >
-            Alle ansehen
-          </button>
         </div>
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-56 bg-gray-100 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-56 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : liveAuctions.length ? (

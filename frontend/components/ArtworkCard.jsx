@@ -1,7 +1,47 @@
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
-export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
+// --- FAVORITE (lokal, nur für Artworks) ---
+const LS_FAV_KEY = "ar_favorites";
+
+/** Liest Array von Artwork-IDs aus localStorage. */
+function readFavIds() {
+  try {
+    const raw = localStorage.getItem(LS_FAV_KEY);
+    const arr = JSON.parse(raw || "[]");
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Schreibt Array von Artwork-IDs in localStorage. */
+function writeFavIds(arr) {
+  try {
+    localStorage.setItem(LS_FAV_KEY, JSON.stringify(arr));
+  } catch {}
+}
+
+/** Prüft, ob eine ID als Favorit markiert ist. */
+function isFavId(id) {
+  const ids = readFavIds();
+  return ids.includes(id);
+}
+
+/** Toggle Favorit für eine Artwork-ID. */
+function toggleFavId(id) {
+  const ids = readFavIds();
+  const has = ids.includes(id);
+  const next = has ? ids.filter((x) => x !== id) : [...ids, id];
+  writeFavIds(next);
+  return !has; // neuer Zustand (true = jetzt Favorit)
+}
+
+export default function ArtworkCard({
+  artwork: initialArtwork,
+  onBidSuccess,
+  variant = "default", // "default" | "compact"
+}) {
   const [artwork, setArtwork] = useState(initialArtwork);
   const [offers, setOffers] = useState([]);
   const [open, setOpen] = useState(false);
@@ -13,6 +53,10 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
   const [loadingOffers, setLoadingOffers] = useState(false);
 
   const { user, openLogin } = useLoginModal();
+
+  // Nur Käufer dürfen Herz + Bieten sehen
+  const isBuyer = !!user && user.role === "buyer";
+  const isCompact = variant === "compact";
 
   // Aktueller Preis (höchstes Gebot oder Startpreis)
   const currentPrice = artwork.price || artwork.startPrice || 0;
@@ -30,16 +74,13 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
     try {
       const response = await fetch(
         `http://localhost:3001/api/offers/artwork/${artwork._id}`,
-        {
-          credentials: "include",
-        }
+        { credentials: "include" }
       );
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
           setOffers(data.offers || []);
-
           // Update artwork price if we got new info
           if (data.stats?.highestBid > 0) {
             setArtwork((prev) => ({
@@ -56,12 +97,12 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
     }
   };
 
-  // Lade Gebote beim ersten Mount
   useEffect(() => {
     fetchOffers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artwork._id]);
 
-  // Check if current user has already bid
+  // Hat aktueller Nutzer bereits geboten?
   const userBid = user
     ? offers.find(
         (offer) => offer.userId?._id === user._id || offer.userId === user._id
@@ -75,16 +116,12 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
       openLogin();
       return;
     }
-
-    if (user.role === "seller" || user.role === "artist") {
-      setBidError(
-        "Als Verkäufer/Künstler kannst du nicht auf eigene Werke bieten"
-      );
+    if (!isBuyer) {
+      setBidError("Nur Käufer dürfen bieten.");
       return;
     }
 
     const amount = parseFloat(bidAmount);
-
     if (isNaN(amount) || amount < minBid) {
       setBidError(`Gebot muss mindestens ${minBid} € betragen`);
       return;
@@ -96,14 +133,12 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
     try {
       const response = await fetch("http://localhost:3001/api/offers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           artworkId: artwork._id,
           userId: user._id,
-          amount: amount,
+          amount,
         }),
       });
 
@@ -121,15 +156,10 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
       // Reload offers to show updated state
       await fetchOffers();
 
-      // Call parent callback if provided
-      if (onBidSuccess) {
-        onBidSuccess(data.offer, artwork);
-      }
+      // Parent informieren
+      onBidSuccess?.(data.offer, artwork);
 
-      // Erfolgsmeldung nach 3 Sekunden ausblenden
-      setTimeout(() => {
-        setBidSuccess(false);
-      }, 3000);
+      setTimeout(() => setBidSuccess(false), 2500);
     } catch (error) {
       setBidError(error.message);
     } finally {
@@ -156,20 +186,59 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
   const isAuctionEnded =
     artwork.status === "ended" || artwork.status === "canceled";
 
+  // --- FAVORITE: lokaler Zustand (nur Buyer) ---
+  const [fav, setFav] = useState(() => isFavId(initialArtwork?._id));
+  const [favBusy, setFavBusy] = useState(false);
+  const onToggleFavorite = async () => {
+    if (!user) return openLogin();
+    if (!isBuyer) return;
+    try {
+      setFavBusy(true);
+      const nowFav = toggleFavId(artwork._id);
+      setFav(nowFav);
+    } finally {
+      setFavBusy(false);
+    }
+  };
+
   return (
     <>
       {/* Card */}
-      <div className="card  bg-black/50 border-20 border-black/50 w-80 shadow-md rounded-2xl">
+      <div
+        className={`card bg-black/50 border-20 border-black/50 ${
+          isCompact ? "w-64" : "w-80"
+        } shadow-md rounded-2xl relative`}
+      >
+        {/* Herz oben rechts — nur für Buyer sichtbar */}
+        {isBuyer && (
+          <button
+            type="button"
+            aria-label={fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+            title={fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+            onClick={onToggleFavorite}
+            disabled={favBusy}
+            className="absolute top-2 right-2 z-10 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center"
+          >
+            <span className={`text-xl ${fav ? "text-rose-600" : "text-gray-700"}`}>
+              {fav ? "♥" : "♡"}
+            </span>
+          </button>
+        )}
+
         <figure>
           <img
             src={artwork.images || "https://via.placeholder.com/400x300"}
             alt={artwork.title}
-            className="h-60 w-full object-cover rounded-t-lg"
+            className={`${isCompact ? "h-44" : "h-60"} w-full object-cover rounded-t-lg`}
+            onError={(e) => {
+              e.currentTarget.src =
+                "https://via.placeholder.com/400x300?text=Artwork";
+            }}
           />
         </figure>
 
-        <div className="card-body ">
-          <h2 className="card-title text-lg font-extralight font-sans">
+        <div className="card-body">
+          <h2 className={`card-title ${isCompact ? "text-base" : "text-lg"} font-extralight font-sans`}>
             {artwork.title}
             <span className={`badge ${getStatusColor(artwork.status)}`}>
               {artwork.status === "live" && "Live"}
@@ -179,49 +248,49 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
             </span>
           </h2>
 
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {artwork.description}
-          </p>
+          {!isCompact && (
+            <p className="text-sm text-gray-300 line-clamp-2">
+              {artwork.description}
+            </p>
+          )}
 
           {/* Preis-Information */}
           <div className="mt-2">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-200">
                 Aktueller Preis:
               </span>
-              <span className="badge badge-outline font-bold text-lg">
+              <span className={`badge badge-outline font-bold ${isCompact ? "text-base" : "text-lg"}`}>
                 {displayPrice.toLocaleString("de-DE")}{" "}
                 {artwork.currency || "EUR"}
               </span>
             </div>
 
-            {/* Gebots-Statistiken */}
-            <div className="text-xs text-gray-500 space-y-1">
-              <div className="flex justify-between">
-                <span>Start: {artwork.startPrice} €</span>
-                <span>Max: {artwork.endPrice} €</span>
+            {!isCompact && (
+              <div className="text-xs text-gray-400 space-y-1">
+                <div className="flex justify-between">
+                  <span>Start: {artwork.startPrice} €</span>
+                  <span>Max: {artwork.endPrice} €</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Gebote: {offers.length}</span>
+                  {userBid && (
+                    <span className="text-blue-300 font-medium">
+                      Dein Gebot: {userBid.amount} €
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Gebote: {offers.length}</span>
-                {userBid && (
-                  <span className="text-blue-600 font-medium">
-                    Dein Gebot: {userBid.amount} €
-                  </span>
-                )}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Höchstes Gebot Anzeige */}
-          {offers.length > 0 && (
+          {!isCompact && offers.length > 0 && (
             <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
               <div className="flex justify-between items-center">
-                <span className="text-green-700 font-medium">
-                  Höchstes Gebot:
-                </span>
+                <span className="text-green-700 font-medium">Höchstes Gebot:</span>
                 <span className="text-green-800 font-bold">
-                  {offers[0].amount} € von{" "}
-                  {offers[0].userId?.userName || "Anonym"}
+                  {offers[0].amount} € von {offers[0].userId?.userName || "Anonym"}
                 </span>
               </div>
             </div>
@@ -233,7 +302,6 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
               <span className="text-xs">✓ Gebot erfolgreich abgegeben!</span>
             </div>
           )}
-
           {bidError && (
             <div className="alert alert-error alert-sm">
               <span className="text-xs">{bidError}</span>
@@ -241,7 +309,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
           )}
 
           {/* Bid Form */}
-          {showBidForm && isAuctionActive && (
+          {showBidForm && isAuctionActive && isBuyer && (
             <form onSubmit={handleBidSubmit} className="space-y-2">
               <div className="form-control">
                 <label className="label">
@@ -257,7 +325,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
                     placeholder={`${minBid}`}
-                    className="input input-bordered input-sm flex-1"
+                    className="input input-bordered input-sm flex-1 text-black placeholder-black/60 bg-white"
                     required
                     disabled={submitting}
                   />
@@ -304,18 +372,12 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
               Ansehen
             </button>
 
-            {/* Bid Button */}
-            {isAuctionActive && !showBidForm && (
+            {/* Bid Button – nur Buyer & aktive Auktion */}
+            {isAuctionActive && isBuyer && !showBidForm && (
               <button
                 onClick={() => {
                   if (!user) {
                     openLogin();
-                    return;
-                  }
-                  if (user.role === "seller" || user.role === "artist") {
-                    setBidError(
-                      "Als Verkäufer/Künstler kannst du nicht bieten"
-                    );
                     return;
                   }
                   setShowBidForm(true);
@@ -328,10 +390,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
               </button>
             )}
 
-            {isAuctionEnded && (
-              <span className="badge badge-error">Beendet</span>
-            )}
-
+            {isAuctionEnded && <span className="badge badge-error">Beendet</span>}
             {!isAuctionActive && !isAuctionEnded && (
               <span className="badge badge-warning">Nicht aktiv</span>
             )}
@@ -366,8 +425,7 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
               <p className="text-sm opacity-90 mb-2">{artwork.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold">
-                  {displayPrice.toLocaleString("de-DE")}{" "}
-                  {artwork.currency || "EUR"}
+                  {displayPrice.toLocaleString("de-DE")} {artwork.currency || "EUR"}
                 </span>
                 <div className="flex gap-2 items-center">
                   <span className="text-sm">
