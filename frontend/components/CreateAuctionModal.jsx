@@ -16,7 +16,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       description: "",
       images: "",
       startPrice: "",
-      endPrice: "",
       price: "",
       currency: "EUR",
     },
@@ -51,7 +50,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
           price: "",
           currency: "EUR",
         },
@@ -150,22 +148,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           "Startpreis muss größer als 0 sein";
         hasError = true;
       }
-
-      if (!artwork.endPrice || artwork.endPrice <= 0) {
-        newErrors[`artwork_${index}_endPrice`] =
-          "Maximalpreis muss größer als 0 sein";
-        hasError = true;
-      }
-
-      if (
-        artwork.endPrice &&
-        artwork.startPrice &&
-        parseFloat(artwork.endPrice) <= parseFloat(artwork.startPrice)
-      ) {
-        newErrors[`artwork_${index}_endPrice`] =
-          "Maximalpreis muss höher als Startpreis sein";
-        hasError = true;
-      }
     });
 
     setErrors(newErrors);
@@ -197,7 +179,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         artworks: artworks.map((artwork) => ({
           ...artwork,
           startPrice: parseFloat(artwork.startPrice),
-          endPrice: parseFloat(artwork.endPrice),
+
           price: parseFloat(artwork.price || artwork.startPrice),
           endDate: new Date(auctionData.endDate).toISOString(),
         })),
@@ -219,7 +201,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
+
           price: "",
           currency: "EUR",
         },
@@ -493,17 +475,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       value={artwork.startPrice}
                       onChange={(e) =>
                         handleArtworkChange(index, "startPrice", e.target.value)
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      placeholder="Maximalpreis (€)"
-                      value={artwork.endPrice}
-                      onChange={(e) =>
-                        handleArtworkChange(index, "endPrice", e.target.value)
                       }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
                     />
