@@ -21,6 +21,9 @@ const Auction = () => {
         fetch(`http://localhost:3001/api/auctions/${auctionId}/artworks`),
       ]);
 
+      console.log("Auction response status:", auctionResponse.status);
+      console.log("Artworks response status:", artworksResponse.status);
+
       if (!auctionResponse.ok) {
         throw new Error(`Auction not found (${auctionResponse.status})`);
       }
@@ -32,6 +35,9 @@ const Auction = () => {
       const auctionResult = await auctionResponse.json();
       const artworksResult = await artworksResponse.json();
 
+      console.log("Auction result:", auctionResult);
+      console.log("Artworks result:", artworksResult);
+
       // Berücksichtigung der API Response Struktur
       const auctionData = auctionResult.success
         ? auctionResult.data
@@ -40,8 +46,12 @@ const Auction = () => {
         ? artworksResult.data
         : artworksResult;
 
+      console.log("Processed auction data:", auctionData);
+      console.log("Processed artworks data:", artworksData);
+      console.log("Artworks count:", artworksData?.length);
+
       setAuction(auctionData);
-      setArtworks(artworksData);
+      setArtworks(Array.isArray(artworksData) ? artworksData : []);
       setLastUpdate(new Date());
     } catch (err) {
       setError(err.message);
@@ -78,9 +88,6 @@ const Auction = () => {
         art._id === artwork._id ? { ...art, price: offer.amount } : art
       )
     );
-
-    // Optional: Show a toast notification
-    // toast.success(`Gebot von ${offer.amount}€ erfolgreich abgegeben!`);
   }, []);
 
   if (loading) {
@@ -116,21 +123,21 @@ const Auction = () => {
       {/* Auction Header */}
       {auction && (
         <div className="mb-8">
-          {/* Banner Image */}
-          {auction.bannerImageUrl && (
+          {/* Artist Avatar Header */}
+          {auction.artistId?.avatarUrl && (
             <div className="mb-6">
-              <div className="flex flex-row">
+              <div className="flex flex-row items-start gap-6">
                 <img
-                  src={auction.bannerImageUrl}
-                  alt={auction.title}
+                  src={auction.artistId.avatarUrl}
+                  alt={auction.artistId.userName || "Artist"}
                   className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-lg shadow-lg"
                   onError={(e) => {
                     e.target.src =
-                      "https://via.placeholder.com/800x300?text=Auction+Banner";
+                      "https://via.placeholder.com/400x400?text=Artist";
                   }}
                 />
-                <div className="flex flex-col ml-10">
-                  <h1 className="text-3xl md:text-4xl font-bold">
+                <div className="flex flex-col flex-1">
+                  <h1 className="text-3xl md:text-4xl font-bold mb-2">
                     {auction.title}
                   </h1>
                   {auction.description && (
@@ -178,7 +185,6 @@ const Auction = () => {
                   size="lg"
                   onExpired={() => {
                     console.log(`Auction ${auction._id} has ended`);
-                    // Refresh auction data when timer expires
                     fetchAuctionData();
                   }}
                 />
@@ -196,12 +202,7 @@ const Auction = () => {
                 </p>
               </div>
             )}
-            {auction.artistId?.name && (
-              <div>
-                <span className="font-semibold text-gray-700">Artist:</span>
-                <p className="text-sm text-gray-600">{auction.artistId.name}</p>
-              </div>
-            )}
+
             <div>
               <span className="font-semibold text-gray-700">Artworks:</span>
               <p className="text-sm text-gray-600">{artworks.length} pieces</p>
@@ -216,18 +217,6 @@ const Auction = () => {
                 {lastUpdate.toLocaleTimeString("de-DE")}
               </span>
             </div>
-            <button
-              onClick={fetchAuctionData}
-              disabled={loading}
-              className="btn btn-outline btn-sm"
-              title="Daten aktualisieren"
-            >
-              {loading ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                <>🔄 Aktualisieren</>
-              )}
-            </button>
           </div>
         </div>
       )}

@@ -304,20 +304,6 @@ export default function ArtworkCard({ artwork: initialArtwork, onBidSuccess }) {
               Ansehen
             </button>
 
-            {/* Refresh Button */}
-            <button
-              onClick={fetchOffers}
-              disabled={loadingOffers}
-              className="btn btn-ghost btn-sm"
-              title="Gebote aktualisieren"
-            >
-              {loadingOffers ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                "🔄"
-              )}
-            </button>
-
             {/* Bid Button */}
             {isAuctionActive && !showBidForm && (
               <button
