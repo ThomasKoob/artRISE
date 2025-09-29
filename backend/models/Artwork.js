@@ -1,11 +1,10 @@
-import mongoose from 'mongoose';
-
+import mongoose from "mongoose";
 
 const imageSchema = new mongoose.Schema({
-    url: {
-        type: String,
-        required: true,
-    },
+  url: {
+    type: String,
+    required: true,
+  },
 });
 
 const ArtworkSchema = new mongoose.Schema({
@@ -42,7 +41,7 @@ const ArtworkSchema = new mongoose.Schema({
   },
   endPrice: {
     type: Number,
-    required: true,
+    required: false,
     min: 0,
   },
   status: {
@@ -56,13 +55,8 @@ const ArtworkSchema = new mongoose.Schema({
   },
 });
 
-ArtworkSchema.index({ auctionId: 1, endDate : 1 });
+ArtworkSchema.index({ auctionId: 1, endDate: 1 });
 
-ArtworkSchema.index({ status: 1, endDate: 1, });
-
-
-
+ArtworkSchema.index({ status: 1, endDate: 1 });
 
 export default mongoose.model("Artwork", ArtworkSchema);
- 
-   

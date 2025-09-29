@@ -26,7 +26,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       description: "",
       images: "",
       startPrice: "",
-      endPrice: "",
       price: "",
       currency: "EUR",
     },
@@ -58,7 +57,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
           price: "",
           currency: "EUR",
         },
@@ -145,20 +143,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           "Start price must be greater than 0";
         hasError = true;
       }
-      if (!art.endPrice || art.endPrice <= 0) {
-        newErrors[`artwork_${index}_endPrice`] =
-          "Max price must be greater than 0";
-        hasError = true;
-      }
-      if (
-        art.endPrice &&
-        art.startPrice &&
-        parseFloat(art.endPrice) <= parseFloat(art.startPrice)
-      ) {
-        newErrors[`artwork_${index}_endPrice`] =
-          "Max price must be higher than start price";
-        hasError = true;
-      }
+
     });
 
     setErrors(newErrors);
@@ -184,11 +169,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           ...auctionData,
           endDate: new Date(auctionData.endDate).toISOString(),
         },
-        artworks: artworks.map((art) => ({
-          ...art,
-          startPrice: parseFloat(art.startPrice),
-          endPrice: parseFloat(art.endPrice),
-          price: parseFloat(art.price || art.startPrice),
+
           endDate: new Date(auctionData.endDate).toISOString(),
         })),
       };
@@ -209,7 +190,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
+
           price: "",
           currency: "EUR",
         },
@@ -449,26 +430,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       onChange={(e) => handleArtworkChange(index, "startPrice", e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
                     />
-                    {errors[`artwork_${index}_startPrice`] && (
-                      <p className="text-sm text-red-600 mt-1 col-span-2">
-                        {errors[`artwork_${index}_startPrice`]}
-                      </p>
-                    )}
 
-                    <input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      placeholder="Max price (€)"
-                      value={art.endPrice}
-                      onChange={(e) => handleArtworkChange(index, "endPrice", e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                    />
-                    {errors[`artwork_${index}_endPrice`] && (
-                      <p className="text-sm text-red-600 mt-1 col-span-2">
-                        {errors[`artwork_${index}_endPrice`]}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}

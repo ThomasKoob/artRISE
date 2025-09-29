@@ -8,7 +8,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
       description: "",
       images: "",
       startPrice: "",
-      endPrice: "",
+
       price: "",
       currency: "EUR",
     },
@@ -27,7 +27,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
+
           price: "",
           currency: "EUR",
         },
@@ -66,10 +66,8 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
         }
       }
       const sp = parseFloat(it.startPrice);
-      const ep = parseFloat(it.endPrice);
+
       if (!sp || sp <= 0) e[`sp${i}`] = "Startpreis > 0";
-      if (!ep || ep <= 0) e[`ep${i}`] = "Maximalpreis > 0";
-      if (sp && ep && ep <= sp) e[`ep${i}`] = "Maximalpreis > Startpreis";
     });
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -83,7 +81,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
         items.map((it) => ({
           ...it,
           startPrice: parseFloat(it.startPrice),
-          endPrice: parseFloat(it.endPrice),
+
           price: parseFloat(it.price || it.startPrice),
         }))
       );
@@ -93,7 +91,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
           description: "",
           images: "",
           startPrice: "",
-          endPrice: "",
+
           price: "",
           currency: "EUR",
         },
@@ -217,19 +215,6 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
                   onChange={(e) => setField(idx, "startPrice", e.target.value)}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
                     errors[`sp${idx}`]
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
-                <input
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  placeholder="Maximalpreis (€)"
-                  value={aw.endPrice}
-                  onChange={(e) => setField(idx, "endPrice", e.target.value)}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
-                    errors[`ep${idx}`]
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300 focus:ring-blue-500"
                   }`}
