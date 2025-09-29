@@ -1,5 +1,8 @@
+// pages/Home.jsx
+// DE: Startseite – UI auf Englisch + "View"-Button auf jeder Auktionskarte.
+
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
@@ -33,6 +36,7 @@ function toggleFavAuction(id) {
   return !has;
 }
 
+// DE: Hilfsfunktionen
 const smartList = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (!payload || typeof payload !== "object") return [];
@@ -54,14 +58,14 @@ const fetchJson = async (url, opts) => {
 const formatDateTime = (dateStr) => {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
-  return d.toLocaleString("de-DE");
+  return d.toLocaleString("en-GB");
 };
 const getTimeLeft = (endDate) => {
   if (!endDate) return { label: "—", ended: false };
   const end = new Date(endDate).getTime();
   const now = Date.now();
   const diff = end - now;
-  if (diff <= 0) return { label: "Beendet", ended: true };
+  if (diff <= 0) return { label: "Ended", ended: true };
   const mins = Math.floor(diff / 60000);
   const days = Math.floor(mins / (60 * 24));
   const hours = Math.floor((mins % (60 * 24)) / 60);
@@ -70,7 +74,7 @@ const getTimeLeft = (endDate) => {
   if (days) parts.push(`${days}d`);
   if (hours) parts.push(`${hours}h`);
   parts.push(`${minutes}m`);
-  return { label: `Noch ${parts.join(" ")}`, ended: false };
+  return { label: `Ends in ${parts.join(" ")}`, ended: false };
 };
 const statusPill = (status = "draft") => {
   const s = String(status || "").toLowerCase();
@@ -111,15 +115,6 @@ const Home = () => {
     })();
   }, []);
 
-  const auctionById = useMemo(() => {
-    const m = new Map();
-    for (const a of allAuctions) {
-      const id = a?._id || a?.id;
-      if (id) m.set(id, a);
-    }
-    return m;
-  }, [allAuctions]);
-
   const normalizedArtworks = useMemo(() => {
     return allArtworks.map((a) => {
       const aid =
@@ -157,23 +152,21 @@ const Home = () => {
   const liveAuctions = useMemo(() => {
     const now = Date.now();
     const liveNames = new Set(["live", "active", "open"]);
-    const result = allAuctions.filter((a) => {
+    return allAuctions.filter((a) => {
       const s = String(a?.status || "").toLowerCase();
       if (liveNames.has(s)) return true;
       if (a?.endDate) {
-        return (
-          new Date(a.endDate).getTime() > now && s !== "ended" && s !== "closed"
-        );
+        return new Date(a.endDate).getTime() > now && s !== "ended" && s !== "closed";
       }
       return false;
     });
-    return result;
   }, [allAuctions]);
 
   const handleSlideshowClick = (item) => {
     if (item?.auctionId) navigate(`/auction/${item.auctionId}`);
   };
 
+  // DE: Karte für einzelne Auktion mit "View"-Button unten
   const AuctionCard = ({ auction }) => {
     const cover =
       auction?.bannerImageUrl ||
@@ -184,7 +177,7 @@ const Home = () => {
       "https://via.placeholder.com/800x400?text=Auction+Banner";
     const { label } = getTimeLeft(auction?.endDate);
 
-    // Favorit-Status pro Auktion (nur Buyer)
+    // DE: Favorit-Status (nur Buyer)
     const [favA, setFavA] = React.useState(() =>
       isFavAuction(auction._id || auction.id)
     );
@@ -202,20 +195,15 @@ const Home = () => {
     };
 
     return (
-      <button
-        type="button"
-        onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="relative text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
-        title="Zur Auktion"
-      >
-        {/* Herz oben rechts – nur Buyer */}
+      <div className="relative text-left border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-lg transition-all duration-300">
+        {/* DE: Favoriten-Herz */}
         {isBuyer && (
           <span className="absolute top-2 right-2 z-10">
             <button
               onClick={toggleA}
               disabled={favBusy}
               className="w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center"
-              title={favA ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+              title={favA ? "Remove from favorites" : "Add to favorites"}
             >
               <span className={`text-xl ${favA ? "text-rose-600" : "text-gray-700"}`}>
                 {favA ? "♥" : "♡"}
@@ -224,6 +212,7 @@ const Home = () => {
           </span>
         )}
 
+        {/* DE: Bild + Status */}
         <div className="relative">
           <img
             src={cover}
@@ -242,9 +231,11 @@ const Home = () => {
             {auction?.status || "draft"}
           </span>
         </div>
+
+        {/* DE: Text */}
         <div className="p-4 space-y-1">
           <h3 className="text-lg font-semibold text-black line-clamp-1">
-            {auction?.title || "Ohne Titel"}
+            {auction?.title || "Untitled"}
           </h3>
           <p className="text-sm text-gray-600 line-clamp-2">
             {auction?.description || "—"}
@@ -254,22 +245,33 @@ const Home = () => {
             {auction?.endDate && <span>{formatDateTime(auction.endDate)}</span>}
           </div>
         </div>
-      </button>
+
+        {/* DE: Footer mit View-Button */}
+        <div className="p-4 pt-0">
+          <Link
+            to={`/auction/${auction._id || auction.id}`}
+            className="btn btn-sm btn-outline w-full"
+            title="View auction"
+          >
+            View
+          </Link>
+        </div>
+      </div>
     );
   };
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* HERO */}
-      <section className=" bg-darkBackground/90 rounded-2xl border-2 border-coldYellow text-white p-8 md:p-10 shadow-lg">
+      <section className="bg-darkBackground/90 rounded-2xl border-2 border-coldYellow text-white p-8 md:p-10 shadow-lg">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           <div>
-            <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
+            <h1 className="m-5 md:text-8xl text-center font-sans font-extralight">
               A stage for every artist, everywhere.
             </h1>
-            <p className="m-10 font- text-xl font-extralight text-white/90">
+            <p className="m-10 text-xl font-extralight text-white/90">
               On artRise, creativity has no boundaries. From first steps to
-              established work – upload your art, start your auction, and share
+              established work — upload your art, start your auction, and share
               it with the world.
             </p>
           </div>
@@ -286,8 +288,7 @@ const Home = () => {
               />
             ) : (
               <div className="text-white/80">
-                Keine Kunstwerke verfügbar oder keine zugehörige Auktion
-                gefunden.
+                No artworks available or no related auction found.
               </div>
             )}
           </div>
@@ -298,7 +299,7 @@ const Home = () => {
       <section className="max-w-7xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">Live Auktionen</h2>
+            <h2 className="text-2xl font-bold">Live Auctions</h2>
           </div>
         </div>
 
@@ -315,7 +316,7 @@ const Home = () => {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">Zurzeit keine Live-Auktionen.</p>
+          <p className="text-gray-600">No live auctions at the moment.</p>
         )}
       </section>
     </div>
