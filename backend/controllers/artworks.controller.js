@@ -41,7 +41,7 @@ export const createArtwork = async (req, res) => {
       currency,
       images,
       startPrice,
-      endPrice,
+
       status,
       endDate,
     } = req.body;
@@ -53,7 +53,6 @@ export const createArtwork = async (req, res) => {
       !currency ||
       !images ||
       !startPrice ||
-      !endPrice ||
       !endDate
     )
       throw new Error("All required fields must be provided");
