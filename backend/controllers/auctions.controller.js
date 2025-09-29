@@ -5,7 +5,7 @@ import Auction from "../models/Auction.js";
 export const getAuctions = async (req, res) => {
   try {
     const auctions = await Auction.find()
-      .populate("artistId", "name email") // Artist info hinzufügen
+      .populate("artistId", "userName email avatarUrl") // userName statt name!
       .sort({ createdAt: -1 });
 
     // Status basierend auf Datum berechnen
@@ -46,7 +46,7 @@ export const getAuctionById = async (req, res) => {
 
     const auction = await Auction.findById(id).populate(
       "artistId",
-      "name email"
+      "userName email avatarUrl" // userName statt name!
     );
 
     if (!auction) {
