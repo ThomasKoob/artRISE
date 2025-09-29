@@ -4,7 +4,7 @@
 @theme {
   --color-*: initial;
   --color-violetHeader: #2e2739;
-  --color-coldYellow: #ff82d7;
+  --color-coldYellow: #b8ce8e;
   --color-buttonPink: #ff79c6;
   --color-darkBackground: #3f354e;
   --color-modalGray: #f8ffdf;
@@ -13,6 +13,8 @@
   --color-whiteLetter: #f0f5f0;
   --color-greenButton: #8482fc;
   --color-lightRedButton: #f5839a;
+  --color-gruenOlive: #444c34;
+  /* --color-gruenOliveHell: #b8ce8e; */
 }
 
 body {
