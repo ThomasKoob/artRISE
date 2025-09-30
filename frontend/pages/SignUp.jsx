@@ -95,8 +95,8 @@ const SignUp = () => {
       // damit Cookies/Session korrekt gesetzt werden.
       await login({ email: formData.email, password: formData.password });
 
-      // 4) Weiterleiten (Rolle egal – خليه يمشي للـ Home ولا Dashboard)
-      navigate("/dashboard"); // تنجم تبدّلها إلى "/" إذا تحب تمشي للـ Home
+      
+      navigate("/dashboard"); 
     } catch (err) {
       setError(err.message || "Unbekannter Fehler");
     } finally {
