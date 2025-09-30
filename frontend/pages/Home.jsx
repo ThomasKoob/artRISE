@@ -1,37 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
-import { useLoginModal } from "../context/LoginModalContext.jsx";
+
 
 const API_BASE = "http://localhost:3001";
 
-// --- FAVORITES (Auktionen) lokal ---
-const LS_AUCTION_FAV_KEY = "ar_favorites_auctions";
-function readFavAuctions() {
-  try {
-    const raw = localStorage.getItem(LS_AUCTION_FAV_KEY);
-    const arr = JSON.parse(raw || "[]");
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-function writeFavAuctions(arr) {
-  try {
-    localStorage.setItem(LS_AUCTION_FAV_KEY, JSON.stringify(arr));
-  } catch {}
-}
-function isFavAuction(id) {
-  const ids = readFavAuctions();
-  return ids.includes(id);
-}
-function toggleFavAuction(id) {
-  const ids = readFavAuctions();
-  const has = ids.includes(id);
-  const next = has ? ids.filter((x) => x !== id) : [...ids, id];
-  writeFavAuctions(next);
-  return !has;
-}
+
+
 
 const smartList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -91,8 +66,7 @@ const statusPill = (status = "draft") => {
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user } = useLoginModal();
-  const isBuyer = !!user && user.role === "buyer";
+
 
   const [allArtworks, setAllArtworks] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
@@ -184,22 +158,7 @@ const Home = () => {
       "https://via.placeholder.com/800x400?text=Auction+Banner";
     const { label } = getTimeLeft(auction?.endDate);
 
-    // Favorit-Status pro Auktion (nur Buyer)
-    const [favA, setFavA] = React.useState(() =>
-      isFavAuction(auction._id || auction.id)
-    );
-    const [favBusy, setFavBusy] = React.useState(false);
-    const toggleA = async (e) => {
-      e.stopPropagation();
-      if (!isBuyer) return;
-      try {
-        setFavBusy(true);
-        const now = toggleFavAuction(auction._id || auction.id);
-        setFavA(now);
-      } finally {
-        setFavBusy(false);
-      }
-    };
+  
 
     return (
       <button
@@ -208,21 +167,7 @@ const Home = () => {
         className="relative text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
         title="Zur Auktion"
       >
-        {/* Herz oben rechts – nur Buyer */}
-        {isBuyer && (
-          <span className="absolute top-2 right-2 z-10">
-            <button
-              onClick={toggleA}
-              disabled={favBusy}
-              className="w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center"
-              title={favA ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
-            >
-              <span className={`text-xl ${favA ? "text-rose-600" : "text-gray-700"}`}>
-                {favA ? "♥" : "♡"}
-              </span>
-            </button>
-          </span>
-        )}
+     
 
         <div className="relative">
           <img

@@ -117,7 +117,8 @@ const SignUp = () => {
 
       await login({ email: formData.email, password: formData.password });
 
-      navigate("/dashboard");
+      
+      navigate("/dashboard"); 
     } catch (err) {
       setError(err.message || "Unbekannter Fehler");
     } finally {
