@@ -207,7 +207,7 @@ export default function ArtworkCard({
               <div className="text-xs text-gray-400 space-y-1">
                 <div className="flex justify-between">
                   <span>Start: {artwork.startPrice} €</span>
-                  <span>Max: {artwork.endPrice} €</span>
+                 
                 </div>
                 <div className="flex justify-between">
                   <span>Gebote: {offers.length}</span>
