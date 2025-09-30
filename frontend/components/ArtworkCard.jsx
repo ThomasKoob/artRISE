@@ -1,41 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
-// --- FAVORITE (lokal, nur für Artworks) ---
-const LS_FAV_KEY = "ar_favorites";
 
-/** Liest Array von Artwork-IDs aus localStorage. */
-function readFavIds() {
-  try {
-    const raw = localStorage.getItem(LS_FAV_KEY);
-    const arr = JSON.parse(raw || "[]");
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Schreibt Array von Artwork-IDs in localStorage. */
-function writeFavIds(arr) {
-  try {
-    localStorage.setItem(LS_FAV_KEY, JSON.stringify(arr));
-  } catch {}
-}
-
-/** Prüft, ob eine ID als Favorit markiert ist. */
-function isFavId(id) {
-  const ids = readFavIds();
-  return ids.includes(id);
-}
-
-/** Toggle Favorit für eine Artwork-ID. */
-function toggleFavId(id) {
-  const ids = readFavIds();
-  const has = ids.includes(id);
-  const next = has ? ids.filter((x) => x !== id) : [...ids, id];
-  writeFavIds(next);
-  return !has; // neuer Zustand (true = jetzt Favorit)
-}
 
 export default function ArtworkCard({
   artwork: initialArtwork,
@@ -186,21 +152,7 @@ export default function ArtworkCard({
   const isAuctionEnded =
     artwork.status === "ended" || artwork.status === "canceled";
 
-  // --- FAVORITE: lokaler Zustand (nur Buyer) ---
-  const [fav, setFav] = useState(() => isFavId(initialArtwork?._id));
-  const [favBusy, setFavBusy] = useState(false);
-  const onToggleFavorite = async () => {
-    if (!user) return openLogin();
-    if (!isBuyer) return;
-    try {
-      setFavBusy(true);
-      const nowFav = toggleFavId(artwork._id);
-      setFav(nowFav);
-    } finally {
-      setFavBusy(false);
-    }
-  };
-
+ 
   return (
     <>
       {/* Card */}
@@ -209,22 +161,7 @@ export default function ArtworkCard({
           isCompact ? "w-64" : "w-80"
         } shadow-md rounded-2xl relative`}
       >
-        {/* Herz oben rechts — nur für Buyer sichtbar */}
-        {isBuyer && (
-          <button
-            type="button"
-            aria-label={fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
-            title={fav ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
-            onClick={onToggleFavorite}
-            disabled={favBusy}
-            className="absolute top-2 right-2 z-10 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center"
-          >
-            <span className={`text-xl ${fav ? "text-rose-600" : "text-gray-700"}`}>
-              {fav ? "♥" : "♡"}
-            </span>
-          </button>
-        )}
-
+       
         <figure>
           <img
             src={artwork.images || "https://via.placeholder.com/400x300"}
