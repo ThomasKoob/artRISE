@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { Plus, X, Trash2 } from "lucide-react";
+import { Plus, X, Trash2, Calendar } from "lucide-react";
 
 const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const [auctionData, setAuctionData] = useState({
     title: "",
     description: "",
-    bannerImageUrl: "",
     minIncrementDefault: 5,
     endDate: "",
   });
@@ -87,15 +86,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     if (!auctionData.title.trim()) newErrors.title = "Titel ist erforderlich";
     if (!auctionData.description.trim())
       newErrors.description = "Beschreibung ist erforderlich";
-    if (!auctionData.bannerImageUrl.trim()) {
-      newErrors.bannerImageUrl = "Banner-Bild ist erforderlich";
-    } else {
-      try {
-        new URL(auctionData.bannerImageUrl);
-      } catch {
-        newErrors.bannerImageUrl = "Ungültige URL";
-      }
-    }
 
     if (!auctionData.endDate) {
       newErrors.endDate = "Enddatum ist erforderlich";
@@ -211,7 +201,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       onClose();
     } catch (error) {
       console.error("Error creating auction:", error);
-      setErrors({ submit: "Fehler beim Erstellen der Auktion" });
+      setErrors({ submit: "Error creating auction" });
     } finally {
       setLoading(false);
     }
@@ -236,11 +226,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-800">
-              {currentStep === 1
-                ? "Neue Auktion erstellen"
-                : "Kunstwerke hinzufügen"}
+              {currentStep === 1 ? "New Auction" : "Add Art"}
             </h2>
-            <p className="text-sm text-gray-500">Schritt {currentStep} von 2</p>
+            <p className="text-sm text-gray-500">Step {currentStep} from 2</p>
           </div>
           <button
             onClick={onClose}
@@ -261,7 +249,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                   htmlFor="title"
                   className="block mb-1 text-sm font-medium text-gray-700"
                 >
-                  Auktions-Titel
+                  Artist name
                 </label>
                 <input
                   type="text"
@@ -273,7 +261,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300 focus:ring-blue-500"
                   }`}
-                  placeholder="Z.B. Moderne Kunst Auktion 2024"
+                  placeholder="Hans Wurst"
                 />
                 {errors.title && (
                   <p className="text-sm text-red-600 mt-1">{errors.title}</p>
@@ -286,7 +274,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                   htmlFor="description"
                   className="block mb-1 text-sm font-medium text-gray-700"
                 >
-                  Beschreibung
+                  Artist Bio
                 </label>
                 <textarea
                   id="description"
@@ -300,40 +288,11 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300 focus:ring-blue-500"
                   }`}
-                  placeholder="Beschreiben Sie Ihre Auktion..."
+                  placeholder="Your Story about you"
                 />
                 {errors.description && (
                   <p className="text-sm text-red-600 mt-1">
                     {errors.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Banner Image */}
-              <div>
-                <label
-                  htmlFor="bannerImageUrl"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Banner-Bild URL
-                </label>
-                <input
-                  type="url"
-                  id="bannerImageUrl"
-                  value={auctionData.bannerImageUrl}
-                  onChange={(e) =>
-                    handleAuctionChange("bannerImageUrl", e.target.value)
-                  }
-                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
-                    errors.bannerImageUrl
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                  placeholder="https://example.com/banner.jpg"
-                />
-                {errors.bannerImageUrl && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {errors.bannerImageUrl}
                   </p>
                 )}
               </div>
@@ -376,21 +335,54 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                   htmlFor="endDate"
                   className="block mb-1 text-sm font-medium text-gray-700"
                 >
-                  Auktions-Ende
+                  Auction-End
                 </label>
-                <input
-                  type="datetime-local"
-                  id="endDate"
-                  value={auctionData.endDate}
-                  onChange={(e) =>
-                    handleAuctionChange("endDate", e.target.value)
-                  }
-                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
-                    errors.endDate
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type="datetime-local"
+                    id="endDate"
+                    value={auctionData.endDate}
+                    onChange={(e) =>
+                      handleAuctionChange("endDate", e.target.value)
+                    }
+                    className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
+                      errors.endDate
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-blue-500"
+                    }`}
+                  />
+                  <div
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                    onClick={() =>
+                      document.getElementById("endDate").showPicker()
+                    }
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                  </div>
+                </div>
+
                 {errors.endDate && (
                   <p className="text-sm text-red-600 mt-1">{errors.endDate}</p>
                 )}
@@ -403,7 +395,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-800">
-                  Kunstwerke ({artworks.length}/10)
+                  Art ({artworks.length}/10)
                 </h3>
                 {artworks.length < 10 && (
                   <button
@@ -411,7 +403,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                     onClick={addArtwork}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
                   >
-                    + Hinzufügen
+                    + Add
                   </button>
                 )}
               </div>
@@ -423,7 +415,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                 >
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium text-gray-800">
-                      Kunstwerk {index + 1}
+                      Art {index + 1}
                     </h4>
                     {artworks.length > 1 && (
                       <button
@@ -448,7 +440,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
 
                   <input
                     type="url"
-                    placeholder="Bild-URL"
+                    placeholder="Picture URL"
                     value={artwork.images}
                     onChange={(e) =>
                       handleArtworkChange(index, "images", e.target.value)
@@ -457,7 +449,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                   />
 
                   <textarea
-                    placeholder="Beschreibung"
+                    placeholder="Description"
                     value={artwork.description}
                     onChange={(e) =>
                       handleArtworkChange(index, "description", e.target.value)
@@ -471,7 +463,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       type="number"
                       min="1"
                       step="0.01"
-                      placeholder="Startpreis (€)"
+                      placeholder="Startprice (€)"
                       value={artwork.startPrice}
                       onChange={(e) =>
                         handleArtworkChange(index, "startPrice", e.target.value)
@@ -499,7 +491,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               onClick={prevStep}
               className="text-black px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Zurück
+              Back
             </button>
           )}
           <div className="flex gap-3 ml-auto">
@@ -508,7 +500,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               onClick={onClose}
               className="text-black px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Abbrechen
+              Abort
             </button>
             {currentStep === 1 ? (
               <button
@@ -516,7 +508,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                 onClick={nextStep}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
               >
-                Weiter
+                Next
               </button>
             ) : (
               <button
@@ -524,7 +516,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                 disabled={loading}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
               >
-                {loading ? "Wird erstellt..." : "Auktion erstellen"}
+                {loading ? "Creating..." : "Create Auction"}
               </button>
             )}
           </div>
