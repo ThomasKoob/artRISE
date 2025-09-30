@@ -21,13 +21,13 @@ const SignUp = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleChange = (e) => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  const processFile = (file) => {
     if (!file) return;
 
     const valid = [
@@ -53,6 +53,38 @@ const SignUp = () => {
     reader.onloadend = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
     setError("");
+  };
+
+  const handleFileChange = (e) => {
+    processFile(e.target.files[0]);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processFile(files[0]);
+    }
   };
 
   const uploadAvatar = async () => {
@@ -115,10 +147,11 @@ const SignUp = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Registration failed");
 
+      // 3) Auto-Login direkt nach erfolgreicher Registrierung
       await login({ email: formData.email, password: formData.password });
 
-      
-      navigate("/dashboard"); 
+      // 4) Weiterleiten
+      navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Unbekannter Fehler");
     } finally {
@@ -219,9 +252,19 @@ const SignUp = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+            <div
+              className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
+                isDragging
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-300 bg-gray-50 hover:bg-gray-100"
+              }`}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              <label className="flex flex-col items-center justify-center w-full h-32 cursor-pointer">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
                   <svg
                     className="w-8 h-8 mb-2 text-gray-500"
                     fill="none"
@@ -240,7 +283,7 @@ const SignUp = () => {
                     & drop it here
                   </p>
                   <p className="text-xs text-gray-500">
-                    PNG, JPG, GIF oder WebP (MAX. 10MB)
+                    PNG, JPG, GIF oder WebP (MAX. 5MB)
                   </p>
                 </div>
                 <input

@@ -67,17 +67,6 @@ const Auction = () => {
     }
   }, [auctionId, fetchAuctionData]);
 
-  // Auto-refresh every 30 seconds for live auctions
-  useEffect(() => {
-    if (!auction || auction.status !== "live") return;
-
-    const interval = setInterval(() => {
-      fetchAuctionData();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [auction, fetchAuctionData]);
-
   // Handle successful bid from ArtworkCard
   const handleBidSuccess = useCallback((offer, artwork) => {
     console.log("Bid success:", offer, artwork);
@@ -162,14 +151,6 @@ const Auction = () => {
                 )}
                 {auction.status === "ended" && (
                   <span className="badge badge-error badge-lg">🏁 Ended</span>
-                )}
-
-                {/* Live Update Indicator */}
-                {auction.status === "live" && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Auto-Update aktiv</span>
-                  </div>
                 )}
               </div>
             </div>

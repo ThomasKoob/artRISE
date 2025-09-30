@@ -15,7 +15,7 @@ const auctionSchema = new Schema(
     },
     bannerImageUrl: {
       type: String,
-      required: true,
+      required: false,
     },
 
     minIncrementDefault: {

@@ -85,17 +85,11 @@ export const getAuctionById = async (req, res) => {
 // Neue Auktion erstellen
 export const createAuction = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      bannerImageUrl,
-      minIncrementDefault,
-      endDate,
-      artistId,
-    } = req.body;
+    const { title, description, minIncrementDefault, endDate, artistId } =
+      req.body;
 
     // Validierung
-    if (!title || !description || !bannerImageUrl || !endDate || !artistId) {
+    if (!title || !description || !endDate || !artistId) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided",
@@ -113,7 +107,6 @@ export const createAuction = async (req, res) => {
     const newAuction = new Auction({
       title,
       description,
-      bannerImageUrl,
       minIncrementDefault: minIncrementDefault || 5,
       endDate,
       artistId,
