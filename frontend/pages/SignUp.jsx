@@ -1,11 +1,13 @@
-// pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { openLogin, login } = useLoginModal(); // DE: login aus dem Context für Auto-Login
+  const { openLogin, login } = useLoginModal();
+
+  const CLOUD_NAME = "dhomuf4kg";
+  const UPLOAD_PRESET = "react_upload";
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -24,14 +26,21 @@ const SignUp = () => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  // DE: Avatar-Auswahl + Preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const valid = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (!valid.includes(file.type)) {
-      setError("Bitte wähle ein gültiges Bildformat (JPEG, PNG, GIF oder WebP)");
+      setError(
+        "Bitte wähle ein gültiges Bildformat (JPEG, PNG, GIF oder WebP)"
+      );
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
@@ -46,20 +55,36 @@ const SignUp = () => {
     setError("");
   };
 
-  // DE: Avatar hochladen (falls Datei gewählt)
   const uploadAvatar = async () => {
     if (!avatarFile) return null;
     setUploadingAvatar(true);
-    const data = new FormData();
-    data.append("avatar", avatarFile);
+
+    const formData = new FormData();
+    formData.append("file", avatarFile);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
     try {
-      const res = await fetch("http://localhost:3001/api/upload/avatar", {
-        method: "POST",
-        body: data,
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Upload failed");
-      return json?.data?.url;
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Cloudinary Error:", data);
+        throw new Error(
+          data.error?.message || "Upload zu Cloudinary fehlgeschlagen"
+        );
+      }
+
+      return data.secure_url;
+    } catch (err) {
+      console.error("Upload Error:", err);
+      throw new Error(err.message || "Avatar-Upload fehlgeschlagen");
     } finally {
       setUploadingAvatar(false);
     }
@@ -90,9 +115,6 @@ const SignUp = () => {
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Registration failed");
 
-      // 3) **Auto-Login** direkt nach erfolgreicher Registrierung
-      // DE: Wir nutzen denselben Login-Flow wie im Modal-Context,
-      // damit Cookies/Session korrekt gesetzt werden.
       await login({ email: formData.email, password: formData.password });
 
       
@@ -104,7 +126,6 @@ const SignUp = () => {
     }
   };
 
-  // DE: Button-Text dynamisch nach Rolle
   const getButtonConfig = () => {
     if (formData.role === "buyer") {
       return {
@@ -114,7 +135,9 @@ const SignUp = () => {
       };
     }
     return {
-      text: loading ? "Artist account is being created..." : "Register as an artist",
+      text: loading
+        ? "Artist account is being created..."
+        : "Register as an artist",
     };
   };
   const buttonConfig = getButtonConfig();
@@ -199,14 +222,26 @@ const SignUp = () => {
             <div className="flex items-center justify-center w-full">
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg className="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <svg
+                    className="w-8 h-8 mb-2 text-gray-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                   </svg>
                   <p className="mb-1 text-sm text-gray-500">
-                    <span className="font-semibold">Choose a file</span> or drag & drop it here
+                    <span className="font-semibold">Choose a file</span> or drag
+                    & drop it here
                   </p>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF oder WebP (MAX. 5MB)</p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, GIF oder WebP (MAX. 10MB)
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -219,7 +254,9 @@ const SignUp = () => {
             </div>
 
             {avatarFile && (
-              <p className="mt-2 text-sm text-green-600">✓ {avatarFile.name} ausgewählt</p>
+              <p className="mt-2 text-sm text-green-600">
+                ✓ {avatarFile.name} ausgewählt
+              </p>
             )}
           </div>
 
