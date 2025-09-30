@@ -1,7 +1,10 @@
 import React, { useState } from "react";
-import { Plus, X, Trash2, Calendar } from "lucide-react";
+import { Plus, X, Upload } from "lucide-react";
 
 const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
+  const CLOUD_NAME = "dhomuf4kg";
+  const UPLOAD_PRESET = "react_upload";
+
   const [auctionData, setAuctionData] = useState({
     title: "",
     description: "",
@@ -19,6 +22,11 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       currency: "EUR",
     },
   ]);
+
+  const [imageFiles, setImageFiles] = useState({});
+  const [imagePreviews, setImagePreviews] = useState({});
+  const [uploadingImages, setUploadingImages] = useState({});
+  const [dragStates, setDragStates] = useState({});
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
@@ -60,6 +68,19 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const removeArtwork = (index) => {
     if (artworks.length > 1) {
       setArtworks((prev) => prev.filter((_, i) => i !== index));
+      // Cleanup states
+      const newFiles = { ...imageFiles };
+      const newPreviews = { ...imagePreviews };
+      const newUploading = { ...uploadingImages };
+      const newDrag = { ...dragStates };
+      delete newFiles[index];
+      delete newPreviews[index];
+      delete newUploading[index];
+      delete newDrag[index];
+      setImageFiles(newFiles);
+      setImagePreviews(newPreviews);
+      setUploadingImages(newUploading);
+      setDragStates(newDrag);
     }
   };
 
@@ -77,6 +98,114 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           i === index ? { ...artwork, price: value } : artwork
         )
       );
+    }
+  };
+
+  // Validiert und verarbeitet Bild-Datei
+  const processImageFile = (idx, file) => {
+    if (!file) return;
+
+    const valid = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!valid.includes(file.type)) {
+      setErrors((p) => ({
+        ...p,
+        [`artwork_${idx}_images`]: "Ungültiges Bildformat",
+      }));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors((p) => ({
+        ...p,
+        [`artwork_${idx}_images`]: "Datei zu groß (max. 10MB)",
+      }));
+      return;
+    }
+
+    setImageFiles((p) => ({ ...p, [idx]: file }));
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreviews((p) => ({ ...p, [idx]: reader.result }));
+    };
+    reader.readAsDataURL(file);
+    setErrors((p) => {
+      const newErrors = { ...p };
+      delete newErrors[`artwork_${idx}_images`];
+      return newErrors;
+    });
+  };
+
+  const handleFileChange = (idx, e) => {
+    processImageFile(idx, e.target.files[0]);
+  };
+
+  // Drag & Drop Handler
+  const handleDragEnter = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: true }));
+  };
+
+  const handleDragLeave = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: false }));
+  };
+
+  const handleDragOver = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: false }));
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processImageFile(idx, files[0]);
+    }
+  };
+
+  // Upload zu Cloudinary
+  const uploadToCloudinary = async (idx) => {
+    const file = imageFiles[idx];
+    if (!file) return null;
+
+    setUploadingImages((p) => ({ ...p, [idx]: true }));
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Cloudinary Error:", data);
+        throw new Error(data.error?.message || "Upload fehlgeschlagen");
+      }
+
+      return data.secure_url;
+    } catch (err) {
+      console.error("Upload Error:", err);
+      throw new Error(err.message || "Bild-Upload fehlgeschlagen");
+    } finally {
+      setUploadingImages((p) => ({ ...p, [idx]: false }));
     }
   };
 
@@ -121,16 +250,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         hasError = true;
       }
 
-      if (!artwork.images.trim()) {
-        newErrors[`artwork_${index}_images`] = "Bild-URL ist erforderlich";
+      if (!artwork.images.trim() && !imageFiles[index]) {
+        newErrors[`artwork_${index}_images`] = "Bild ist erforderlich";
         hasError = true;
-      } else {
-        try {
-          new URL(artwork.images);
-        } catch {
-          newErrors[`artwork_${index}_images`] = "Ungültige URL";
-          hasError = true;
-        }
       }
 
       if (!artwork.startPrice || artwork.startPrice <= 0) {
@@ -161,18 +283,32 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     setLoading(true);
 
     try {
+      // Upload aller Bilder zu Cloudinary
+      const uploadedArtworks = await Promise.all(
+        artworks.map(async (artwork, idx) => {
+          let imageUrl = artwork.images;
+
+          // Falls eine Datei ausgewählt wurde, hochladen
+          if (imageFiles[idx]) {
+            imageUrl = await uploadToCloudinary(idx);
+          }
+
+          return {
+            ...artwork,
+            images: imageUrl,
+            startPrice: parseFloat(artwork.startPrice),
+            price: parseFloat(artwork.price || artwork.startPrice),
+            endDate: new Date(auctionData.endDate).toISOString(),
+          };
+        })
+      );
+
       const submitData = {
         auction: {
           ...auctionData,
           endDate: new Date(auctionData.endDate).toISOString(),
         },
-        artworks: artworks.map((artwork) => ({
-          ...artwork,
-          startPrice: parseFloat(artwork.startPrice),
-
-          price: parseFloat(artwork.price || artwork.startPrice),
-          endDate: new Date(auctionData.endDate).toISOString(),
-        })),
+        artworks: uploadedArtworks,
       };
 
       await onSubmit(submitData);
@@ -181,7 +317,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       setAuctionData({
         title: "",
         description: "",
-        bannerImageUrl: "",
         minIncrementDefault: 5,
         endDate: "",
       });
@@ -191,11 +326,14 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
           description: "",
           images: "",
           startPrice: "",
-
           price: "",
           currency: "EUR",
         },
       ]);
+      setImageFiles({});
+      setImagePreviews({});
+      setUploadingImages({});
+      setDragStates({});
       setCurrentStep(1);
       setErrors({});
       onClose();
@@ -223,7 +361,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h2 className="text-xl font-bold text-gray-800">
               {currentStep === 1 ? "New Auction" : "Add Art"}
@@ -352,7 +490,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                     }`}
                   />
                   <div
-                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
+                    className="absolute right-5 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
                     onClick={() =>
                       document.getElementById("endDate").showPicker()
                     }
@@ -392,93 +530,194 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
 
           {/* Step 2: Artworks */}
           {currentStep === 2 && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-800">
-                  Art ({artworks.length}/10)
-                </h3>
-                {artworks.length < 10 && (
-                  <button
-                    type="button"
-                    onClick={addArtwork}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                  >
-                    + Add
-                  </button>
-                )}
+            <div>
+              <div className="sticky top-0 bg-white z-10 pb-4 border-b mb-6 -mx-6 px-6 -mt-6 pt-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-800">
+                    Art ({artworks.length}/10)
+                  </h3>
+                  {artworks.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={addArtwork}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2"
+                    >
+                      <Plus size={18} />
+                      Add
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {artworks.map((artwork, index) => (
-                <div
-                  key={index}
-                  className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4"
-                >
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium text-gray-800">
-                      Art {index + 1}
-                    </h4>
-                    {artworks.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeArtwork(index)}
-                        className="text-red-600 hover:text-red-800"
+              <div className="space-y-6">
+                {artworks.map((artwork, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4"
+                  >
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium text-gray-800">
+                        Art {index + 1}
+                      </h4>
+                      {artworks.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeArtwork(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Titel"
+                      value={artwork.title}
+                      onChange={(e) =>
+                        handleArtworkChange(index, "title", e.target.value)
+                      }
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
+                        errors[`artwork_${index}_title`]
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      } text-gray-900`}
+                    />
+
+                    {/* Bild Upload Bereich */}
+                    <div>
+                      {imagePreviews[index] && (
+                        <div className="mb-3 relative">
+                          <img
+                            src={imagePreviews[index]}
+                            alt="Preview"
+                            className="w-full h-48 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newFiles = { ...imageFiles };
+                              const newPreviews = { ...imagePreviews };
+                              delete newFiles[index];
+                              delete newPreviews[index];
+                              setImageFiles(newFiles);
+                              setImagePreviews(newPreviews);
+                            }}
+                            className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+
+                      <div
+                        className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
+                          dragStates[index]
+                            ? "border-blue-500 bg-blue-50"
+                            : errors[`artwork_${index}_images`]
+                            ? "border-red-500 bg-red-50"
+                            : "border-gray-300 bg-white hover:bg-gray-50"
+                        }`}
+                        onDragEnter={(e) => handleDragEnter(index, e)}
+                        onDragLeave={(e) => handleDragLeave(index, e)}
+                        onDragOver={(e) => handleDragOver(index, e)}
+                        onDrop={(e) => handleDrop(index, e)}
                       >
-                        ✕
-                      </button>
+                        <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
+                          <div className="flex flex-col items-center justify-center pointer-events-none">
+                            <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                            <p className="mb-1 text-sm text-gray-600">
+                              <span className="font-semibold">Click</span> or
+                              drag picture here
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, GIF, WebP (max. 10MB)
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            onChange={(e) => handleFileChange(index, e)}
+                          />
+                        </label>
+                      </div>
+
+                      {imageFiles[index] && (
+                        <p className="mt-2 text-xs text-green-600">
+                          ✓ {imageFiles[index].name} selected
+                        </p>
+                      )}
+                      {uploadingImages[index] && (
+                        <p className="mt-2 text-xs text-blue-600">
+                          Uploading...
+                        </p>
+                      )}
+                      {errors[`artwork_${index}_images`] && (
+                        <p className="mt-2 text-xs text-red-600">
+                          {errors[`artwork_${index}_images`]}
+                        </p>
+                      )}
+                    </div>
+
+                    <textarea
+                      placeholder="Description"
+                      value={artwork.description}
+                      onChange={(e) =>
+                        handleArtworkChange(
+                          index,
+                          "description",
+                          e.target.value
+                        )
+                      }
+                      rows={3}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
+                        errors[`artwork_${index}_description`]
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-blue-500"
+                      } text-gray-900`}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <input
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        placeholder="Startprice (€)"
+                        value={artwork.startPrice}
+                        onChange={(e) =>
+                          handleArtworkChange(
+                            index,
+                            "startPrice",
+                            e.target.value
+                          )
+                        }
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
+                          errors[`artwork_${index}_startPrice`]
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-blue-500"
+                        } text-gray-900`}
+                      />
+                    </div>
+
+                    {(errors[`artwork_${index}_title`] ||
+                      errors[`artwork_${index}_description`] ||
+                      errors[`artwork_${index}_startPrice`]) && (
+                      <p className="text-xs text-red-600">
+                        {errors[`artwork_${index}_title`] ||
+                          errors[`artwork_${index}_description`] ||
+                          errors[`artwork_${index}_startPrice`]}
+                      </p>
                     )}
                   </div>
+                ))}
 
-                  <input
-                    type="text"
-                    placeholder="Titel"
-                    value={artwork.title}
-                    onChange={(e) =>
-                      handleArtworkChange(index, "title", e.target.value)
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  />
-
-                  <input
-                    type="url"
-                    placeholder="Picture URL"
-                    value={artwork.images}
-                    onChange={(e) =>
-                      handleArtworkChange(index, "images", e.target.value)
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  />
-
-                  <textarea
-                    placeholder="Description"
-                    value={artwork.description}
-                    onChange={(e) =>
-                      handleArtworkChange(index, "description", e.target.value)
-                    }
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      placeholder="Startprice (€)"
-                      value={artwork.startPrice}
-                      onChange={(e) =>
-                        handleArtworkChange(index, "startPrice", e.target.value)
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 text-gray-900"
-                    />
+                {errors.submit && (
+                  <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+                    {errors.submit}
                   </div>
-                </div>
-              ))}
-
-              {errors.submit && (
-                <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                  {errors.submit}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -513,7 +752,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={
+                  loading || Object.values(uploadingImages).some((v) => v)
+                }
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
               >
                 {loading ? "Creating..." : "Create Auction"}
