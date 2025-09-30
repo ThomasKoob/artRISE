@@ -1,21 +1,11 @@
 // components/BuyerDashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Gavel, Eye, ArrowUpRight } from "lucide-react";
-import { Link, useNavigate } from "react-router";
+import { Link,  } from "react-router";
 import UserHeader from "./UserHeader";
-import { useFavorites } from "../context/FavoritesContext.jsx";
 
-// === Lokale Favoriten (Auktionen) via localStorage ===
-const LS_AUCTION_FAV_KEY = "ar_favorites_auctions";
-function readFavAuctions() {
-  try {
-    const raw = localStorage.getItem(LS_AUCTION_FAV_KEY);
-    const arr = JSON.parse(raw || "[]");
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
+
+
 
 const API_BASE = "http://localhost:3001";
 
@@ -32,124 +22,17 @@ function getAuctionIdFromArtwork(artwork) {
   return artwork.auctionID || null;
 }
 
-/** Kompakte Karte für ein favorisiertes Kunstwerk (nur Bild, Titel, Ansehen). */
-function FavoriteArtworkCard({ artwork }) {
-  const navigate = useNavigate();
-  const auctionId = getAuctionIdFromArtwork(artwork);
-  return (
-    <div className="relative rounded-xl overflow-hidden bg-black/40 border border-black/30 shadow-sm">
-      <img
-        src={artwork.images || "https://via.placeholder.com/400x300?text=Artwork"}
-        alt={artwork.title || "Artwork"}
-        className="w-full h-36 object-cover"
-        onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/400x300?text=Artwork")}
-      />
-      <div className="p-3">
-        <div className="text-sm font-medium text-white line-clamp-1">{artwork.title || "Ohne Titel"}</div>
-        <div className="mt-2 flex justify-between items-center">
-          <button
-            className="btn btn-xs btn-outline"
-            onClick={() => {
-              if (auctionId) navigate(`/auction/${auctionId}`);
-            }}
-            disabled={!auctionId}
-            title={auctionId ? "Ansehen" : "Keine Auktions-ID"}
-          >
-            <Eye size={14} />
-            Ansehen
-          </button>
-          {typeof artwork.price !== "undefined" && (
-            <span className="text-xs text-white/80">
-              {(artwork.price || artwork.startPrice || 0).toLocaleString("de-DE")} €
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
-/** Kompakte Karte für eine favorisierte Auktion (Bild, Titel, Ansehen). */
-function FavoriteAuctionCard({ auction }) {
-  return (
-    <div className="relative rounded-xl overflow-hidden bg-white/80 border border-gray-200 shadow-sm">
-      {auction.bannerImageUrl ? (
-        <img
-          src={auction.bannerImageUrl}
-          alt={auction.title || "Auction"}
-          className="w-full h-36 object-cover"
-          onError={(e) => (e.currentTarget.src = "https://via.placeholder.com/400x300?text=Auction")}
-        />
-      ) : (
-        <div className="w-full h-36 bg-gray-100 flex items-center justify-center text-gray-500 text-sm">
-          Keine Vorschau
-        </div>
-      )}
-      <div className="p-3">
-        <div className="text-sm font-semibold text-black line-clamp-1">{auction.title || "Auktion"}</div>
-        <div className="mt-2 flex justify-between items-center">
-          <Link to={`/auction/${auction._id || auction.id}`} className="btn btn-xs btn-primary" title="Ansehen">
-            <Eye size={14} />
-            Ansehen
-          </Link>
-          {auction.status && (
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded-full ${
-                String(auction.status).toLowerCase() === "live"
-                  ? "bg-green-100 text-green-700"
-                  : String(auction.status).toLowerCase() === "ended"
-                  ? "bg-gray-100 text-gray-700"
-                  : "bg-blue-100 text-blue-700"
-              }`}
-            >
-              {auction.status}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+
+
 
 const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
   const [myOffers, setMyOffers] = useState(initialOffers || []);
   const [artworkDetails, setArtworkDetails] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Favoriten (Artworks) aus Context (localStorage)
-  const { ids: favoriteArtworkIds } = useFavorites();
-  const [allArtworks, setAllArtworks] = useState([]);
 
-  // Favoriten (Auctions) aus localStorage
-  const [favoriteAuctionIds, setFavoriteAuctionIds] = useState(() => readFavAuctions());
-  const [allAuctions, setAllAuctions] = useState([]);
 
-  // Inline-Bid (Erhöhen) UI-State
-  const [raisingOfferId, setRaisingOfferId] = useState(null);
-  const [raisingAmount, setRaisingAmount] = useState("");
-  const [raiseError, setRaiseError] = useState("");
-  const [raiseSubmitting, setRaiseSubmitting] = useState(false);
-
-  // Alle Artworks & Auctions laden (für Favoriten-Auflösung)
-  useEffect(() => {
-    (async () => {
-      try {
-        const [aRes, aucRes] = await Promise.all([
-          fetch(`${API_BASE}/api/artworks`, { credentials: "include" }),
-          fetch(`${API_BASE}/api/auctions`, { credentials: "include" }),
-        ]);
-        const aJson = await aRes.json().catch(() => ({}));
-        const aucJson = await aucRes.json().catch(() => ({}));
-        const aList = Array.isArray(aJson?.data) ? aJson.data : Array.isArray(aJson) ? aJson : [];
-        const aucList = Array.isArray(aucJson?.data) ? aucJson.data : Array.isArray(aucJson) ? aucJson : [];
-        setAllArtworks(aList);
-        setAllAuctions(aucList);
-      } catch {
-        setAllArtworks([]);
-        setAllAuctions([]);
-      }
-    })();
-  }, []);
 
   // Details für Gebote laden (Artwork + Offers je Artwork)
   const fetchDetailedOffers = async () => {
@@ -209,18 +92,7 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
     return { total: myOffers.length, winning, totalValue };
   }, [myOffers, artworkDetails, user._id]);
 
-  // Favoriten-Listen auflösen
-  const favoriteArtworks = useMemo(() => {
-    if (!favoriteArtworkIds.length || !allArtworks.length) return [];
-    const set = new Set(favoriteArtworkIds);
-    return allArtworks.filter((a) => set.has(a._id));
-  }, [favoriteArtworkIds, allArtworks]);
 
-  const favoriteAuctions = useMemo(() => {
-    if (!favoriteAuctionIds.length || !allAuctions.length) return [];
-    const set = new Set(favoriteAuctionIds);
-    return allAuctions.filter((a) => set.has(a._id) || set.has(a.id));
-  }, [favoriteAuctionIds, allAuctions]);
 
   // Hilfsfunktion: minBid berechnen für ein Offer (basierend auf Details)
   const computeMinBidForOffer = (offer) => {
@@ -233,6 +105,12 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
   };
 
   // Erhöhen klicken → kleine Inline-Form öffnen
+
+    const [raisingOfferId, setRaisingOfferId] = useState(null);
+  const [raisingAmount, setRaisingAmount] = useState("");
+  const [raiseError, setRaiseError] = useState("");
+  const [raiseSubmitting, setRaiseSubmitting] = useState(false);
+
   const openRaiseFor = (offer) => {
     const min = computeMinBidForOffer(offer);
     setRaisingOfferId(offer._id);
@@ -464,48 +342,10 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
         )}
       </div>
 
-      {/* Favoriten – kompakte Karten (Kunstwerke & Auktionen) */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-black">Favoriten</h2>
-        </div>
+      
 
-        {/* Kunstwerk-Favoriten */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Kunstwerke <span className="text-gray-500">({favoriteArtworks.length})</span>
-            </h3>
-          </div>
-          {favoriteArtworks.length ? (
-            <div className="mt-2 grid grid-cols-2 md:grid-cols-3 xl-grid-cols-5 xl:grid-cols-6 gap-3">
-              {favoriteArtworks.map((art) => (
-                <FavoriteArtworkCard key={art._id} artwork={art} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 mt-1">Keine Kunstwerk-Favoriten.</p>
-          )}
-        </div>
-
-        {/* Auktions-Favoriten */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Auktionen <span className="text-gray-500">({favoriteAuctions.length})</span>
-            </h3>
-          </div>
-          {favoriteAuctions.length ? (
-            <div className="mt-2 grid grid-cols-2 md:grid-cols-3 xl-grid-cols-5 xl:grid-cols-6 gap-3">
-              {favoriteAuctions.map((auc) => (
-                <FavoriteAuctionCard key={auc._id || auc.id} auction={auc} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 mt-1">Keine Auktions-Favoriten.</p>
-          )}
-        </div>
-      </div>
+        
+      
     </div>
   );
 };
