@@ -13,7 +13,7 @@ const auctionSchema = new Schema(
       type: String,
       required: true,
     },
-    bannerImageUrl: {
+    avatarUrl: {
       type: String,
       required: false,
     },

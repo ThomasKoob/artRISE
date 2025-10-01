@@ -5,7 +5,7 @@ import Auction from "../models/Auction.js";
 export const getAuctions = async (req, res) => {
   try {
     const auctions = await Auction.find()
-      .populate("artistId", "userName email avatarUrl") // userName statt name!
+      .populate("artistId", "userName email avatarUrl")
       .sort({ createdAt: -1 });
 
     // Status basierend auf Datum berechnen
@@ -46,7 +46,7 @@ export const getAuctionById = async (req, res) => {
 
     const auction = await Auction.findById(id).populate(
       "artistId",
-      "userName email avatarUrl" // userName statt name!
+      "userName email avatarUrl"
     );
 
     if (!auction) {
@@ -85,8 +85,22 @@ export const getAuctionById = async (req, res) => {
 // Neue Auktion erstellen
 export const createAuction = async (req, res) => {
   try {
-    const { title, description, minIncrementDefault, endDate, artistId } =
-      req.body;
+    const {
+      title,
+      description,
+      avatarUrl,
+      minIncrementDefault,
+      endDate,
+      artistId,
+    } = req.body;
+
+    console.log("Creating auction with data:", {
+      title,
+      description,
+      avatarUrl,
+      endDate,
+      artistId,
+    });
 
     // Validierung
     if (!title || !description || !endDate || !artistId) {
@@ -104,15 +118,24 @@ export const createAuction = async (req, res) => {
       });
     }
 
-    const newAuction = new Auction({
+    const auctionData = {
       title,
       description,
       minIncrementDefault: minIncrementDefault || 5,
       endDate,
       artistId,
-    });
+    };
+
+    // avatarUrl nur hinzufügen wenn vorhanden
+    if (avatarUrl) {
+      auctionData.avatarUrl = avatarUrl;
+    }
+
+    const newAuction = new Auction(auctionData);
 
     const savedAuction = await newAuction.save();
+
+    console.log("Auction created successfully:", savedAuction);
 
     res.status(201).json({
       success: true,
@@ -152,9 +175,9 @@ export const updateAuction = async (req, res) => {
     }
 
     const updatedAuction = await Auction.findByIdAndUpdate(id, updates, {
-      new: true, // Return updated document
-      runValidators: true, // Run mongoose validations
-    }).populate("artistId", "name email");
+      new: true,
+      runValidators: true,
+    }).populate("artistId", "userName email avatarUrl");
 
     if (!updatedAuction) {
       return res.status(404).json({
@@ -171,7 +194,6 @@ export const updateAuction = async (req, res) => {
   } catch (error) {
     console.error("Error updating auction:", error);
 
-    // MongoDB Duplicate Key Error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
