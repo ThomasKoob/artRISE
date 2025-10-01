@@ -8,7 +8,7 @@ import Dashboard from "../pages/Dashboard.jsx";
 
 const App = () => {
   return (
-    <div className="flex flex-col h-screen bg-whiteWarm">
+    <div className="flex flex-col bg-whiteWarm">
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
