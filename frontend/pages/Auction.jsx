@@ -33,6 +33,8 @@ const Auction = () => {
         : artworksResult;
 
       console.log("Processed auction data:", auctionData);
+      console.log("Avatar URL direkt:", auctionData.avatarUrl);
+      console.log("Avatar URL über artistId:", auctionData.artistId?.avatarUrl);
       console.log("Processed artworks data:", artworksData);
       console.log("Artworks count:", artworksData?.length);
 
@@ -93,31 +95,41 @@ const Auction = () => {
 
       {auction && (
         <div className="mb-8">
-          {auction.artistId?.avatarUrl && (
-            <div className="mb-6">
-              <div className="flex flex-row items-start gap-6">
+          {/* Artist Info - Immer anzeigen */}
+          <div className="mb-6">
+            <div className="flex flex-row items-start gap-6">
+              {/* Avatar - nur wenn vorhanden */}
+              {/* Avatar - beide möglichen Pfade prüfen */}
+              {(auction.avatarUrl || auction.artistId?.avatarUrl) && (
                 <img
-                  src={auction.artistId.avatarUrl}
-                  alt={auction.artistId.userName || "Artist"}
+                  src={auction.avatarUrl || auction.artistId?.avatarUrl}
+                  alt={auction.title || "Artist"}
                   className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-lg shadow-lg"
                   onError={(e) => {
+                    console.error(
+                      "Avatar konnte nicht geladen werden:",
+                      e.target.src
+                    );
                     e.target.src =
                       "https://via.placeholder.com/400x400?text=Artist";
                   }}
                 />
-                <div className="flex flex-col flex-1">
-                  <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                    {auction.title}
-                  </h1>
-                  {auction.description && (
-                    <p className="text-gray-600 mb-4 text-lg leading-relaxed">
-                      {auction.description}
-                    </p>
-                  )}
-                </div>
+              )}
+              <div className="flex flex-col flex-1">
+                {/* Artist Name (auction.title) */}
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                  {auction.title}
+                </h1>
+
+                {/* Artist Bio (auction.description) */}
+                {auction.description && (
+                  <p className="text-gray-600 mb-4 text-lg leading-relaxed">
+                    {auction.description}
+                  </p>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
             <div className="flex-1">
