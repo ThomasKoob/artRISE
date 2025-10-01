@@ -3,13 +3,7 @@ import { useNavigate } from "react-router";
 import { Plus, Eye, Trash2, Images } from "lucide-react";
 import UserHeader from "./UserHeader";
 
-const SellerDashboard = ({
-  user,
-  activeMyAuction,
-  onCreateAuction,
-  onCreateArtwork,
-  onDeleteAuction,
-}) => {
+const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
   const navigate = useNavigate();
 
   return (
@@ -73,18 +67,6 @@ const SellerDashboard = ({
                 onClick={() => navigate(`/auction/${activeMyAuction._id}`)}
               >
                 <Eye size={16} /> Ansehen
-              </button>
-              <button
-                className="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
-                onClick={onCreateArtwork}
-              >
-                <Images size={16} /> Kunstwerk hinzufügen
-              </button>
-              <button
-                className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
-                onClick={() => onDeleteAuction(activeMyAuction)}
-              >
-                <Trash2 size={16} /> Löschen
               </button>
             </div>
           </div>
