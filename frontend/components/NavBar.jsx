@@ -1,28 +1,20 @@
 // components/NavBar.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect,  useState } from "react";
 import { Link } from "react-router";
 import {
   Menu,
-  MoreVertical,
+
   LogOut,
   LogIn,
   UserPlus,
   User,
-  ChevronDown,
+  
   X,
 } from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 /** DE: Kleine Hilfsfunktion zum Schließen per Klick außerhalb */
-function useClickOutside(ref, onClose) {
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose?.();
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onClose, ref]);
-}
+
 
 const NavBar = () => {
   const { openLogin, user, logout, isInitializing } = useLoginModal();
@@ -30,23 +22,17 @@ const NavBar = () => {
   // DE: Mobile-Menü (Hamburger) Zustand
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // DE: Kebab-Menü (3 Punkte) Zustand
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef(null);
-  useClickOutside(userMenuRef, () => setUserMenuOpen(false));
-
+  
   // DE: Beim Navigieren das Mobile-Menü schließen (optional)
   useEffect(() => {
-    const closeOnEsc = (e) =>
-      e.key === "Escape" && (setMobileOpen(false), setUserMenuOpen(false));
-    window.addEventListener("keydown", closeOnEsc);
-    return () => window.removeEventListener("keydown", closeOnEsc);
-  }, []);
+     const closeOnEsc = (e) => {
+    if (e.key === "Escape") setMobileOpen(false);
+  };
+  window.addEventListener("keydown", closeOnEsc);
+  return () => window.removeEventListener("keydown", closeOnEsc);
+}, [setMobileOpen]);
 
-  const isBuyer = user?.role === "buyer";
-  const isSeller = user?.role === "seller" || user?.role === "artist";
-  const isAdmin = user?.role === "admin";
-
+  
   return (
     <nav className="bg-darkBackground/90 border-b-2 border-black/50 sticky top-0 z-50 shadow-md">
       {/* TOP BAR */}
@@ -72,7 +58,7 @@ const NavBar = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <div className="ml-2 font-light text-3xl sm:text-4xl hover:text- text-whiteLetter font-sans">
+              <div className="ml-2 font-light text-3xl sm:text-4xl  text-whiteLetter font-sans">
                 popAUC
               </div>
             </Link>
@@ -96,7 +82,7 @@ const NavBar = () => {
           </div>
 
           {/* Right: Auth & User-Actions */}
-          <div className="flex p- items-center gap-2 sm:gap-3">
+          <div className="flex  items-center gap-2 sm:gap-3">
             {isInitializing ? (
               <div className="px-3 py-2 text-gray-400 text-sm">Laden…</div>
             ) : !user ? (
@@ -117,39 +103,8 @@ const NavBar = () => {
                   LogIn
                 </button>
 
-                {/* Kebab zeigt Auth-Aktionen auf Mobile */}
-                <div className="relative md:hidden" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setUserMenuOpen((s) => !s)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10"
-                    aria-label="Open user menu"
-                    aria-expanded={userMenuOpen}
-                    title="Mehr"
-                  >
-                    <MoreVertical size={20} className="text-coldYellow" />
-                  </button>
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white shadow-lg border border-gray-200 py-1">
-                      <Link
-                        to="/signup"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-gray-800 text-sm"
-                      >
-                        <UserPlus size={16} /> SignUp
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          openLogin();
-                        }}
-                        className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-gray-800 text-sm"
-                      >
-                        <LogIn size={16} /> LogIn
-                      </button>
-                    </div>
-                  )}
-                </div>
+             
+                        
               </>
             ) : (
               // Eingeloggt
@@ -161,70 +116,23 @@ const NavBar = () => {
                 {/* Dashboard (Desktop) */}
                 <Link
                   to="/dashboard"
-                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
+                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
                 >
-                  <User size={16} className="mr-1" />
-                  Dashboard
+                  <User size={20} />
                 </Link>
 
-                {/* Kebab User-Menu (Desktop & Mobile) */}
-                <div className="relative" ref={userMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setUserMenuOpen((s) => !s)}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10"
-                    aria-label="Open user menu"
-                    aria-expanded={userMenuOpen}
-                    title="User-Menü"
-                  >
-                    <MoreVertical size={20} className="text-coldYellow" />
-                  </button>
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-lg border border-gray-200 py-1">
-                      {/* Rolle anzeigen */}
-                      <div className="px-3 py-2 text-xs text-gray-500 border-b">
-                        Angemeldet als{" "}
-                        <span className="font-medium">{user.role}</span>
-                      </div>
-                      <Link
-                        to="/dashboard"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-gray-800 text-sm"
-                      >
-                        <User size={16} /> Dashboard
-                      </Link>
-                      {/* Optional: rollenspezifische Shortcuts */}
-                      {isBuyer && (
-                        <Link
-                          to="/auction"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-gray-800 text-sm"
-                        >
-                          <ChevronDown size={16} /> Galerie
-                        </Link>
-                      )}
-                      {(isSeller || isAdmin) && (
-                        <Link
-                          to="/auction"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-gray-800 text-sm"
-                        >
-                          <ChevronDown size={16} /> Auktionen
-                        </Link>
-                      )}
-                      <div className="my-1 border-t" />
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          logout();
-                        }}
-                        className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-50 text-red-600 text-sm"
-                      >
-                        <LogOut size={16} /> LogOut
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {/* LogOut (Desktop) — ICON ONLY, next to Dashboard */}
+                <button
+                  onClick={logout}
+                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-md transition"
+                  aria-label="Log out"
+                  title="Log out"
+                >
+                  <LogOut size={18} />
+                  <span className="sr-only">Log out</span>
+                </button>
+
+              
               </>
             )}
           </div>
@@ -320,20 +228,23 @@ const NavBar = () => {
                 <Link
                   to="/dashboard"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
+                  className="flex items-center justify-center h-10 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
                 >
-                  <User size={16} className="inline mr-1" />
-                  Dashboard
+                  <User size={18} />
+                  <span className="sr-only">Dashboard</span>
                 </Link>
+               
                 <button
                   onClick={() => {
                     setMobileOpen(false);
                     logout();
                   }}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                  className="flex items-center justify-center h-10 w-full rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                  aria-label="Log out"
+                  title="Log out"
                 >
-                  <LogOut size={16} className="inline mr-1" />
-                  LogOut
+                  <LogOut size={18} />
+                  <span className="sr-only">Log out</span>
                 </button>
               </>
             )}

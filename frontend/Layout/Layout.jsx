@@ -9,7 +9,7 @@ const Layout = () => {
     <LoginModalProvider>
       <div className="flex flex-col min-h-screen">
         {" "}
-        {/* ⟵ min-h-screen (mouch h-screen) */}
+        
         <NavBar className="flex justify-center" />
         <main className="grow">
           <Outlet />
