@@ -2,11 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 
-
 const API_BASE = "http://localhost:3001";
-
-
-
 
 const smartList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -66,7 +62,6 @@ const statusPill = (status = "draft") => {
 
 const Home = () => {
   const navigate = useNavigate();
-
 
   const [allArtworks, setAllArtworks] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
@@ -158,8 +153,6 @@ const Home = () => {
       "https://via.placeholder.com/800x400?text=Auction+Banner";
     const { label } = getTimeLeft(auction?.endDate);
 
-  
-
     return (
       <button
         type="button"
@@ -167,8 +160,6 @@ const Home = () => {
         className="relative text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
         title="Zur Auktion"
       >
-     
-
         <div className="relative">
           <img
             src={cover}
@@ -206,7 +197,7 @@ const Home = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
       {/* HERO */}
-      <section className=" bg-darkBackground/90 rounded-2xl border-2 border-coldYellow text-white p-8 md:p-10 shadow-lg">
+      <section className=" bg-darkBackground/90 rounded-2xl border-2 border-black text-white p-8 md:p-10 shadow-lg">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           <div>
             <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
@@ -250,7 +241,10 @@ const Home = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-56 bg-gray-100 rounded-xl animate-pulse" />
+              <div
+                key={i}
+                className="h-56 bg-gray-100 rounded-xl animate-pulse"
+              />
             ))}
           </div>
         ) : liveAuctions.length ? (
