@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 
@@ -60,12 +60,65 @@ const statusPill = (status = "draft") => {
   }
 };
 
+// Extract a usable image URL from various shapes (array, string, JSON, comma, nested)
+const getFirstImageUrl = (obj) => {
+  if (!obj) return null;
+  const raw =
+    obj.images ??
+    obj.photos ??
+    obj.image ??
+    obj.imageUrl ??
+    obj.coverUrl ??
+    obj.bannerImageUrl ??
+    obj.photo ??
+    obj.picture ??
+    // common nested shapes
+    obj.media?.[0]?.url ??
+    obj.files?.[0]?.url ??
+    null;
+  if (!raw) return null;
+  if (Array.isArray(raw)) return raw[0] || null;
+  if (typeof raw === "string") {
+    // try JSON array in string
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) return parsed[0];
+    } catch {}
+    // try comma-separated list
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return parts[0] || raw;
+  }
+  return null;
+};
+
+// Simple deterministic pick based on auction id (so it doesn't change every re-render)
+const pickDeterministic = (arr, seedStr) => {
+  if (!arr?.length) return null;
+  let h = 0;
+  for (let i = 0; i < (seedStr || "").length; i++) {
+    h = (h * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+  const idx = h % arr.length;
+  return arr[idx];
+};
+// Normalize any id (ObjectId/object/string) to a stable comparable string
+const toIdStr = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object")
+    return String(v._id || v.id || v.$oid || JSON.stringify(v));
+  return String(v);
+};
 const Home = () => {
   const navigate = useNavigate();
 
   const [allArtworks, setAllArtworks] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const randomIndexMapRef = useRef(new Map());
 
   useEffect(() => {
     (async () => {
@@ -84,7 +137,7 @@ const Home = () => {
     const m = new Map();
     for (const a of allAuctions) {
       const id = a?._id || a?.id;
-      if (id) m.set(id, a);
+      if (id) m.set(toIdStr(id), a);
     }
     return m;
   }, [allAuctions]);
@@ -103,7 +156,7 @@ const Home = () => {
         const maybe = a.auction._id || a.auction.id;
         if (maybe) fallbackAid = maybe;
       }
-      return { ...a, auctionId: fallbackAid };
+      return { ...a, auctionId: toIdStr(fallbackAid) };
     });
   }, [allArtworks]);
 
@@ -144,7 +197,35 @@ const Home = () => {
   };
 
   const AuctionCard = ({ auction }) => {
+    // 1) collect artworks that belong to this auction
+    const aId = auction?._id || auction?.id;
+    const aIdStr = toIdStr(aId);
+    const relatedArtworks = useMemo(() => {
+      if (!aId) return [];
+      return normalizedArtworks.filter(
+        (aw) => toIdStr(aw.auctionId) === aIdStr
+      );
+    }, [aIdStr, normalizedArtworks]);
+
+    // 2) choose one artwork deterministically and get its image
+    let chosenArtwork = null;
+    const map = randomIndexMapRef.current;
+    if (relatedArtworks.length) {
+      if (!map.has(aIdStr)) {
+        const baseIdx = Math.floor(Math.random() * relatedArtworks.length);
+        map.set(aIdStr, baseIdx);
+      }
+      const baseIdx = map.get(aIdStr);
+
+      const idx = baseIdx % relatedArtworks.length;
+      chosenArtwork = relatedArtworks[idx];
+    }
+    const artworkImg = getFirstImageUrl(chosenArtwork);
+
+    // 3) fallback to auction banner if no artwork image
     const cover =
+      artworkImg ||
+      getFirstImageUrl(auction) ||
       auction?.bannerImageUrl ||
       auction?.banner ||
       auction?.image ||
@@ -157,7 +238,7 @@ const Home = () => {
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="relative text-left border rounded-xl overflow-hidden bg-whtieWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
+        className="relative text-left border rounded-xl overflow-hidden bg-whiteWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
         title="Zur Auktion"
       >
         <div className="relative">
@@ -203,7 +284,7 @@ const Home = () => {
             <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
               A stage for every artist, everywhere.
             </h1>
-            <p className="m-10 font- text-xl font-extralight text-white/90">
+            <p className="m-10 text-xl font-extralight text-white/90">
               On artRise, creativity has no boundaries. From first steps to
               established work – upload your art, start your auction, and share
               it with the world.
