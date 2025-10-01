@@ -1,6 +1,20 @@
+// backend/controllers/auth.controller.js
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
+// Helper function für Cookie-Settings
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: true, // ✅ IMMER true (auch in Development mit Render Backend)
+    sameSite: "none", // ✅ WICHTIG: 'none' für Cross-Origin
+    maxAge: Number(process.env.JWT_EXPIRES_IN_DAYS || 7) * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+};
 
 const register = async (req, res, next) => {
   try {
@@ -25,25 +39,21 @@ const register = async (req, res, next) => {
       email,
       password: hashedPassword,
       avatarUrl,
-      role: role || "buyer", // falls nicht angegeben
+      role: role || "buyer",
     });
 
     const user = created.toObject();
     delete user.password;
+
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN_DAYS + "d" }
     );
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires: new Date(
-        Date.now() +
-          Number(process.env.JWT_EXPIRES_IN_DAYS) * 24 * 60 * 60 * 1000
-      ),
-    });
+
+    // ✅ Verwende die Helper-Funktion
+    res.cookie("token", token, getCookieOptions());
+
     res.status(201).json({ msg: "User registered", data: user });
   } catch (err) {
     next(err);
@@ -62,20 +72,16 @@ const login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     delete user.password;
+
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN_DAYS + "d" }
     );
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      expires: new Date(
-        Date.now() +
-          Number(process.env.JWT_EXPIRES_IN_DAYS) * 24 * 60 * 60 * 1000
-      ),
-    });
+
+    // ✅ Verwende die Helper-Funktion
+    res.cookie("token", token, getCookieOptions());
+
     res.json({ msg: "User logged in", data: user });
   } catch (err) {
     next(err);
@@ -83,11 +89,8 @@ const login = async (req, res, next) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-  });
+  // ✅ Verwende die Helper-Funktion
+  res.clearCookie("token", getCookieOptions());
   res.json({ msg: "User logged out" });
 };
 

@@ -1,13 +1,12 @@
+// frontend/pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
+import { register, uploadToCloudinary } from "../api/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
   const { openLogin, login } = useLoginModal();
-
-  const CLOUD_NAME = "dhomuf4kg";
-  const UPLOAD_PRESET = "react_upload";
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -87,40 +86,7 @@ const SignUp = () => {
     }
   };
 
-  const uploadAvatar = async () => {
-    if (!avatarFile) return null;
-    setUploadingAvatar(true);
-
-    const formData = new FormData();
-    formData.append("file", avatarFile);
-    formData.append("upload_preset", UPLOAD_PRESET);
-
-    try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Cloudinary Error:", data);
-        throw new Error(
-          data.error?.message || "Upload zu Cloudinary fehlgeschlagen"
-        );
-      }
-
-      return data.secure_url;
-    } catch (err) {
-      console.error("Upload Error:", err);
-      throw new Error(err.message || "Avatar-Upload fehlgeschlagen");
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
+  // frontend/pages/SignUp.jsx (handleSubmit Funktion)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -131,31 +97,36 @@ const SignUp = () => {
       // 1) Avatar ggf. hochladen
       let avatarUrl = formData.avatarUrl;
       if (avatarFile) {
-        avatarUrl = await uploadAvatar();
+        setUploadingAvatar(true);
+        avatarUrl = await uploadToCloudinary(avatarFile);
+        setUploadingAvatar(false);
       }
       if (!avatarUrl) {
         throw new Error("Bitte wähle ein Profilbild aus");
       }
 
       // 2) Registrierung
-      const res = await fetch("http://localhost:3001/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ ...formData, avatarUrl }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Registration failed");
+      console.log("Registering user...");
+      await register({ ...formData, avatarUrl });
+      console.log("Registration successful");
 
-      // 3) Auto-Login direkt nach erfolgreicher Registrierung
-      await login({ email: formData.email, password: formData.password });
+      // 3) Auto-Login
+      console.log("Attempting auto-login...");
+      const userData = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+      console.log("Login successful:", userData);
 
       // 4) Weiterleiten
+      console.log("Redirecting to dashboard...");
       navigate("/dashboard");
     } catch (err) {
+      console.error("SignUp Error:", err);
       setError(err.message || "Unbekannter Fehler");
     } finally {
       setLoading(false);
+      setUploadingAvatar(false);
     }
   };
 

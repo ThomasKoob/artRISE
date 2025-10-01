@@ -1,89 +1,69 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-} from "react";
-import { LoginModal } from "../components/LoginModal.jsx";
+// frontend/context/LoginModalContext.jsx
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { LoginModal } from "../components/LoginModal";
+import {
+  login as apiLogin,
+  logout as apiLogout,
+  getCurrentUser,
+} from "../api/api";
 
-const LoginModalContext = createContext({
-  openLogin: () => {},
-  closeLogin: () => {},
-  login: async () => {},
-  logout: async () => {},
-  user: null,
-  error: "",
-  loading: false,
-  isInitializing: true, // Neu: zeigt an ob der Auth-Status noch geladen wird
-});
+const LoginModalContext = createContext();
 
-export const useLoginModal = () => useContext(LoginModalContext);
+export const useLoginModal = () => {
+  const context = useContext(LoginModalContext);
+  if (!context) {
+    throw new Error("useLoginModal must be used within LoginModalProvider");
+  }
+  return context;
+};
 
 export const LoginModalProvider = ({ children }) => {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [user, setUser] = useState(null);
-  const [isInitializing, setIsInitializing] = useState(true); // Neu
+  const [isInitializing, setIsInitializing] = useState(true);
 
-  const openLogin = useCallback(() => {
-    setError("");
-    setOpen(true);
-  }, []);
-
-  const closeLogin = useCallback(() => setOpen(false), []);
-
-  // Neu: Funktion zum Überprüfen des aktuellen Auth-Status
-  const checkAuthStatus = useCallback(async () => {
-    try {
-      const res = await fetch("http://localhost:3001/api/auth/me", {
-        method: "GET",
-        credentials: "include", // Wichtig für Cookies
-      });
-
-      if (res.ok) {
-        const userData = await res.json();
-        setUser(userData);
-      } else {
-        // Wenn der Token ungültig/abgelaufen ist, User ausloggen
-        setUser(null);
-      }
-    } catch (error) {
-      console.log("Auth-Check fehlgeschlagen:", error.message);
-      setUser(null);
-    } finally {
-      setIsInitializing(false);
-    }
-  }, []);
-
-  // Neu: useEffect zum Überprüfen des Auth-Status beim Laden der App
+  // User beim App-Start laden
   useEffect(() => {
-    checkAuthStatus();
-  }, [checkAuthStatus]);
+    const loadUser = async () => {
+      try {
+        const userData = await getCurrentUser();
+        setUser(userData);
+      } catch (err) {
+        console.log("Not logged in");
+        setUser(null);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
 
-  const login = async ({ email, password }) => {
+    loadUser();
+  }, []);
+
+  const openLogin = () => {
+    setIsOpen(true);
+    setError("");
+  };
+
+  const closeLogin = () => {
+    setIsOpen(false);
+    setError("");
+  };
+
+  const login = async (credentials) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("http://localhost:3001/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Ungültige Anmeldedaten");
-      }
-
-      // Benutzer aus der Response setzen
-      setUser(data.data || data.user || { email });
-      setOpen(false);
-    } catch (e) {
-      setError(e.message);
+      const response = await apiLogin(credentials);
+      const userData = response.data || response;
+      setUser(userData);
+      setIsOpen(false);
+      return userData;
+    } catch (err) {
+      const errorMessage = err.message || "Login fehlgeschlagen";
+      setError(errorMessage);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -91,13 +71,11 @@ export const LoginModalProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:3001/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (error) {
-      console.log("Logout-Request fehlgeschlagen:", error.message);
-    } finally {
+      await apiLogout();
+      setUser(null);
+    } catch (err) {
+      console.error("Logout error:", err);
+      // Logout trotzdem durchführen
       setUser(null);
     }
   };
@@ -105,18 +83,17 @@ export const LoginModalProvider = ({ children }) => {
   return (
     <LoginModalContext.Provider
       value={{
+        isOpen,
         openLogin,
         closeLogin,
+        user,
         login,
         logout,
-        user,
-        error,
-        loading,
-        isInitializing, // Neu: für Loading-State beim App-Start
+        isInitializing,
       }}
     >
       {children}
-      {open && (
+      {isOpen && (
         <LoginModal
           onClose={closeLogin}
           onSubmit={login}

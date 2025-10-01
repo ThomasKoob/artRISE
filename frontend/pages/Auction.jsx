@@ -1,7 +1,9 @@
+// frontend/pages/Auction.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router";
 import ArtworkCard from "../components/ArtworkCard";
 import CountdownTimer from "../components/CountdownTimer";
+import { getAuctionById, getAuctionArtworks } from "../api/api";
 
 const Auction = () => {
   const [artworks, setArtworks] = useState([]);
@@ -15,30 +17,14 @@ const Auction = () => {
     try {
       setLoading(true);
 
-      // Fetch auction details and artworks in parallel
-      const [auctionResponse, artworksResponse] = await Promise.all([
-        fetch(`http://localhost:3001/api/auctions/${auctionId}`),
-        fetch(`http://localhost:3001/api/auctions/${auctionId}/artworks`),
+      const [auctionResult, artworksResult] = await Promise.all([
+        getAuctionById(auctionId),
+        getAuctionArtworks(auctionId),
       ]);
-
-      console.log("Auction response status:", auctionResponse.status);
-      console.log("Artworks response status:", artworksResponse.status);
-
-      if (!auctionResponse.ok) {
-        throw new Error(`Auction not found (${auctionResponse.status})`);
-      }
-
-      if (!artworksResponse.ok) {
-        throw new Error(`Failed to load artworks (${artworksResponse.status})`);
-      }
-
-      const auctionResult = await auctionResponse.json();
-      const artworksResult = await artworksResponse.json();
 
       console.log("Auction result:", auctionResult);
       console.log("Artworks result:", artworksResult);
 
-      // Berücksichtigung der API Response Struktur
       const auctionData = auctionResult.success
         ? auctionResult.data
         : auctionResult;
@@ -67,11 +53,8 @@ const Auction = () => {
     }
   }, [auctionId, fetchAuctionData]);
 
-  // Handle successful bid from ArtworkCard
   const handleBidSuccess = useCallback((offer, artwork) => {
     console.log("Bid success:", offer, artwork);
-
-    // Update the specific artwork in the list
     setArtworks((prev) =>
       prev.map((art) =>
         art._id === artwork._id ? { ...art, price: offer.amount } : art
@@ -102,17 +85,14 @@ const Auction = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-      {/* Back Navigation */}
       <div className="mb-6">
         <Link to="/auction" className="btn btn-ghost btn-sm">
           ← Back to All Auctions
         </Link>
       </div>
 
-      {/* Auction Header */}
       {auction && (
         <div className="mb-8">
-          {/* Artist Avatar Header */}
           {auction.artistId?.avatarUrl && (
             <div className="mb-6">
               <div className="flex flex-row items-start gap-6">
@@ -142,7 +122,6 @@ const Auction = () => {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-2">
-                {/* Status Badge */}
                 {auction.status === "live" && (
                   <span className="badge badge-success badge-lg">🔴 Live</span>
                 )}
@@ -155,7 +134,6 @@ const Auction = () => {
               </div>
             </div>
 
-            {/* Countdown Timer - Prominent Display */}
             {auction.status !== "ended" && auction.endDate && (
               <div className="bg-gradient-to-r from-orange-100 to-red-100 p-4 rounded-lg border border-orange-200">
                 <p className="text-sm font-semibold text-gray-700 mb-2">
@@ -173,7 +151,6 @@ const Auction = () => {
             )}
           </div>
 
-          {/* Auction Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
             {auction.endDate && (
               <div>
@@ -190,7 +167,6 @@ const Auction = () => {
             </div>
           </div>
 
-          {/* Refresh Controls */}
           <div className="flex justify-between items-center mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="text-sm text-gray-600">
               <span>Letzte Aktualisierung: </span>
@@ -202,7 +178,6 @@ const Auction = () => {
         </div>
       )}
 
-      {/* Artworks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {artworks.length > 0 ? (
           artworks.map((artwork) => (
@@ -219,7 +194,6 @@ const Auction = () => {
         )}
       </div>
 
-      {/* Live Stats */}
       {auction?.status === "live" && artworks.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6 mt-8">
           <h3 className="text-lg font-semibold mb-4">

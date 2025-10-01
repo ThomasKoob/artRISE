@@ -1,64 +1,17 @@
+// frontend/pages/Home.jsx
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 
-const API_BASE = "http://localhost:3001";
-
-const smartList = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-  if (Array.isArray(payload.data)) return payload.data;
-  for (const k of Object.keys(payload)) {
-    if (Array.isArray(payload[k])) return payload[k];
-  }
-  return [];
-};
-const fetchJson = async (url, opts) => {
-  try {
-    const r = await fetch(url, { credentials: "include", ...(opts || {}) });
-    const j = await r.json().catch(() => ({}));
-    return j;
-  } catch {
-    return {};
-  }
-};
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleString("de-DE");
-};
-const getTimeLeft = (endDate) => {
-  if (!endDate) return { label: "—", ended: false };
-  const end = new Date(endDate).getTime();
-  const now = Date.now();
-  const diff = end - now;
-  if (diff <= 0) return { label: "Beendet", ended: true };
-  const mins = Math.floor(diff / 60000);
-  const days = Math.floor(mins / (60 * 24));
-  const hours = Math.floor((mins % (60 * 24)) / 60);
-  const minutes = mins % 60;
-  const parts = [];
-  if (days) parts.push(`${days}d`);
-  if (hours) parts.push(`${hours}h`);
-  parts.push(`${minutes}m`);
-  return { label: `Noch ${parts.join(" ")}`, ended: false };
-};
-const statusPill = (status = "draft") => {
-  const s = String(status || "").toLowerCase();
-  switch (s) {
-    case "live":
-    case "active":
-    case "open":
-      return "bg-green-100 text-green-800";
-    case "upcoming":
-      return "bg-blue-100 text-blue-800";
-    case "ended":
-    case "closed":
-      return "bg-gray-200 text-gray-700";
-    default:
-      return "bg-amber-100 text-amber-800";
-  }
-};
+// ✅ Import API functions
+import {
+  getAllArtworks,
+  getAllAuctions,
+  listFromApi,
+  formatDateTime,
+  getTimeLeft,
+  getStatusBadgeClass,
+} from "../api/api";
 
 // Extract a usable image URL from various shapes (array, string, JSON, comma, nested)
 const getFirstImageUrl = (obj) => {
@@ -104,6 +57,7 @@ const pickDeterministic = (arr, seedStr) => {
   const idx = h % arr.length;
   return arr[idx];
 };
+
 // Normalize any id (ObjectId/object/string) to a stable comparable string
 const toIdStr = (v) => {
   if (!v) return "";
@@ -112,6 +66,7 @@ const toIdStr = (v) => {
     return String(v._id || v.id || v.$oid || JSON.stringify(v));
   return String(v);
 };
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -123,12 +78,13 @@ const Home = () => {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      // ✅ Use API functions instead of direct fetch
       const [artsRaw, auctionsRaw] = await Promise.all([
-        fetchJson(`${API_BASE}/api/artworks`),
-        fetchJson(`${API_BASE}/api/auctions`),
+        getAllArtworks(),
+        getAllAuctions(),
       ]);
-      setAllArtworks(smartList(artsRaw));
-      setAllAuctions(smartList(auctionsRaw));
+      setAllArtworks(listFromApi(artsRaw));
+      setAllAuctions(listFromApi(auctionsRaw));
       setLoading(false);
     })();
   }, []);
@@ -205,7 +161,7 @@ const Home = () => {
       return normalizedArtworks.filter(
         (aw) => toIdStr(aw.auctionId) === aIdStr
       );
-    }, [aIdStr, normalizedArtworks]);
+    }, [aIdStr]);
 
     // 2) choose one artwork deterministically and get its image
     let chosenArtwork = null;
@@ -232,6 +188,8 @@ const Home = () => {
       auction?.imageUrl ||
       auction?.coverUrl ||
       "https://via.placeholder.com/800x400?text=Auction+Banner";
+
+    // ✅ Use helper from api.js
     const { label } = getTimeLeft(auction?.endDate);
 
     return (
@@ -252,7 +210,8 @@ const Home = () => {
             }}
           />
           <span
-            className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${statusPill(
+            // ✅ Use helper from api.js
+            className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
               auction?.status
             )}`}
           >
@@ -268,6 +227,7 @@ const Home = () => {
           </p>
           <div className="flex items-center justify-between text-xs text-gray-600 pt-1">
             <span>{label}</span>
+            {/* ✅ Use helper from api.js */}
             {auction?.endDate && <span>{formatDateTime(auction.endDate)}</span>}
           </div>
         </div>
