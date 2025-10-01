@@ -1,20 +1,10 @@
 // components/NavBar.jsx
-import React, { useEffect,  useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
-import {
-  Menu,
-
-  LogOut,
-  LogIn,
-  UserPlus,
-  User,
-  
-  X,
-} from "lucide-react";
+import { Menu, LogOut, LogIn, UserPlus, User, X } from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 /** DE: Kleine Hilfsfunktion zum Schließen per Klick außerhalb */
-
 
 const NavBar = () => {
   const { openLogin, user, logout, isInitializing } = useLoginModal();
@@ -22,17 +12,15 @@ const NavBar = () => {
   // DE: Mobile-Menü (Hamburger) Zustand
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  
   // DE: Beim Navigieren das Mobile-Menü schließen (optional)
   useEffect(() => {
-     const closeOnEsc = (e) => {
-    if (e.key === "Escape") setMobileOpen(false);
-  };
-  window.addEventListener("keydown", closeOnEsc);
-  return () => window.removeEventListener("keydown", closeOnEsc);
-}, [setMobileOpen]);
+    const closeOnEsc = (e) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEsc);
+    return () => window.removeEventListener("keydown", closeOnEsc);
+  }, [setMobileOpen]);
 
-  
   return (
     <nav className="bg-darkBackground/90 border-b-2 border-black/50 sticky top-0 z-50 shadow-md">
       {/* TOP BAR */}
@@ -102,9 +90,6 @@ const NavBar = () => {
                   <LogIn size={18} className="mr-1" />
                   LogIn
                 </button>
-
-             
-                        
               </>
             ) : (
               // Eingeloggt
@@ -131,8 +116,6 @@ const NavBar = () => {
                   <LogOut size={18} />
                   <span className="sr-only">Log out</span>
                 </button>
-
-              
               </>
             )}
           </div>
@@ -233,7 +216,7 @@ const NavBar = () => {
                   <User size={18} />
                   <span className="sr-only">Dashboard</span>
                 </Link>
-               
+
                 <button
                   onClick={() => {
                     setMobileOpen(false);
