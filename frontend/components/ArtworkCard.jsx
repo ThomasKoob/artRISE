@@ -1,7 +1,7 @@
 // frontend/components/ArtworkCard.jsx
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
-import { getArtworkOffers, createOffer } from "../api/api";
+import { getArtworkOffers, createOffer, getFirstImageUrl } from "../api/api";
 
 export default function ArtworkCard({
   artwork: initialArtwork,
@@ -16,7 +16,7 @@ export default function ArtworkCard({
   const [submitting, setSubmitting] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [bidError, setBidError] = useState("");
-  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [setLoadingOffers] = useState(false);
 
   const { user, openLogin } = useLoginModal();
   const isBuyer = !!user && user.role === "buyer";
@@ -137,9 +137,7 @@ export default function ArtworkCard({
         <figure>
           <img
             src={
-              Array.isArray(artwork.images)
-                ? artwork.images[0]
-                : artwork.images || "https://via.placeholder.com/400x300"
+              getFirstImageUrl(artwork) || "https://via.placeholder.com/400x300"
             }
             alt={artwork.title}
             className={`${
@@ -332,7 +330,14 @@ export default function ArtworkCard({
         >
           <div className="max-w-3xl max-h-[90vh] rounded-2xl border-50 border-black/80 relative">
             <img
-              src={artwork.images}
+              src={
+                getFirstImageUrl(artwork) ||
+                "https://via.placeholder.com/800x600?text=Artwork"
+              }
+              onError={(e) => {
+                e.currentTarget.src =
+                  "https://via.placeholder.com/800x600?text=Artwork";
+              }}
               alt={artwork.title}
               className="rounded-lg shadow-lg max-h-[80vh] object-contain w-full"
             />

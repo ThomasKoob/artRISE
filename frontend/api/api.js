@@ -376,3 +376,77 @@ export function getStatusBadgeClass(status = "draft") {
       return "bg-amber-100 text-amber-800";
   }
 }
+
+// URL + IMAGE HELPERS 
+
+export function toAbsoluteUrl(u) {
+  if (!u) return null;
+  if (/^https?:\/\//i.test(u)) return u;        // absolute
+  if (u.startsWith("//")) return window.location.protocol + u;
+  // API_URL 
+  return `${API_URL}${u.startsWith("/") ? "" : "/"}${u}`;
+}
+
+/** Normalize any id (ObjectId/object/string) to a stable comparable string */
+export function toIdStr(v) {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "object")
+    return String(v._id || v.id || v.$oid || JSON.stringify(v));
+  return String(v);
+}
+
+/**(array/string/JSON/comma/nested…) to absolute */
+export function getFirstImageUrl(obj) {
+  if (!obj) return null;
+
+  const direct = [
+    obj?.images?.[0]?.url,
+    obj?.images?.[0]?.src,
+    obj?.images?.url,
+    obj?.images?.src,
+    obj?.photoUrl,
+    obj?.thumbnailUrl,
+    obj?.cover?.url,
+    obj?.cover?.src,
+  ].filter(Boolean);
+  if (direct.length) return toAbsoluteUrl(direct[0]);
+
+  const raw =
+    obj?.images ??
+    obj?.photos ??
+    obj?.image ??
+    obj?.imageUrl ??
+    obj?.coverUrl ??
+    obj?.bannerImageUrl ??
+    obj?.photo ??
+    obj?.picture ??
+    obj?.media?.[0]?.url ??
+    obj?.files?.[0]?.url ??
+    null;
+
+  if (!raw) return null;
+
+  if (Array.isArray(raw)) {
+    const first = raw[0];
+    if (typeof first === "string") return toAbsoluteUrl(first);
+    if (typeof first === "object") return toAbsoluteUrl(first?.url || first?.src);
+    return null;
+  }
+
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length) return toAbsoluteUrl(parsed[0]);
+    } catch { 
+      // ignore
+    }
+    const parts = raw.split(",").map(s => s.trim()).filter(Boolean);
+    return toAbsoluteUrl(parts[0] || raw);
+  }
+
+  if (typeof raw === "object") {
+    return toAbsoluteUrl(raw?.url || raw?.src || null);
+  }
+  return null;
+}

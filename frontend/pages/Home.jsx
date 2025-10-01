@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 
-// ✅ Import API functions
+// Import API functions
 import {
   getAllArtworks,
   getAllAuctions,
@@ -36,7 +36,9 @@ const getFirstImageUrl = (obj) => {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length) return parsed[0];
-    } catch {}
+    } catch {
+      // ignore
+    }
     // try comma-separated list
     const parts = raw
       .split(",")
@@ -45,17 +47,6 @@ const getFirstImageUrl = (obj) => {
     return parts[0] || raw;
   }
   return null;
-};
-
-// Simple deterministic pick based on auction id (so it doesn't change every re-render)
-const pickDeterministic = (arr, seedStr) => {
-  if (!arr?.length) return null;
-  let h = 0;
-  for (let i = 0; i < (seedStr || "").length; i++) {
-    h = (h * 31 + seedStr.charCodeAt(i)) >>> 0;
-  }
-  const idx = h % arr.length;
-  return arr[idx];
 };
 
 // Normalize any id (ObjectId/object/string) to a stable comparable string
@@ -88,15 +79,6 @@ const Home = () => {
       setLoading(false);
     })();
   }, []);
-
-  const auctionById = useMemo(() => {
-    const m = new Map();
-    for (const a of allAuctions) {
-      const id = a?._id || a?.id;
-      if (id) m.set(toIdStr(id), a);
-    }
-    return m;
-  }, [allAuctions]);
 
   const normalizedArtworks = useMemo(() => {
     return allArtworks.map((a) => {
@@ -148,20 +130,32 @@ const Home = () => {
     return result;
   }, [allAuctions]);
 
+  // 4. Latest 4 Live Auctions
+  const latest4LiveAuctions = useMemo(() => {
+    const toTime = (x) => {
+      const c = x?.createdAt ? new Date(x.createdAt).getTime() : 0;
+      const e = x?.endDate ? new Date(x.endDate).getTime() : 0;
+      return Math.max(c, e);
+    };
+    return [...liveAuctions].sort((a, b) => toTime(b) - toTime(a)).slice(0, 4);
+  }, [liveAuctions]);
+
   const handleSlideshowClick = (item) => {
     if (item?.auctionId) navigate(`/auction/${item.auctionId}`);
   };
 
   const AuctionCard = ({ auction }) => {
-    // 1) collect artworks that belong to this auction
-    const aId = auction?._id || auction?.id;
-    const aIdStr = toIdStr(aId);
+    const aIdStr = useMemo(
+      () => toIdStr(auction?._id || auction?.id),
+      [auction]
+    );
+
     const relatedArtworks = useMemo(() => {
-      if (!aId) return [];
+      if (!aIdStr) return [];
       return normalizedArtworks.filter(
         (aw) => toIdStr(aw.auctionId) === aIdStr
       );
-    }, [aIdStr]);
+    }, [aIdStr, normalizedArtworks]);
 
     // 2) choose one artwork deterministically and get its image
     let chosenArtwork = null;
@@ -189,28 +183,27 @@ const Home = () => {
       auction?.coverUrl ||
       "https://via.placeholder.com/800x400?text=Auction+Banner";
 
-    // ✅ Use helper from api.js
+    //  Use helper from api.js
     const { label } = getTimeLeft(auction?.endDate);
 
     return (
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="relative text-left border rounded-xl overflow-hidden bg-whiteWarm/50 shadow-sm hover:shadow-lg transition-all duration-300"
+        className="group relative block w-full p-0 appearance-none text-left overflow-hidden rounded-2xl border-2 border-black/10 bg-whiteWarm/50 shadow-sm hover:shadow-xl hover:border-black/70 transition-all duration-300 focus:outline-none"
         title="Zur Auktion"
       >
-        <div className="relative">
+        <div className="relative aspect-[16/9] w-full">
           <img
             src={cover}
             alt={auction?.title || "Auction banner"}
-            className="w-full h-40 object-cover"
+            className="absolute inset-0 w-full h-full object-cover block"
             onError={(e) => {
               e.currentTarget.src =
                 "https://via.placeholder.com/800x400?text=Auction+Banner";
             }}
           />
           <span
-            // ✅ Use helper from api.js
             className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
               auction?.status
             )}`}
@@ -218,6 +211,7 @@ const Home = () => {
             {auction?.status || "draft"}
           </span>
         </div>
+
         <div className="p-4 space-y-1">
           <h3 className="text-lg font-semibold text-black line-clamp-1">
             {auction?.title || "Ohne Titel"}
@@ -227,7 +221,7 @@ const Home = () => {
           </p>
           <div className="flex items-center justify-between text-xs text-gray-600 pt-1">
             <span>{label}</span>
-            {/* ✅ Use helper from api.js */}
+            {/* Use helper from api.js */}
             {auction?.endDate && <span>{formatDateTime(auction.endDate)}</span>}
           </div>
         </div>
@@ -275,7 +269,10 @@ const Home = () => {
       <section className="max-w-7xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold">Live Auktionen</h2>
+            <h2 className="text-2xl text-white font-bold">Live Auktionen</h2>
+            <p className="text-sm text-gray-300">
+              {liveAuctions.length} live · {allAuctions.length} gesamt
+            </p>
           </div>
         </div>
 
@@ -288,9 +285,9 @@ const Home = () => {
               />
             ))}
           </div>
-        ) : liveAuctions.length ? (
+        ) : latest4LiveAuctions.length ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {liveAuctions.map((a) => (
+            {latest4LiveAuctions.map((a) => (
               <AuctionCard key={a._id || a.id || Math.random()} auction={a} />
             ))}
           </div>
