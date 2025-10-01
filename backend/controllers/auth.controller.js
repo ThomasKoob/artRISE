@@ -19,9 +19,9 @@ const getCookieOptions = () => {
 const register = async (req, res, next) => {
   try {
     const { userName, email, password, avatarUrl, role } = req.body;
-    if (!userName || !email || !password || !avatarUrl) {
+    if (!userName || !email || !password) {
       return res.status(400).json({
-        message: "userName, email, password und avatarUrl sind Pflichtfelder",
+        message: "username, email und password sind Pflichtfelder",
       });
     }
     const emailExists = await User.exists({ email });
@@ -38,7 +38,6 @@ const register = async (req, res, next) => {
       userName,
       email,
       password: hashedPassword,
-      avatarUrl,
       role: role || "buyer",
     });
 

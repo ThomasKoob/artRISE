@@ -1,8 +1,7 @@
-// frontend/pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
-import { register, uploadToCloudinary } from "../api/api";
+import { register } from "../api/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -12,81 +11,14 @@ const SignUp = () => {
     userName: "",
     email: "",
     password: "",
-    avatarUrl: "",
     role: "buyer",
   });
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
 
   const handleChange = (e) => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
-
-  const processFile = (file) => {
-    if (!file) return;
-
-    const valid = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
-    if (!valid.includes(file.type)) {
-      setError(
-        "Bitte wähle ein gültiges Bildformat (JPEG, PNG, GIF oder WebP)"
-      );
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Die Datei ist zu groß. Maximum 5MB erlaubt.");
-      return;
-    }
-
-    setAvatarFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setAvatarPreview(reader.result);
-    reader.readAsDataURL(file);
-    setError("");
-  };
-
-  const handleFileChange = (e) => {
-    processFile(e.target.files[0]);
-  };
-
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processFile(files[0]);
-    }
-  };
-
-  // frontend/pages/SignUp.jsx (handleSubmit Funktion)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -94,23 +26,12 @@ const SignUp = () => {
     setLoading(true);
 
     try {
-      // 1) Avatar ggf. hochladen
-      let avatarUrl = formData.avatarUrl;
-      if (avatarFile) {
-        setUploadingAvatar(true);
-        avatarUrl = await uploadToCloudinary(avatarFile);
-        setUploadingAvatar(false);
-      }
-      if (!avatarUrl) {
-        throw new Error("Bitte wähle ein Profilbild aus");
-      }
-
-      // 2) Registrierung
+      // 1) Registrierung
       console.log("Registering user...");
-      await register({ ...formData, avatarUrl });
+      await register(formData);
       console.log("Registration successful");
 
-      // 3) Auto-Login
+      // 2) Auto-Login
       console.log("Attempting auto-login...");
       const userData = await login({
         email: formData.email,
@@ -118,7 +39,7 @@ const SignUp = () => {
       });
       console.log("Login successful:", userData);
 
-      // 4) Weiterleiten
+      // 3) Weiterleiten
       console.log("Redirecting to dashboard...");
       navigate("/dashboard");
     } catch (err) {
@@ -126,7 +47,6 @@ const SignUp = () => {
       setError(err.message || "Unbekannter Fehler");
     } finally {
       setLoading(false);
-      setUploadingAvatar(false);
     }
   };
 
@@ -207,73 +127,6 @@ const SignUp = () => {
             />
           </div>
 
-          {/* Avatar Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Profilbild
-            </label>
-
-            {avatarPreview && (
-              <div className="mb-3 flex justify-center">
-                <img
-                  src={avatarPreview}
-                  alt="Avatar Preview"
-                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
-                />
-              </div>
-            )}
-
-            <div
-              className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
-                isDragging
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 bg-gray-50 hover:bg-gray-100"
-              }`}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <label className="flex flex-col items-center justify-center w-full h-32 cursor-pointer">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 pointer-events-none">
-                  <svg
-                    className="w-8 h-8 mb-2 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <p className="mb-1 text-sm text-gray-500">
-                    <span className="font-semibold">Choose a file</span> or drag
-                    & drop it here
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    PNG, JPG, GIF oder WebP (MAX. 5MB)
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                  onChange={handleFileChange}
-                  required={!formData.avatarUrl}
-                />
-              </label>
-            </div>
-
-            {avatarFile && (
-              <p className="mt-2 text-sm text-green-600">
-                ✓ {avatarFile.name} ausgewählt
-              </p>
-            )}
-          </div>
-
           {/* Role */}
           <div>
             <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
@@ -293,10 +146,10 @@ const SignUp = () => {
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading || uploadingAvatar}
+            disabled={loading}
             className="w-full cursor-pointer bg-lightRedButton/80 hover:bg-lightRedButton text-darkBackground font-medium py-2.5 px-4 rounded-lg shadow-sm disabled:opacity-50 transition-colors"
           >
-            {uploadingAvatar ? "Bild wird hochgeladen..." : buttonConfig.text}
+            {buttonConfig.text}
           </button>
 
           <p className="text-center text-sm text-gray-600">

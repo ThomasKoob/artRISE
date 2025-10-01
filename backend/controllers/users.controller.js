@@ -17,7 +17,7 @@ export const createUser = async (req, res) => {
 
     if (!userName || !email || !password) {
       return res.status(400).json({
-        message: "userName, email, password und avatarUrl sind erforderlich",
+        message: "username, email und password sind erforderlich",
       });
     }
 

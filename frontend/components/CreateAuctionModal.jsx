@@ -8,7 +8,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const [auctionData, setAuctionData] = useState({
     title: "",
     description: "",
-    minIncrementDefault: 5,
+    avatarUrl: "",
     endDate: "",
   });
 
@@ -28,6 +28,12 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const [uploadingImages, setUploadingImages] = useState({});
   const [dragStates, setDragStates] = useState({});
 
+  // Avatar States
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarDragging, setAvatarDragging] = useState(false);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -44,6 +50,104 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         delete newErrors[field];
         return newErrors;
       });
+    }
+  };
+
+  // Avatar Handlers
+  const processAvatarFile = (file) => {
+    if (!file) return;
+
+    const valid = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (!valid.includes(file.type)) {
+      setErrors((p) => ({ ...p, avatar: "Ungültiges Bildformat" }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((p) => ({ ...p, avatar: "Datei zu groß (max. 5MB)" }));
+      return;
+    }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+    setErrors((p) => {
+      const newErrors = { ...p };
+      delete newErrors.avatar;
+      return newErrors;
+    });
+  };
+
+  const handleAvatarFileChange = (e) => {
+    processAvatarFile(e.target.files[0]);
+  };
+
+  const handleAvatarDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(true);
+  };
+
+  const handleAvatarDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(false);
+  };
+
+  const handleAvatarDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleAvatarDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      processAvatarFile(files[0]);
+    }
+  };
+
+  const uploadAvatar = async () => {
+    if (!avatarFile) return null;
+    setUploadingAvatar(true);
+
+    const formData = new FormData();
+    formData.append("file", avatarFile);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Cloudinary Error:", data);
+        throw new Error(data.error?.message || "Upload fehlgeschlagen");
+      }
+
+      return data.secure_url;
+    } catch (err) {
+      console.error("Upload Error:", err);
+      throw new Error(err.message || "Avatar-Upload fehlgeschlagen");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -68,7 +172,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const removeArtwork = (index) => {
     if (artworks.length > 1) {
       setArtworks((prev) => prev.filter((_, i) => i !== index));
-      // Cleanup states
       const newFiles = { ...imageFiles };
       const newPreviews = { ...imagePreviews };
       const newUploading = { ...uploadingImages };
@@ -216,6 +319,10 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     if (!auctionData.description.trim())
       newErrors.description = "Beschreibung ist erforderlich";
 
+    if (!auctionData.avatarUrl && !avatarFile) {
+      newErrors.avatar = "Avatar ist erforderlich";
+    }
+
     if (!auctionData.endDate) {
       newErrors.endDate = "Enddatum ist erforderlich";
     } else {
@@ -224,10 +331,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       if (endDate <= now) {
         newErrors.endDate = "Enddatum muss in der Zukunft liegen";
       }
-    }
-
-    if (auctionData.minIncrementDefault <= 0) {
-      newErrors.minIncrementDefault = "Mindestgebot muss größer als 0 sein";
     }
 
     setErrors(newErrors);
@@ -283,12 +386,17 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     setLoading(true);
 
     try {
-      // Upload aller Bilder zu Cloudinary
+      // 1. Avatar hochladen falls vorhanden
+      let avatarUrl = auctionData.avatarUrl;
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar();
+      }
+
+      // 2. Upload aller Bilder zu Cloudinary
       const uploadedArtworks = await Promise.all(
         artworks.map(async (artwork, idx) => {
           let imageUrl = artwork.images;
 
-          // Falls eine Datei ausgewählt wurde, hochladen
           if (imageFiles[idx]) {
             imageUrl = await uploadToCloudinary(idx);
           }
@@ -306,6 +414,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       const submitData = {
         auction: {
           ...auctionData,
+          avatarUrl,
           endDate: new Date(auctionData.endDate).toISOString(),
         },
         artworks: uploadedArtworks,
@@ -317,7 +426,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       setAuctionData({
         title: "",
         description: "",
-        minIncrementDefault: 5,
+        avatarUrl: "",
         endDate: "",
       });
       setArtworks([
@@ -334,6 +443,8 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       setImagePreviews({});
       setUploadingImages({});
       setDragStates({});
+      setAvatarFile(null);
+      setAvatarPreview(null);
       setCurrentStep(1);
       setErrors({});
       onClose();
@@ -349,13 +460,11 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl mx-4"
         onClick={(e) => e.stopPropagation()}
@@ -435,35 +544,77 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                 )}
               </div>
 
-              {/* Increment */}
+              {/* Avatar Upload */}
               <div>
-                <label
-                  htmlFor="minIncrementDefault"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Mindest-Increment (€)
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Profile Picture
                 </label>
-                <input
-                  type="number"
-                  id="minIncrementDefault"
-                  min="1"
-                  value={auctionData.minIncrementDefault}
-                  onChange={(e) =>
-                    handleAuctionChange(
-                      "minIncrementDefault",
-                      parseInt(e.target.value) || 0
-                    )
-                  }
-                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
-                    errors.minIncrementDefault
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
+
+                {avatarPreview && (
+                  <div className="mb-3 flex justify-center">
+                    <div className="relative">
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar Preview"
+                        className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAvatarFile(null);
+                          setAvatarPreview(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
+                    avatarDragging
+                      ? "border-blue-500 bg-blue-50"
+                      : errors.avatar
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300 bg-white hover:bg-gray-50"
                   }`}
-                />
-                {errors.minIncrementDefault && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {errors.minIncrementDefault}
+                  onDragEnter={handleAvatarDragEnter}
+                  onDragLeave={handleAvatarDragLeave}
+                  onDragOver={handleAvatarDragOver}
+                  onDrop={handleAvatarDrop}
+                >
+                  <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
+                    <div className="flex flex-col items-center justify-center pointer-events-none">
+                      <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                      <p className="mb-1 text-sm text-gray-600">
+                        <span className="font-semibold">Click</span> or drag
+                        picture here
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF, WebP (max. 5MB)
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleAvatarFileChange}
+                    />
+                  </label>
+                </div>
+
+                {avatarFile && (
+                  <p className="mt-2 text-xs text-green-600">
+                    ✓ {avatarFile.name} selected
                   </p>
+                )}
+                {uploadingAvatar && (
+                  <p className="mt-2 text-xs text-blue-600">Uploading...</p>
+                )}
+                {errors.avatar && (
+                  <p className="mt-2 text-xs text-red-600">{errors.avatar}</p>
                 )}
               </div>
 
@@ -753,7 +904,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               <button
                 onClick={handleSubmit}
                 disabled={
-                  loading || Object.values(uploadingImages).some((v) => v)
+                  loading ||
+                  uploadingAvatar ||
+                  Object.values(uploadingImages).some((v) => v)
                 }
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
               >
