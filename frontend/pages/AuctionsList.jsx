@@ -1,6 +1,8 @@
+// frontend/pages/AuctionsList.jsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import CountdownTimer from "../components/CountdownTimer";
+import { getAllAuctions, listFromApi } from "../api/api";
 
 const AuctionsList = () => {
   const [auctions, setAuctions] = useState([]);
@@ -10,27 +12,11 @@ const AuctionsList = () => {
   useEffect(() => {
     const fetchAuctions = async () => {
       try {
-        const url = "http://localhost:3001/api/auctions";
-        console.log("Fetching from:", url); // Debug log
-
-        const response = await fetch(url);
-        console.log("Response status:", response.status); // Debug log
-        console.log("Response ok:", response.ok); // Debug log
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("Raw result:", result); // Debug log
-
-        // Berücksichtigung der API Response Struktur
-        const data = result.success ? result.data : result;
-        console.log("Processed data:", data); // Debug log
-
+        const result = await getAllAuctions();
+        const data = listFromApi(result);
         setAuctions(data);
       } catch (err) {
-        console.error("Full error object:", err); // Debug log
+        console.error("Full error object:", err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -56,13 +42,7 @@ const AuctionsList = () => {
         </div>
         <div className="text-sm text-gray-600">
           <p>Debug info:</p>
-          <p>• Check if your backend server is running on port 3001</p>
-          <p>
-            • Try opening:{" "}
-            <a href="http://localhost:3001/api/auctions" className="link">
-              http://localhost:3001/api/auctions
-            </a>
-          </p>
+          <p>• Check if your backend server is running</p>
           <p>• Check browser console for more details</p>
         </div>
       </div>
@@ -84,7 +64,6 @@ const AuctionsList = () => {
               key={auction._id}
               className="card bg-base-100 shadow-md overflow-hidden"
             >
-              {/* Auction Banner Image */}
               {auction.bannerImageUrl && (
                 <figure className="h-48">
                   <img
@@ -105,7 +84,6 @@ const AuctionsList = () => {
                   {auction.description}
                 </p>
 
-                {/* Status Badge and Countdown */}
                 <div className="flex justify-between items-center mt-2">
                   <div className="flex gap-2">
                     {auction.status === "live" && (
@@ -119,19 +97,16 @@ const AuctionsList = () => {
                     )}
                   </div>
 
-                  {/* Countdown Timer */}
                   {auction.status !== "ended" && auction.endDate && (
                     <CountdownTimer
                       endDate={auction.endDate}
                       onExpired={() => {
-                        // Optional: Refresh auctions when one expires
                         console.log(`Auction ${auction._id} has ended`);
                       }}
                     />
                   )}
                 </div>
 
-                {/* Auction Details */}
                 <div className="text-sm text-gray-500 mt-3 space-y-1">
                   {auction.endDate && (
                     <p>

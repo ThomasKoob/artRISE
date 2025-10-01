@@ -1,10 +1,12 @@
+// frontend/components/ArtworkCard.jsx
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
+import { getArtworkOffers, createOffer } from "../api/api";
 
 export default function ArtworkCard({
   artwork: initialArtwork,
   onBidSuccess,
-  variant = "default", // "default" | "compact"
+  variant = "default",
 }) {
   const [artwork, setArtwork] = useState(initialArtwork);
   const [offers, setOffers] = useState([]);
@@ -17,17 +19,12 @@ export default function ArtworkCard({
   const [loadingOffers, setLoadingOffers] = useState(false);
 
   const { user, openLogin } = useLoginModal();
-
-  // Nur Käufer dürfen Herz + Bieten sehen
   const isBuyer = !!user && user.role === "buyer";
   const isCompact = variant === "compact";
 
-  // Aktueller Preis (höchstes Gebot oder Startpreis)
   const currentPrice = artwork.price || artwork.startPrice || 0;
   const highestBid = offers.length > 0 ? offers[0].amount : 0;
   const displayPrice = Math.max(currentPrice, highestBid);
-
-  // Mindest-Gebot berechnen
   const minBid = displayPrice + (artwork.minIncrement || 5);
 
   // Aktuelle Gebote laden
@@ -36,25 +33,19 @@ export default function ArtworkCard({
 
     setLoadingOffers(true);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/offers/artwork/${artwork._id}`,
-        { credentials: "include" }
-      );
+      const data = await getArtworkOffers(artwork._id);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-           const sorted = [...(data.offers || [])].sort(
-            (a, b) => (b.amount || 0) - (a.amount || 0)
-          );
-          setOffers(sorted);
-          // Update artwork price if we got new info
-          if (data.stats?.highestBid > 0) {
-            setArtwork((prev) => ({
-              ...prev,
-              price: data.stats.highestBid,
-            }));
-          }
+      if (data.success) {
+        const sorted = [...(data.offers || [])].sort(
+          (a, b) => (b.amount || 0) - (a.amount || 0)
+        );
+        setOffers(sorted);
+
+        if (data.stats?.highestBid > 0) {
+          setArtwork((prev) => ({
+            ...prev,
+            price: data.stats.highestBid,
+          }));
         }
       }
     } catch (error) {
@@ -69,7 +60,6 @@ export default function ArtworkCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artwork._id]);
 
-  // Hat aktueller Nutzer bereits geboten?
   const userBid = user
     ? offers.find(
         (offer) => offer.userId?._id === user._id || offer.userId === user._id
@@ -98,34 +88,17 @@ export default function ArtworkCard({
     setBidError("");
 
     try {
-      const response = await fetch("http://localhost:3001/api/offers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          artworkId: artwork._id,
-          userId: user._id,
-          amount,
-        }),
+      const data = await createOffer({
+        artworkId: artwork._id,
+        userId: user._id,
+        amount,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || data.message || "Gebot fehlgeschlagen");
-      }
-
-      // Erfolg
       setBidSuccess(true);
       setBidAmount("");
       setShowBidForm(false);
-
-      // Reload offers to show updated state
       await fetchOffers();
-
-      // Parent informieren
       onBidSuccess?.(data.offer, artwork);
-
       setTimeout(() => setBidSuccess(false), 2500);
     } catch (error) {
       setBidError(error.message);
@@ -164,7 +137,7 @@ export default function ArtworkCard({
         <figure>
           <img
             src={
-             Array.isArray(artwork.images)
+              Array.isArray(artwork.images)
                 ? artwork.images[0]
                 : artwork.images || "https://via.placeholder.com/400x300"
             }
@@ -324,7 +297,6 @@ export default function ArtworkCard({
               Ansehen
             </button>
 
-            {/* Bid Button – nur Buyer & aktive Auktion */}
             {isAuctionActive && isBuyer && !showBidForm && (
               <button
                 onClick={() => {

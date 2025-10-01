@@ -4,7 +4,7 @@ export const registerSchema = z.object({
   userName: z.string().min(3).max(30),
   email: z.string().email(),
   password: z.string().min(6),
-  avatarUrl: z.string().url(),
+  avatarUrl: z.string().url().optional(),
   role: z.enum(["artist", "buyer", "admin"]).optional(),
 });
 

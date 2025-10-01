@@ -17,15 +17,14 @@ const port = process.env.PORT || 3001;
 // CORS Configuration für Production
 const corsOptions = {
   origin: function (origin, callback) {
-    // Erlaubte Origins aus Environment Variable + localhost für Development
     const allowedOrigins = [
       process.env.CLIENT_URL,
       "http://localhost:5173",
       "http://localhost:3000",
-      "http://localhost:5174", // Vite alternative port
+      "http://localhost:5174",
     ].filter(Boolean);
 
-    // Erlaube Requests ohne Origin (z.B. Postman, Mobile Apps)
+    // ✅ Wichtig: Erlaube Requests ohne Origin (Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
@@ -35,10 +34,10 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,
+  credentials: true, // ✅ Wichtig!
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  maxAge: 86400, // 24 Stunden Cache für CORS Preflight
+  maxAge: 86400,
 };
 
 app.use(cors(corsOptions));

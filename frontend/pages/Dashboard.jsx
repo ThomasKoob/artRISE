@@ -1,45 +1,33 @@
+// frontend/pages/Dashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 import CreateAuctionModal from "../components/CreateAuctionModal.jsx";
 import CreateArtworkModal from "../components/CreateArtworkModal.jsx";
-
-// Import the new dashboard components
 import AdminDashboard from "../components/AdminDashboard.jsx";
 import SellerDashboard from "../components/SellerDashboard.jsx";
 import BuyerDashboard from "../components/BuyerDashboard.jsx";
 
-const API_BASE = "http://localhost:3001";
-
-const fetchJson = async (url, opts) => {
-  const res = await fetch(url, { credentials: "include", ...(opts || {}) });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.message || `HTTP ${res.status}`);
-  return json;
-};
-
-const listFromApi = (p) => {
-  if (Array.isArray(p)) return p;
-  if (Array.isArray(p?.data)) return p.data;
-  if (Array.isArray(p?.items)) return p.items;
-  return [];
-};
-
-const idOf = (v) => v?._id || v?.id || (typeof v === "string" ? v : null);
+// Import API functions
+import {
+  getMyAuctions,
+  getMyOffers,
+  getAllUsers,
+  getAllAuctions,
+  createAuction,
+  createArtwork,
+  deleteAuction,
+  listFromApi,
+  idOf,
+} from "../api/api";
 
 export default function Dashboard() {
   const { user, isInitializing } = useLoginModal();
 
   const [loading, setLoading] = useState(true);
-
-  // seller/artist
   const [myAuctionsRaw, setMyAuctionsRaw] = useState([]);
   const [showCreateAuction, setShowCreateAuction] = useState(false);
   const [showCreateArtwork, setShowCreateArtwork] = useState(false);
-
-  // buyer
   const [myOffers, setMyOffers] = useState([]);
-
-  // admin
   const [allUsers, setAllUsers] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
 
@@ -51,11 +39,11 @@ export default function Dashboard() {
       setLoading(true);
       try {
         if (user.role === "seller" || user.role === "artist") {
-          const raw = await fetchJson(`${API_BASE}/api/auctions/me`);
+          const raw = await getMyAuctions();
           const list = listFromApi(raw);
           if (!cancelled) setMyAuctionsRaw(list);
         } else if (user.role === "buyer") {
-          const raw = await fetchJson(`${API_BASE}/api/offers/me`);
+          const raw = await getMyOffers();
           let offers = listFromApi(raw);
           const uid = idOf(user);
           if (uid) {
@@ -70,10 +58,7 @@ export default function Dashboard() {
           }
           if (!cancelled) setMyOffers(offers);
         } else if (user.role === "admin") {
-          const [u, a] = await Promise.all([
-            fetchJson(`${API_BASE}/api/users`),
-            fetchJson(`${API_BASE}/api/auctions`),
-          ]);
+          const [u, a] = await Promise.all([getAllUsers(), getAllAuctions()]);
           if (!cancelled) {
             setAllUsers(listFromApi(u));
             setAllAuctions(listFromApi(a));
@@ -98,7 +83,6 @@ export default function Dashboard() {
     };
   }, [user]);
 
-  // hard filter by artistId === current user
   const myAuctions = useMemo(() => {
     if (!user) return [];
     const uid = idOf(user);
@@ -133,15 +117,12 @@ export default function Dashboard() {
   }, [myAuctions, now]);
 
   const handleCreateAuction = async ({ auction, artworks }) => {
-    const created = await fetchJson(`${API_BASE}/api/auctions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...auction,
-        artistId: idOf(user),
-        endDate: new Date(auction.endDate).toISOString(),
-      }),
+    const created = await createAuction({
+      ...auction,
+      artistId: idOf(user),
+      endDate: new Date(auction.endDate).toISOString(),
     });
+
     const createdAuction = created?.data || created;
     const auctionId = idOf(createdAuction);
     if (!auctionId) throw new Error("Keine Auction-ID erhalten");
@@ -149,24 +130,20 @@ export default function Dashboard() {
     if (Array.isArray(artworks) && artworks.length) {
       await Promise.all(
         artworks.map((aw) =>
-          fetchJson(`${API_BASE}/api/artworks`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...aw,
-              startPrice: parseFloat(aw.startPrice),
-              endPrice: parseFloat(aw.endPrice),
-              price: parseFloat(aw.price || aw.startPrice),
-              currency: aw.currency || "EUR",
-              endDate: new Date(auction.endDate).toISOString(),
-              auctionId,
-            }),
+          createArtwork({
+            ...aw,
+            startPrice: parseFloat(aw.startPrice),
+            endPrice: parseFloat(aw.endPrice),
+            price: parseFloat(aw.price || aw.startPrice),
+            currency: aw.currency || "EUR",
+            endDate: new Date(auction.endDate).toISOString(),
+            auctionId,
           })
         )
       );
     }
 
-    const raw = await fetchJson(`${API_BASE}/api/auctions/me`);
+    const raw = await getMyAuctions();
     setMyAuctionsRaw(listFromApi(raw));
     setShowCreateAuction(false);
     alert("✅ Auktion erstellt");
@@ -175,34 +152,29 @@ export default function Dashboard() {
   const handleDeleteAuction = async (auction) => {
     if (!auction?._id) return;
     if (!window.confirm(`"${auction.title}" löschen?`)) return;
-    await fetchJson(`${API_BASE}/api/auctions/${auction._id}`, {
-      method: "DELETE",
-    });
+
+    await deleteAuction(auction._id);
     setMyAuctionsRaw((prev) => prev.filter((a) => a._id !== auction._id));
   };
 
   const handleCreateArtwork = async (auctionId, artworks) => {
     if (!auctionId || !Array.isArray(artworks) || !artworks.length) return;
+
     await Promise.all(
       artworks.map((aw) =>
-        fetchJson(`${API_BASE}/api/artworks`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...aw,
-            startPrice: parseFloat(aw.startPrice),
-            endPrice: parseFloat(aw.endPrice),
-            price: parseFloat(aw.price || aw.startPrice),
-            currency: aw.currency || "EUR",
-            auctionId,
-          }),
+        createArtwork({
+          ...aw,
+          startPrice: parseFloat(aw.startPrice),
+          endPrice: parseFloat(aw.endPrice),
+          price: parseFloat(aw.price || aw.startPrice),
+          currency: aw.currency || "EUR",
+          auctionId,
         })
       )
     );
     alert("✅ Kunstwerk(e) hinzugefügt");
   };
 
-  // Loading and Authentication States
   if (isInitializing) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -232,7 +204,6 @@ export default function Dashboard() {
     );
   }
 
-  // Render appropriate dashboard based on user role
   const renderDashboardByRole = () => {
     switch (user.role) {
       case "admin":
@@ -266,7 +237,6 @@ export default function Dashboard() {
         {renderDashboardByRole()}
       </div>
 
-      {/* Modals for Seller/Artist */}
       {(user.role === "seller" || user.role === "artist") && (
         <>
           <CreateAuctionModal

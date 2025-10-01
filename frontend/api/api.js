@@ -1,0 +1,378 @@
+// frontend/api/api.js
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV
+    ? "http://localhost:3001"
+    : "https://popauc.onrender.com");
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Generic fetch wrapper with error handling
+ */
+export async function fetchJson(endpoint, options = {}) {
+  const url = endpoint.startsWith("http") ? endpoint : `${API_URL}${endpoint}`;
+
+  const config = {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  const response = await fetch(url, config);
+  const json = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(json?.message || `HTTP ${response.status}`);
+  }
+
+  return json;
+}
+
+/**
+ * Extract array from various API response formats
+ */
+export function listFromApi(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+}
+
+/**
+ * Extract ID from various object formats
+ */
+export function idOf(value) {
+  return value?._id || value?.id || (typeof value === "string" ? value : null);
+}
+
+// ============================================
+// AUCTIONS API
+// ============================================
+
+/**
+ * Get all auctions
+ */
+export async function getAllAuctions() {
+  return fetchJson("/api/auctions");
+}
+
+/**
+ * Get single auction by ID
+ */
+export async function getAuctionById(auctionId) {
+  return fetchJson(`/api/auctions/${auctionId}`);
+}
+
+/**
+ * Get artworks for a specific auction
+ */
+export async function getAuctionArtworks(auctionId) {
+  return fetchJson(`/api/auctions/${auctionId}/artworks`);
+}
+
+/**
+ * Get current user's auctions (seller/artist only)
+ */
+export async function getMyAuctions() {
+  return fetchJson("/api/auctions/me");
+}
+
+/**
+ * Create new auction
+ */
+export async function createAuction(auctionData) {
+  return fetchJson("/api/auctions", {
+    method: "POST",
+    body: JSON.stringify(auctionData),
+  });
+}
+
+/**
+ * Update auction
+ */
+export async function updateAuction(auctionId, auctionData) {
+  return fetchJson(`/api/auctions/${auctionId}`, {
+    method: "PUT",
+    body: JSON.stringify(auctionData),
+  });
+}
+
+/**
+ * Delete auction
+ */
+export async function deleteAuction(auctionId) {
+  return fetchJson(`/api/auctions/${auctionId}`, {
+    method: "DELETE",
+  });
+}
+
+// ============================================
+// ARTWORKS API
+// ============================================
+
+/**
+ * Get all artworks
+ */
+export async function getAllArtworks() {
+  return fetchJson("/api/artworks");
+}
+
+/**
+ * Get single artwork by ID
+ */
+export async function getArtworkById(artworkId) {
+  return fetchJson(`/api/artworks/${artworkId}`);
+}
+
+/**
+ * Create new artwork
+ */
+export async function createArtwork(artworkData) {
+  return fetchJson("/api/artworks", {
+    method: "POST",
+    body: JSON.stringify(artworkData),
+  });
+}
+
+/**
+ * Update artwork
+ */
+export async function updateArtwork(artworkId, artworkData) {
+  return fetchJson(`/api/artworks/${artworkId}`, {
+    method: "PUT",
+    body: JSON.stringify(artworkData),
+  });
+}
+
+/**
+ * Delete artwork
+ */
+export async function deleteArtwork(artworkId) {
+  return fetchJson(`/api/artworks/${artworkId}`, {
+    method: "DELETE",
+  });
+}
+
+// ============================================
+// BIDS/OFFERS API
+// ============================================
+
+/**
+ * Get current user's offers/bids
+ */
+export async function getMyOffers() {
+  return fetchJson("/api/offers/me");
+}
+
+/**
+ * Get all offers for a specific artwork
+ */
+export async function getArtworkOffers(artworkId) {
+  return fetchJson(`/api/offers/artwork/${artworkId}`);
+}
+
+/**
+ * Create/place an offer
+ */
+export async function createOffer(offerData) {
+  return fetchJson("/api/offers", {
+    method: "POST",
+    body: JSON.stringify(offerData),
+  });
+}
+
+/**
+ * Update an existing offer (raise bid)
+ */
+export async function updateOffer(offerId, offerData) {
+  return fetchJson(`/api/offers/${offerId}`, {
+    method: "PUT",
+    body: JSON.stringify(offerData),
+  });
+}
+
+/**
+ * Place a bid on an artwork (alternative endpoint)
+ */
+export async function placeBid(artworkId, bidData) {
+  return fetchJson(`/api/artworks/${artworkId}/bids`, {
+    method: "POST",
+    body: JSON.stringify(bidData),
+  });
+}
+
+// ============================================
+// USERS API
+// ============================================
+
+/**
+ * Get all users (admin only)
+ */
+export async function getAllUsers() {
+  return fetchJson("/api/users");
+}
+
+/**
+ * Get user by ID
+ */
+export async function getUserById(userId) {
+  return fetchJson(`/api/users/${userId}`);
+}
+
+/**
+ * Update user
+ */
+export async function updateUser(userId, userData) {
+  return fetchJson(`/api/users/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify(userData),
+  });
+}
+
+/**
+ * Delete user
+ */
+export async function deleteUser(userId) {
+  return fetchJson(`/api/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
+// ============================================
+// AUTH API
+// ============================================
+
+/**
+ * Register new user
+ */
+export async function register(userData) {
+  return fetchJson("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(userData),
+  });
+}
+
+/**
+ * Login user
+ */
+export async function login(credentials) {
+  return fetchJson("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
+  });
+}
+
+/**
+ * Logout user
+ */
+export async function logout() {
+  return fetchJson("/api/auth/logout", {
+    method: "POST",
+  });
+}
+
+/**
+ * Get current user
+ */
+export async function getCurrentUser() {
+  return fetchJson("/api/auth/me");
+}
+
+// ============================================
+// CLOUDINARY HELPER
+// ============================================
+
+/**
+ * Upload image to Cloudinary
+ */
+export async function uploadToCloudinary(
+  file,
+  cloudName = "dhomuf4kg",
+  uploadPreset = "react_upload"
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.error?.message || "Upload zu Cloudinary fehlgeschlagen"
+    );
+  }
+
+  return data.secure_url;
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Format date/time in German locale
+ */
+export function formatDateTime(dateStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleString("de-DE");
+}
+
+/**
+ * Get time remaining until end date
+ */
+export function getTimeLeft(endDate) {
+  if (!endDate) return { label: "—", ended: false };
+
+  const end = new Date(endDate).getTime();
+  const now = Date.now();
+  const diff = end - now;
+
+  if (diff <= 0) return { label: "Beendet", ended: true };
+
+  const mins = Math.floor(diff / 60000);
+  const days = Math.floor(mins / (60 * 24));
+  const hours = Math.floor((mins % (60 * 24)) / 60);
+  const minutes = mins % 60;
+
+  const parts = [];
+  if (days) parts.push(`${days}d`);
+  if (hours) parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+
+  return { label: `Noch ${parts.join(" ")}`, ended: false };
+}
+
+/**
+ * Get status badge color classes
+ */
+export function getStatusBadgeClass(status = "draft") {
+  const s = String(status || "").toLowerCase();
+  switch (s) {
+    case "live":
+    case "active":
+    case "open":
+      return "bg-green-100 text-green-800";
+    case "upcoming":
+      return "bg-blue-100 text-blue-800";
+    case "ended":
+    case "closed":
+      return "bg-gray-200 text-gray-700";
+    default:
+      return "bg-amber-100 text-amber-800";
+  }
+}
