@@ -1,7 +1,16 @@
 // components/NavBar.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { Menu, MoreVertical, LogOut, LogIn, UserPlus, User, ChevronDown, X } from "lucide-react";
+import {
+  Menu,
+  MoreVertical,
+  LogOut,
+  LogIn,
+  UserPlus,
+  User,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
 /** DE: Kleine Hilfsfunktion zum Schließen per Klick außerhalb */
@@ -28,7 +37,8 @@ const NavBar = () => {
 
   // DE: Beim Navigieren das Mobile-Menü schließen (optional)
   useEffect(() => {
-    const closeOnEsc = (e) => e.key === "Escape" && (setMobileOpen(false), setUserMenuOpen(false));
+    const closeOnEsc = (e) =>
+      e.key === "Escape" && (setMobileOpen(false), setUserMenuOpen(false));
     window.addEventListener("keydown", closeOnEsc);
     return () => window.removeEventListener("keydown", closeOnEsc);
   }, []);
@@ -38,10 +48,10 @@ const NavBar = () => {
   const isAdmin = user?.role === "admin";
 
   return (
-    <nav className="bg-darkBackground/90 sticky top-0 z-50 shadow-md">
+    <nav className="bg-darkBackground/90 border-b-2 border-black/50 sticky top-0 z-50 shadow-md">
       {/* TOP BAR */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4">
-        <div className="h-16 flex items-center justify-between">
+        <div className="h-16 p-4 flex items-center justify-between">
           {/* Left: Logo + Desktop Links */}
           <div className="flex items-center gap-4">
             {/* Hamburger (nur mobil) */}
@@ -53,21 +63,25 @@ const NavBar = () => {
               aria-expanded={mobileOpen}
               title="Menü"
             >
-              {mobileOpen ? <X size={22} className="text-coldYellow" /> : <Menu size={22} className="text-coldYellow" />}
+              {mobileOpen ? (
+                <X size={22} className="text-coldYellow" />
+              ) : (
+                <Menu size={22} className="text-coldYellow" />
+              )}
             </button>
 
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <div className="ml-2 font-light text-3xl sm:text-4xl text-backgroundColor">
-                artRISE
+              <div className="ml-2 font-light text-3xl sm:text-4xl hover:text- text-whiteLetter font-sans">
+                popAUC
               </div>
             </Link>
 
             {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-6 ml-6 text-e99f4c font-sans text-xl font-extralight">
+            <div className="hidden md:flex items-center gap-6 ml-6 text-e99f4c font-sans text-whiteLetter text-xl font-extralight">
               <Link
                 to="/"
-                className="hover:text-coldYellow rounded-xl transition-colors"
+                className="hover:text-buttonPink/70 rounded-xl transition-colors"
               >
                 Home
               </Link>
@@ -82,7 +96,7 @@ const NavBar = () => {
           </div>
 
           {/* Right: Auth & User-Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex p- items-center gap-2 sm:gap-3">
             {isInitializing ? (
               <div className="px-3 py-2 text-gray-400 text-sm">Laden…</div>
             ) : !user ? (
@@ -90,7 +104,7 @@ const NavBar = () => {
               <>
                 <Link
                   to="/signup"
-                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
+                  className="hidden  sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border-2 border-darkBackground  hover:bg-buttonPink font-extralight shadow-md transition"
                 >
                   <UserPlus size={18} className="mr-1" />
                   SignUp
@@ -147,7 +161,7 @@ const NavBar = () => {
                 {/* Dashboard (Desktop) */}
                 <Link
                   to="/dashboard"
-                  className="hidden sm:inline-flex px-3 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white transition"
+                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
                 >
                   <User size={16} className="mr-1" />
                   Dashboard
@@ -169,7 +183,8 @@ const NavBar = () => {
                     <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-lg border border-gray-200 py-1">
                       {/* Rolle anzeigen */}
                       <div className="px-3 py-2 text-xs text-gray-500 border-b">
-                        Angemeldet als <span className="font-medium">{user.role}</span>
+                        Angemeldet als{" "}
+                        <span className="font-medium">{user.role}</span>
                       </div>
                       <Link
                         to="/dashboard"
@@ -296,7 +311,10 @@ const NavBar = () => {
             {!isInitializing && user && (
               <>
                 <div className="px-3 py-2 text-sm text-white/70">
-                  Eingeloggt als <span className="font-medium">{user.userName || user.email}</span>
+                  Eingeloggt als{" "}
+                  <span className="font-medium">
+                    {user.userName || user.email}
+                  </span>
                   <div className="text-xs opacity-80">Rolle: {user.role}</div>
                 </div>
                 <Link

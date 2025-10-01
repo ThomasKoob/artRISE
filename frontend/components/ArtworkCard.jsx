@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
-
-
 export default function ArtworkCard({
   artwork: initialArtwork,
   onBidSuccess,
@@ -152,21 +150,21 @@ export default function ArtworkCard({
   const isAuctionEnded =
     artwork.status === "ended" || artwork.status === "canceled";
 
- 
   return (
     <>
       {/* Card */}
       <div
-        className={`card bg-black/50 border-20 border-black/50 ${
+        className={`card bg-black/30 border-10 border-black ${
           isCompact ? "w-64" : "w-80"
         } shadow-md rounded-2xl relative`}
       >
-       
         <figure>
           <img
             src={artwork.images || "https://via.placeholder.com/400x300"}
             alt={artwork.title}
-            className={`${isCompact ? "h-44" : "h-60"} w-full object-cover rounded-t-lg`}
+            className={`${
+              isCompact ? "h-44" : "h-60"
+            } w-full object-cover rounded-t-lg`}
             onError={(e) => {
               e.currentTarget.src =
                 "https://via.placeholder.com/400x300?text=Artwork";
@@ -175,7 +173,11 @@ export default function ArtworkCard({
         </figure>
 
         <div className="card-body">
-          <h2 className={`card-title ${isCompact ? "text-base" : "text-lg"} font-extralight font-sans`}>
+          <h2
+            className={`card-title ${
+              isCompact ? "text-base" : "text-lg"
+            } font-extralight font-sans`}
+          >
             {artwork.title}
             <span className={`badge ${getStatusColor(artwork.status)}`}>
               {artwork.status === "live" && "Live"}
@@ -194,10 +196,14 @@ export default function ArtworkCard({
           {/* Preis-Information */}
           <div className="mt-2">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-gray-200">
+              <span className="text-sm font-semibold text-whiteLetter">
                 Aktueller Preis:
               </span>
-              <span className={`badge badge-outline font-bold ${isCompact ? "text-base" : "text-lg"}`}>
+              <span
+                className={`badge badge-outline font-bold ${
+                  isCompact ? "text-base" : "text-lg"
+                }`}
+              >
                 {displayPrice.toLocaleString("de-DE")}{" "}
                 {artwork.currency || "EUR"}
               </span>
@@ -207,7 +213,6 @@ export default function ArtworkCard({
               <div className="text-xs text-gray-400 space-y-1">
                 <div className="flex justify-between">
                   <span>Start: {artwork.startPrice} €</span>
-                 
                 </div>
                 <div className="flex justify-between">
                   <span>Gebote: {offers.length}</span>
@@ -225,9 +230,12 @@ export default function ArtworkCard({
           {!isCompact && offers.length > 0 && (
             <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
               <div className="flex justify-between items-center">
-                <span className="text-green-700 font-medium">Höchstes Gebot:</span>
+                <span className="text-green-700 font-medium">
+                  Höchstes Gebot:
+                </span>
                 <span className="text-green-800 font-bold">
-                  {offers[0].amount} € von {offers[0].userId?.userName || "Anonym"}
+                  {offers[0].amount} € von{" "}
+                  {offers[0].userId?.userName || "Anonym"}
                 </span>
               </div>
             </div>
@@ -327,7 +335,9 @@ export default function ArtworkCard({
               </button>
             )}
 
-            {isAuctionEnded && <span className="badge badge-error">Beendet</span>}
+            {isAuctionEnded && (
+              <span className="badge badge-error">Beendet</span>
+            )}
             {!isAuctionActive && !isAuctionEnded && (
               <span className="badge badge-warning">Nicht aktiv</span>
             )}
@@ -338,14 +348,14 @@ export default function ArtworkCard({
       {/* Modal für Vollbild-Ansicht */}
       {open && (
         <div
-          className="fixed border-2 inset-0 bg-black/70 flex items-center justify-center z-50"
+          className="fixed border-2 inset-0 bg-black/90 flex items-center justify-center z-50"
           onClick={() => setOpen(false)}
         >
-          <div className="max-w-4xl max-h-[90vh] p-4 relative">
+          <div className="max-w-3xl max-h-[90vh] rounded-2xl border-50 border-black/80 relative">
             <img
               src={artwork.images}
               alt={artwork.title}
-              className="rounded-lg shadow-lg max-h-[80vh] object-contain"
+              className="rounded-lg shadow-lg max-h-[80vh] object-contain w-full"
             />
 
             {/* Close Button */}
@@ -357,12 +367,13 @@ export default function ArtworkCard({
             </button>
 
             {/* Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg from-black/80 to-transparent p-6 text-white rounded-b-lg">
-              <h3 className="text-xl font-bold mb-2">{artwork.title}</h3>
+            <div className="absolute bottom-0 left-0 right-0 bg from-black/80 to-transparent p-6 font-sans font-extralight text-white rounded-b-lg">
+              <h3 className="text-xl font-ext mb-2">{artwork.title}</h3>
               <p className="text-sm opacity-90 mb-2">{artwork.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold">
-                  {displayPrice.toLocaleString("de-DE")} {artwork.currency || "EUR"}
+                  {displayPrice.toLocaleString("de-DE")}{" "}
+                  {artwork.currency || "EUR"}
                 </span>
                 <div className="flex gap-2 items-center">
                   <span className="text-sm">

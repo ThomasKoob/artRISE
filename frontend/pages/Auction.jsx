@@ -89,7 +89,7 @@ const Auction = () => {
 
   if (error) {
     return (
-      <div className="p-8">
+      <div className="p-8 gap-4">
         <div className="alert alert-error mb-4">
           <span>Error loading auction: {error}</span>
         </div>
