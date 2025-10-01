@@ -44,7 +44,10 @@ export default function ArtworkCard({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setOffers(data.offers || []);
+           const sorted = [...(data.offers || [])].sort(
+            (a, b) => (b.amount || 0) - (a.amount || 0)
+          );
+          setOffers(sorted);
           // Update artwork price if we got new info
           if (data.stats?.highestBid > 0) {
             setArtwork((prev) => ({
@@ -160,7 +163,11 @@ export default function ArtworkCard({
       >
         <figure>
           <img
-            src={artwork.images || "https://via.placeholder.com/400x300"}
+            src={
+             Array.isArray(artwork.images)
+                ? artwork.images[0]
+                : artwork.images || "https://via.placeholder.com/400x300"
+            }
             alt={artwork.title}
             className={`${
               isCompact ? "h-44" : "h-60"
