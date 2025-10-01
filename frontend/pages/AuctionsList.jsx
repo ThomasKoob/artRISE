@@ -1,20 +1,34 @@
 // frontend/pages/AuctionsList.jsx
-import { useState, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import CountdownTimer from "../components/CountdownTimer";
-import { getAllAuctions, listFromApi } from "../api/api";
+import {
+  getAllAuctions,
+  getAllArtworks,
+  listFromApi,
+  getFirstImageUrl,
+  toIdStr,
+  getStatusBadgeClass,
+} from "../api/api";
 
 const AuctionsList = () => {
   const [auctions, setAuctions] = useState([]);
+  const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const randomIndexMapRef = useRef(new Map());
+
   useEffect(() => {
-    const fetchAuctions = async () => {
+    const fetchAll = async () => {
       try {
-        const result = await getAllAuctions();
-        const data = listFromApi(result);
-        setAuctions(data);
+        setLoading(true);
+        const [auctionsRaw, artworksRaw] = await Promise.all([
+          getAllAuctions(),
+          getAllArtworks(), // NEW
+        ]);
+        setAuctions(listFromApi(auctionsRaw));
+        setArtworks(listFromApi(artworksRaw)); // NEW
       } catch (err) {
         console.error("Full error object:", err);
         setError(err.message);
@@ -22,9 +36,21 @@ const AuctionsList = () => {
         setLoading(false);
       }
     };
-
-    fetchAuctions();
+    fetchAll();
   }, []);
+
+  const normalizedArtworks = useMemo(() => {
+    return artworks.map((a) => {
+      const aid =
+        a?.auctionId ||
+        a?.auction?.id ||
+        a?.auction?._id ||
+        a?.auctionId?._id ||
+        a?.auctionID ||
+        null;
+      return { ...a, auctionId: toIdStr(aid) };
+    });
+  }, [artworks]);
 
   if (loading) {
     return (
@@ -49,6 +75,44 @@ const AuctionsList = () => {
     );
   }
 
+  const getCoverForAuction = (auction) => {
+    const aIdStr = toIdStr(auction?._id || auction?.id);
+    if (!aIdStr) {
+      return (
+        getFirstImageUrl(auction) ||
+        auction?.bannerImageUrl ||
+        auction?.image ||
+        auction?.imageUrl ||
+        auction?.coverUrl ||
+        "https://via.placeholder.com/800x400?text=Auction+Banner"
+      );
+    }
+
+    const rel = normalizedArtworks.filter(
+      (aw) => toIdStr(aw.auctionId) === aIdStr
+    );
+
+    let chosen = null;
+    if (rel.length) {
+      const map = randomIndexMapRef.current;
+      if (!map.has(aIdStr)) {
+        map.set(aIdStr, Math.floor(Math.random() * rel.length));
+      }
+      const idx = map.get(aIdStr) % rel.length;
+      chosen = rel[idx];
+    }
+
+    return (
+      getFirstImageUrl(chosen) ||
+      getFirstImageUrl(auction) ||
+      auction?.bannerImageUrl ||
+      auction?.image ||
+      auction?.imageUrl ||
+      auction?.coverUrl ||
+      "https://via.placeholder.com/800x400?text=Auction+Banner"
+    );
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-4">
       <h1 className="text-3xl font-bold mb-8">All Auctions</h1>
@@ -61,22 +125,27 @@ const AuctionsList = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {auctions.map((auction) => (
             <div
-              key={auction._id}
+              key={auction._id || auction.id}
               className="card bg-base-100 shadow-md overflow-hidden"
             >
-              {auction.bannerImageUrl && (
-                <figure className="h-48">
-                  <img
-                    src={auction.bannerImageUrl}
-                    alt={auction.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/400x200?text=No+Image";
-                    }}
-                  />
-                </figure>
-              )}
+              <figure className="h-48 relative">
+                <img
+                  src={getCoverForAuction(auction)}
+                  alt={auction.title || "Auction banner"}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "https://via.placeholder.com/800x400?text=Auction+Banner";
+                  }}
+                />
+                <span
+                  className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                    auction?.status
+                  )}`}
+                >
+                  {auction?.status || "draft"}
+                </span>
+              </figure>
 
               <div className="card-body">
                 <h2 className="card-title text-lg">{auction.title}</h2>
