@@ -1,7 +1,7 @@
 // frontend/components/ArtworkCard.jsx
 import { useState, useEffect } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
-import { getArtworkOffers, createOffer, getFirstImageUrl } from "../api/api";
+import { getArtworkOffers, createOffer,  getFirstImageUrl } from "../api/api";
 
 export default function ArtworkCard({
   artwork: initialArtwork,
@@ -16,7 +16,9 @@ export default function ArtworkCard({
   const [submitting, setSubmitting] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [bidError, setBidError] = useState("");
-  const [setLoadingOffers] = useState(false);
+ const [loadingOffers, setLoadingOffers] = useState(false);
+
+
 
   const { user, openLogin } = useLoginModal();
   const isBuyer = !!user && user.role === "buyer";
@@ -136,9 +138,7 @@ export default function ArtworkCard({
       >
         <figure>
           <img
-            src={
-              getFirstImageUrl(artwork) || "https://via.placeholder.com/400x300"
-            }
+   src={getFirstImageUrl(artwork) || "https://via.placeholder.com/400x300"}
             alt={artwork.title}
             className={`${
               isCompact ? "h-44" : "h-60"
@@ -323,55 +323,92 @@ export default function ArtworkCard({
       </div>
 
       {/* Modal für Vollbild-Ansicht */}
-      {open && (
-        <div
-          className="fixed border-2 inset-0 bg-black/90 flex items-center justify-center z-50"
-          onClick={() => setOpen(false)}
-        >
-          <div className="max-w-3xl max-h-[90vh] rounded-2xl border-50 border-black/80 relative">
-            <img
-              src={
-                getFirstImageUrl(artwork) ||
-                "https://via.placeholder.com/800x600?text=Artwork"
-              }
-              onError={(e) => {
-                e.currentTarget.src =
-                  "https://via.placeholder.com/800x600?text=Artwork";
-              }}
-              alt={artwork.title}
-              className="rounded-lg shadow-lg max-h-[80vh] object-contain w-full"
-            />
 
-            {/* Close Button */}
-            <button
-              onClick={() => setOpen(false)}
-              className="absolute top-2 right-2 btn btn-circle btn-sm"
-            >
-              ✕
-            </button>
-
-            {/* Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg from-black/80 to-transparent p-6 font-sans font-extralight text-white rounded-b-lg">
-              <h3 className="text-xl font-ext mb-2">{artwork.title}</h3>
-              <p className="text-sm opacity-90 mb-2">{artwork.description}</p>
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">
-                  {displayPrice.toLocaleString("de-DE")}{" "}
-                  {artwork.currency || "EUR"}
-                </span>
-                <div className="flex gap-2 items-center">
-                  <span className="text-sm">
-                    {offers.length} Gebot{offers.length !== 1 ? "e" : ""}
-                  </span>
-                  <span className={`badge ${getStatusColor(artwork.status)}`}>
-                    {artwork.status}
+{open && (
+  <div
+    className="fixed inset-0 z-50 bg-transparent backdrop-blur-sm flex items-center justify-center p-4"
+    onClick={() => setOpen(false)}
+  >
+    <div
+      className="relative w-full max-w-5xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Mobil: vertikal | Desktop: horizontal */}
+      <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
+        {/* Info links (Desktop) / unten (Mobil) */}
+        <aside className="w-full md:w-64 bg-white/95 text-black rounded-xl shadow-xl p-3 md:p-4 md:self-end md:order-first">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="text-sm font-semibold leading-snug line-clamp-2">
+              {artwork.title}
+            </h3>
+            <span className={`badge ${getStatusColor(artwork.status)} badge-sm`}>
+              {artwork.status}
+            </span>
+          </div>
+          {artwork.description && (
+            <p className="text-xs text-gray-600 mb-3 line-clamp-4">
+              {artwork.description}
+            </p>
+          )}
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Preis</span>
+              <span className="font-semibold">
+                {displayPrice.toLocaleString("de-DE")} {artwork.currency || "EUR"}
+              </span>
+            </div>
+            {artwork.startPrice != null && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Start</span>
+                <span>{artwork.startPrice} €</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-gray-500">Gebote</span>
+              <span>{offers.length}</span>
+            </div>
+            {offers.length > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded p-2 text-[11px] mt-2">
+                <div className="flex justify-between">
+                  <span className="text-green-700">Höchstes Gebot</span>
+                  <span className="text-green-800 font-semibold">
+                    {offers[0].amount} €
                   </span>
                 </div>
               </div>
-            </div>
+            )}
           </div>
+        </aside>
+
+        {/* Bild rechts (Desktop) / oben (Mobil) */}
+        <div className="relative w-full md:flex-1 rounded-2xl overflow-hidden md:order-last">
+          <img
+            src={getFirstImageUrl(artwork) || "https://via.placeholder.com/800x600?text=Artwork"}
+            alt={artwork.title}
+            onError={(e) => {
+              e.currentTarget.src = "https://via.placeholder.com/800x600?text=Artwork";
+            }}
+            className="w-full max-h-[80vh] md:max-h-[85vh] object-contain bg-transparent block"
+          />
+          {/* close button*/}
+          <button
+            onClick={() => setOpen(false)}
+            className="absolute top-3 right-3 btn btn-circle btn-sm z-20"
+            aria-label="Close"
+          >
+            ✕
+          </button>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
+
+
+
+
+
+
     </>
   );
 }
