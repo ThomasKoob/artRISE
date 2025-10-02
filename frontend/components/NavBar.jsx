@@ -109,7 +109,7 @@ const NavBar = () => {
                 {/* LogOut (Desktop) — ICON ONLY, next to Dashboard */}
                 <button
                   onClick={logout}
-                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 shadow-md transition"
+                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/80 text-white hover:bg-buttonPink shadow-md transition"
                   aria-label="Log out"
                   title="Log out"
                 >
