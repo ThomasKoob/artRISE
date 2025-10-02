@@ -154,18 +154,6 @@ const AuctionsList = () => {
                 </p>
 
                 <div className="flex justify-between items-center mt-2">
-                  <div className="flex gap-2">
-                    {auction.status === "live" && (
-                      <span className="badge badge-success">Live</span>
-                    )}
-                    {auction.status === "upcoming" && (
-                      <span className="badge badge-info">Upcoming</span>
-                    )}
-                    {auction.status === "ended" && (
-                      <span className="badge badge-error">Ended</span>
-                    )}
-                  </div>
-
                   {auction.status !== "ended" && auction.endDate && (
                     <CountdownTimer
                       endDate={auction.endDate}
@@ -187,12 +175,6 @@ const AuctionsList = () => {
                     <p>
                       <span className="font-semibold">Artist:</span>{" "}
                       {auction.artistId.name}
-                    </p>
-                  )}
-                  {auction.minIncrementDefault && (
-                    <p>
-                      <span className="font-semibold">Min. Bid:</span> €
-                      {auction.minIncrementDefault}
                     </p>
                   )}
                 </div>

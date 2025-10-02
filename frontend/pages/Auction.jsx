@@ -207,7 +207,7 @@ const Auction = () => {
       </div>
 
       {auction?.status === "live" && artworks.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6 mt-8">
+        <div className="bg-white rounded-lg shadow p-6 mt-8 text-black">
           <h3 className="text-lg font-semibold mb-4">
             Live Auktions-Statistiken
           </h3>
