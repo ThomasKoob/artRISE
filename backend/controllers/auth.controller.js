@@ -4,8 +4,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 // Helper function für Cookie-Settings
-const getCookieOptions = () => {
-  const isProduction = process.env.NODE_ENV === "production";
+const getCookieOptions = (req) => {
+  const isProd = process.env.NODE_ENV === "production";
+  const isHttps = req?.secure || req?.headers["x-forwarded-proto"] === "https";
 
   return {
     httpOnly: true,
