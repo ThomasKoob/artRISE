@@ -216,9 +216,6 @@ const Home = () => {
           <h3 className="text-lg font-semibold text-black line-clamp-1">
             {auction?.title || "Ohne Titel"}
           </h3>
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {auction?.description || "—"}
-          </p>
           <div className="flex items-center justify-between text-xs text-gray-600 pt-1">
             <span>{label}</span>
             {/* Use helper from api.js */}
