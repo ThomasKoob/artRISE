@@ -1,9 +1,11 @@
 // frontend/api/api.js
-const API_URL =
-  import.meta.env.VITE_API_URL ||
+const RAW_API_URL =
+  import.meta.env.VITE_API_URL ??
   (import.meta.env.DEV
     ? "http://localhost:3001"
     : "https://popauc.onrender.com");
+
+const API_URL = RAW_API_URL.replace(/\/+$/, "");
 
 // ============================================
 // HELPER FUNCTIONS
@@ -25,6 +27,9 @@ export async function fetchJson(endpoint, options = {}) {
   };
 
   const response = await fetch(url, config);
+
+  if (response.status === 204) return null; // <— neu: kein Body erwartet
+
   const json = await response.json().catch(() => ({}));
 
   if (!response.ok) {

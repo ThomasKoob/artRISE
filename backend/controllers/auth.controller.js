@@ -9,8 +9,8 @@ const getCookieOptions = () => {
 
   return {
     httpOnly: true,
-    secure: true, // ✅ IMMER true (auch in Development mit Render Backend)
-    sameSite: "none", // ✅ WICHTIG: 'none' für Cross-Origin
+    secure: isProd ? true : !!isHttps, // lokal (http) -> false, Render/https -> true
+    sameSite: isProd ? "none" : "lax", // Cross-Site in Prod, entspannt lokal
     maxAge: Number(process.env.JWT_EXPIRES_IN_DAYS || 7) * 24 * 60 * 60 * 1000,
     path: "/",
   };
@@ -79,7 +79,7 @@ const login = async (req, res, next) => {
     );
 
     // ✅ Verwende die Helper-Funktion
-    res.cookie("token", token, getCookieOptions());
+    res.cookie("token", token, getCookieOptions(req));
 
     res.json({ msg: "User logged in", data: user });
   } catch (err) {
@@ -89,7 +89,7 @@ const login = async (req, res, next) => {
 
 const logout = (req, res) => {
   // ✅ Verwende die Helper-Funktion
-  res.clearCookie("token", getCookieOptions());
+  res.clearCookie("token", getCookieOptions(req));
   res.json({ msg: "User logged out" });
 };
 
