@@ -5,7 +5,7 @@ import { register } from "../api/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { openLogin, login } = useLoginModal();
+  const { openLogin } = useLoginModal(); //Remove 'login' - no auto-login anymore
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -20,31 +20,27 @@ const SignUp = () => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
+  // UPDATED: No auto-login, redirect to check-email
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // 1) Registrierung
       console.log("Registering user...");
-      await register(formData);
-      console.log("Registration successful");
+      const response = await register(formData);
+      console.log("Registration successful:", response);
 
-      // 2) Auto-Login
-      console.log("Attempting auto-login...");
-      const userData = await login({
-        email: formData.email,
-        password: formData.password,
+      // Redirect to "Check your email" page
+      navigate("/check-email", {
+        state: {
+          email: formData.email,
+          userName: formData.userName,
+        },
       });
-      console.log("Login successful:", userData);
-
-      // 3) Weiterleiten
-      console.log("Redirecting to dashboard...");
-      navigate("/dashboard");
     } catch (err) {
       console.error("SignUp Error:", err);
-      setError(err.message || "Unbekannter Fehler");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -159,7 +155,7 @@ const SignUp = () => {
               onClick={openLogin}
               className="cursor-pointer text-greenButton/80 hover:text-greenButton hover:underline"
             >
-              LogIn
+              Log In
             </button>
           </p>
         </form>

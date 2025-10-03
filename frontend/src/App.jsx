@@ -5,6 +5,8 @@ import AuctionsList from "../pages/AuctionsList.jsx"; // Neue Seite für alle Au
 import Layout from "../Layout/Layout.jsx";
 import SignUp from "../pages/SignUp.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
+import CheckEmail from "../pages/CheckEmail.jsx";
+import VerifyEmail from "../pages/VerifyEmail.jsx";
 
 const App = () => {
   return (
@@ -16,6 +18,8 @@ const App = () => {
           <Route path="auction/:auctionId" element={<Auction />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="signup" element={<SignUp />} />
+          <Route path="check-email" element={<CheckEmail />} />
+          <Route path="verify-email" element={<VerifyEmail />} />
         </Route>
         <Route path="*" element={<h1>Page not found</h1>} />
       </Routes>
