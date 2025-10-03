@@ -222,7 +222,7 @@ const NavBar = () => {
                     setMobileOpen(false);
                     logout();
                   }}
-                  className="flex items-center justify-center h-10 w-full rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                  className="flex items-center justify-center h-10 w-full text-white hover:bg-red-600 transition"
                   aria-label="Log out"
                   title="Log out"
                 >

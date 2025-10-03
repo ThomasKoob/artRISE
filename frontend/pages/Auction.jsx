@@ -4,6 +4,8 @@ import { useParams, Link } from "react-router";
 import ArtworkCard from "../components/ArtworkCard";
 import CountdownTimer from "../components/CountdownTimer";
 import { getAuctionById, getAuctionArtworks } from "../api/api";
+import ShareMenu from "../components/ShareMenu";
+import InstaTiktokShare from "../components/InstaTiktokShare";
 
 const Auction = () => {
   const [artworks, setArtworks] = useState([]);
@@ -12,6 +14,9 @@ const Auction = () => {
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const { auctionId } = useParams();
+  const origin =
+    (typeof window !== "undefined" && window.location.origin) || "";
+  const auctionUrl = origin ? `${origin}/auction/${auctionId}` : "";
 
   const fetchAuctionData = useCallback(async () => {
     try {
@@ -144,6 +149,18 @@ const Auction = () => {
                   <span className="badge badge-error badge-lg">🏁 Ended</span>
                 )}
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <ShareMenu
+                title={`Bid on: ${auction.title} on popAUC`}
+                url={auctionUrl}
+                summary={auction.description?.slice(0, 120) || ""}
+              />
+              <InstaTiktokShare
+                url={auctionUrl}
+                title={`Bid on: ${auction.title} on popAUC`}
+                text={auction.description?.slice(0, 120) || ""}
+              />
             </div>
 
             {auction.status !== "ended" && auction.endDate && (

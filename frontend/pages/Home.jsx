@@ -239,13 +239,12 @@ const Home = () => {
               A stage for every artist, everywhere.
             </h1>
             <p className="m-10 text-xl font-extralight text-white/90">
-              On artRise, creativity has no boundaries. From first steps to
-              established work – upload your art, start your auction, and share
-              it with the world.
+              Not a gallery. Not social media. popAUC is pop-up auctions—fast,
+              fair, and accessible.
             </p>
           </div>
 
-          <div className="md:justify-self-end w-full">
+          <div className="md:justify-self-end w-full border-1 border-black rounded-2xl shadow-lg shadow-black">
             {loading ? (
               <div className="h-40 md:h-48 rounded-xl bg-white/20 animate-pulse" />
             ) : slideshowItems.length ? (
