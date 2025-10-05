@@ -14,7 +14,10 @@
   --color-greenButton: #8482fc;
   --color-lightRedButton: #f5839a;
   --color-gruenOlive: #444c34;
-  /* --color-gruenOliveHell: #b8ce8e; */
+  --color-lavenderViolett: #b679f6;
+  --color-hellPink: #d998bf;
+  --color-hellGrun: #b0f5ab;
+  /* --color-gruenOliveHell: #b7feb2; */
 }
 
 body {

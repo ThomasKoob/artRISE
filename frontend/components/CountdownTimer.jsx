@@ -49,7 +49,9 @@ const CountdownTimer = ({ endDate, onExpired }) => {
     timeLeft.seconds === 0
   ) {
     return (
-      <div className="text-red-500 font-semibold text-sm">🔴 Auction Ended</div>
+      <div className="text-lightRedButton/80 font-semibold text-sm">
+        🔴 Auction Ended
+      </div>
     );
   }
 

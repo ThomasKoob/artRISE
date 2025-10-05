@@ -190,7 +190,7 @@ const Home = () => {
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="group relative block w-full p-0 appearance-none text-left overflow-hidden rounded-2xl border-2 border-black/10 bg-whiteWarm/50 shadow-sm hover:shadow-xl hover:border-black/70 transition-all duration-300 focus:outline-none"
+        className="group relative block w-full p-0 appearance-none shadow-md text-left overflow-hidden rounded-2xl border-2 border-black/10 hover:bg-violetHeader/ hover:shadow-lg hover:shadow-black/70 hover:border-black/70 transition-all duration-300 focus:outline-none"
         title="Zur Auktion"
       >
         <div className="relative aspect-[16/9] w-full">
@@ -213,12 +213,12 @@ const Home = () => {
         </div>
 
         <div className="p-4 space-y-1">
-          <h3 className="text-lg font-semibold text-black line-clamp-1">
+          <h3 className="text-xl text-whiteLetter/80 font-sans font-extralight line-clamp-1">
             {auction?.title || "Ohne Titel"}
           </h3>
-          <p className="text-sm text-gray-600 line-clamp-2">
+          {/* <p className="text-sm text-gray-600 line-clamp-2">
             {auction?.description || "—"}
-          </p>
+          </p> */}
           <div className="flex items-center justify-between text-xs text-gray-600 pt-1">
             <span>{label}</span>
             {/* Use helper from api.js */}
@@ -230,9 +230,10 @@ const Home = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      {" "}
       {/* HERO */}
-      <section className=" bg-darkBackground/90 rounded-2xl border-2 border-black text-white p-8 md:p-10 shadow-lg">
+      <section className="bg-darkBackground/90 rounded-2xl border border-black text-white p-6 md:p-10 shadow-lg shadow-black/50 hover:shadow-lg hover:shadow-buttonPink/30 hover:border-r-2 hover:border-b-2">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           <div>
             <h1 className=" m-5  md:text-8xl text-center font-sans font-extralight">
@@ -263,12 +264,13 @@ const Home = () => {
           </div>
         </div>
       </section>
-
       {/* Live Auctions */}
-      <section className="max-w-7xl mx-auto space-y-4">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl text-white font-bold">Live Auktionen</h2>
+            <h2 className="text-2xl text-white font-sans font-extralight">
+              Live Auktionen
+            </h2>
             <p className="text-sm text-gray-300">
               {liveAuctions.length} live · {allAuctions.length} gesamt
             </p>
@@ -285,7 +287,7 @@ const Home = () => {
             ))}
           </div>
         ) : latest4LiveAuctions.length ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {latest4LiveAuctions.map((a) => (
               <AuctionCard key={a._id || a.id || Math.random()} auction={a} />
             ))}

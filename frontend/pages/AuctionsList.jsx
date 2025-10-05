@@ -1,4 +1,3 @@
-// frontend/pages/AuctionsList.jsx
 import { useState, useRef, useMemo, useEffect } from "react";
 import { Link } from "react-router";
 import CountdownTimer from "../components/CountdownTimer";
@@ -25,10 +24,10 @@ const AuctionsList = () => {
         setLoading(true);
         const [auctionsRaw, artworksRaw] = await Promise.all([
           getAllAuctions(),
-          getAllArtworks(), // NEW
+          getAllArtworks(),
         ]);
         setAuctions(listFromApi(auctionsRaw));
-        setArtworks(listFromApi(artworksRaw)); // NEW
+        setArtworks(listFromApi(artworksRaw));
       } catch (err) {
         console.error("Full error object:", err);
         setError(err.message);
@@ -67,9 +66,8 @@ const AuctionsList = () => {
           <span>Error loading auctions: {error}</span>
         </div>
         <div className="text-sm text-gray-600">
-          <p>Debug info:</p>
-          <p>• Check if your backend server is running</p>
-          <p>• Check browser console for more details</p>
+          <p>• Prüfe, ob dein Backend läuft</p>
+          <p>• Sieh in die Browser-Konsole für Details</p>
         </div>
       </div>
     );
@@ -114,55 +112,60 @@ const AuctionsList = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4">
-      <h1 className="text-3xl font-bold mb-8">All Auctions</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-6 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
+      <section className="p-2 border-black/50 ">
+        <h1 className="text-7xl  text-shadow-accent text-whiteLetter font-sans font-extralight mb-4 mt-0">
+          All Auctions
+        </h1>
 
-      <div className="mb-4 text-sm text-gray-600">
-        Found {auctions.length} auction(s)
-      </div>
-
+        <div className="mb-4 text-sm text-whiteLetter/80">
+          Found {auctions.length} auction(s)
+        </div>
+      </section>
       {auctions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-10  ">
           {auctions.map((auction) => (
             <div
               key={auction._id || auction.id}
-              className="card bg-base-100 shadow-md overflow-hidden"
+              className="card bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden
+             h-[22rem] sm:h-[24rem] md:h-[26rem]
+             grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
             >
-              <figure className="h-48 relative">
+              {/* Cover: skaliert nur das Bild, Layout bleibt stabil */}
+              <div className="relative w-full h-full overflow-hidden">
                 <img
                   src={getCoverForAuction(auction)}
                   alt={auction.title || "Auction banner"}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover
+                 transition-transform duration-300 ease-out transform-gpu
+                 group-hover:scale-105" // hier passiert die „Vorwärts“-Wirkung
                   onError={(e) => {
                     e.currentTarget.src =
                       "https://via.placeholder.com/800x400?text=Auction+Banner";
                   }}
                 />
-                <span
-                  className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                    auction?.status
-                  )}`}
-                >
-                  {auction?.status || "draft"}
-                </span>
-              </figure>
+              </div>
 
-              <div className="card-body">
-                <h2 className="card-title text-lg">{auction.title}</h2>
-                <p className="text-gray-600 text-sm line-clamp-2">
-                  {auction.description}
-                </p>
+              {/* Info/Actions = 1/3 – nur Divider oben */}
+              <div className="row-span-1 p-2 border-t border-base-200 flex flex-col">
+                <h2 className="card-title font-sans font-extralight text-xl">
+                  {auction.title}
+                </h2>
 
-                <div className="flex justify-between items-center mt-2">
+                <div className="flex justify-between items-center mt-8">
                   <div className="flex gap-2">
                     {auction.status === "live" && (
-                      <span className="badge badge-success">Live</span>
+                      <span className="badge badge-success bg-hellGrun/80  text-darkBackground">
+                        Live
+                      </span>
                     )}
                     {auction.status === "upcoming" && (
                       <span className="badge badge-info">Upcoming</span>
                     )}
                     {auction.status === "ended" && (
-                      <span className="badge badge-error">Ended</span>
+                      <span className="badge badge-error bg-lightRedButton">
+                        Ended
+                      </span>
                     )}
                   </div>
 
@@ -176,31 +179,10 @@ const AuctionsList = () => {
                   )}
                 </div>
 
-                <div className="text-sm text-gray-500 mt-3 space-y-1">
-                  {auction.endDate && (
-                    <p>
-                      <span className="font-semibold">Ends:</span>{" "}
-                      {new Date(auction.endDate).toLocaleString()}
-                    </p>
-                  )}
-                  {auction.artistId?.name && (
-                    <p>
-                      <span className="font-semibold">Artist:</span>{" "}
-                      {auction.artistId.name}
-                    </p>
-                  )}
-                  {auction.minIncrementDefault && (
-                    <p>
-                      <span className="font-semibold">Min. Bid:</span> €
-                      {auction.minIncrementDefault}
-                    </p>
-                  )}
-                </div>
-
-                <div className="card-actions justify-end mt-4">
+                <div className="card-actions justify-end mt-3">
                   <Link
                     to={`/auction/${auction._id}`}
-                    className="btn btn-primary btn-sm"
+                    className="btn rounded-2xl font- text-gruenOlive bg-hellPink  hover:bg-buttonPink hover:text-darkBackground font-sans hover:font-extralight btn-xs"
                   >
                     View Auction
                   </Link>

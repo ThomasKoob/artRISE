@@ -348,7 +348,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
                   )}
 
                   <div
-                    className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
+                    className={`flex items-center justify-center w-full border-2 border-dashed  transition ${
                       dragStates[idx]
                         ? "border-blue-500 bg-blue-50"
                         : errors[`i${idx}`]

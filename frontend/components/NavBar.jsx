@@ -22,9 +22,8 @@ const NavBar = () => {
   }, [setMobileOpen]);
 
   return (
-    <nav className="bg-darkBackground/90 border-b-2 border-black/50 sticky top-0 z-50 shadow-md">
-      {/* TOP BAR */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4">
+    <nav className=" bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-50 shadow-md shadow-black/70">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-16 p-4 flex items-center justify-between">
           {/* Left: Logo + Desktop Links */}
           <div className="flex items-center gap-4">
@@ -46,7 +45,7 @@ const NavBar = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <div className="ml-2 font-light text-3xl sm:text-4xl  text-whiteLetter font-sans">
+              <div className=" font-light text-3xl sm:text-4xl  text-lavenderViolett hover:text-coldYellow hover:border-1 hover:border-coldYellow hover:shadow-2xl hover:font-bold font-sans">
                 popAUC
               </div>
             </Link>
@@ -181,7 +180,7 @@ const NavBar = () => {
                 <Link
                   to="/signup"
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition"
+                  className="block px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition hover:shadow-2xl"
                 >
                   <UserPlus size={16} className="inline mr-1" />
                   SignUp

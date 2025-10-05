@@ -1,7 +1,90 @@
-// frontend/components/ArtworkCard.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
-import { getArtworkOffers, createOffer,  getFirstImageUrl } from "../api/api";
+import { getArtworkOffers, createOffer } from "../api/api";
+
+/** Alle Bild-URLs aus einem Artwork robust extrahieren */
+function getImageList(aw) {
+  if (!aw) return [];
+  const candidates = [
+    aw.images,
+    aw.photos,
+    aw.image,
+    aw.imageUrl,
+    aw.coverUrl,
+    aw.bannerImageUrl,
+    aw.photo,
+    aw.picture,
+    aw.media,
+    aw.files,
+  ];
+
+  const urls = [];
+
+  for (const c of candidates) {
+    if (!c) continue;
+
+    // Array von Strings / Objekten
+    if (Array.isArray(c)) {
+      for (const item of c) {
+        if (!item) continue;
+        if (typeof item === "string") {
+          urls.push(item);
+        } else if (typeof item === "object") {
+          // gängige Felder
+          const u = item.url || item.src || item.link || item.path;
+          if (u) urls.push(u);
+        }
+      }
+      continue;
+    }
+
+    // String
+    if (typeof c === "string") {
+      // JSON-Array im String?
+      try {
+        const parsed = JSON.parse(c);
+        if (Array.isArray(parsed)) {
+          for (const v of parsed) {
+            if (typeof v === "string") urls.push(v);
+            else if (v && typeof v === "object" && (v.url || v.src)) {
+              urls.push(v.url || v.src);
+            }
+          }
+          continue;
+        }
+      } catch {
+        /* ignore */
+      }
+      // Kommagetrennt
+      const parts = c
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length) {
+        urls.push(...parts);
+        continue;
+      }
+      // sonst die Roh-URL
+      urls.push(c);
+      continue;
+    }
+
+    // Objekt (z.B. {url:...})
+    if (typeof c === "object") {
+      // media/files können Arrays sein – oben schon behandelt
+      const u = c.url || c.src || c.link || c.path;
+      if (u) urls.push(u);
+    }
+  }
+
+  // Fallback
+  if (!urls.length) {
+    urls.push("https://via.placeholder.com/800x600?text=Artwork");
+  }
+
+  // Deduplizieren
+  return Array.from(new Set(urls));
+}
 
 export default function ArtworkCard({
   artwork: initialArtwork,
@@ -11,43 +94,49 @@ export default function ArtworkCard({
   const [artwork, setArtwork] = useState(initialArtwork);
   const [offers, setOffers] = useState([]);
   const [open, setOpen] = useState(false);
+
+  // Galerie-State
+  const images = useMemo(() => getImageList(artwork), [artwork]);
+  const [index, setIndex] = useState(0);
+
+  // Zoom & Pan State (nur im Modal)
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const lastPosRef = useRef({ x: 0, y: 0 });
+  const isPanningRef = useRef(false);
+
+  // Touch / Swipe / Pinch
+  const touchStartRef = useRef(null);
+  const pinchStartRef = useRef(null);
+
   const [bidAmount, setBidAmount] = useState("");
   const [showBidForm, setShowBidForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [bidError, setBidError] = useState("");
- const [loadingOffers, setLoadingOffers] = useState(false);
-
-
+  const [loadingOffers, setLoadingOffers] = useState(false);
 
   const { user, openLogin } = useLoginModal();
   const isBuyer = !!user && user.role === "buyer";
-  const isCompact = variant === "compact";
 
   const currentPrice = artwork.price || artwork.startPrice || 0;
   const highestBid = offers.length > 0 ? offers[0].amount : 0;
   const displayPrice = Math.max(currentPrice, highestBid);
   const minBid = displayPrice + (artwork.minIncrement || 5);
 
-  // Aktuelle Gebote laden
+  // Gebote laden
   const fetchOffers = async () => {
     if (!artwork._id) return;
-
     setLoadingOffers(true);
     try {
       const data = await getArtworkOffers(artwork._id);
-
       if (data.success) {
         const sorted = [...(data.offers || [])].sort(
           (a, b) => (b.amount || 0) - (a.amount || 0)
         );
         setOffers(sorted);
-
         if (data.stats?.highestBid > 0) {
-          setArtwork((prev) => ({
-            ...prev,
-            price: data.stats.highestBid,
-          }));
+          setArtwork((prev) => ({ ...prev, price: data.stats.highestBid }));
         }
       }
     } catch (error) {
@@ -61,6 +150,32 @@ export default function ArtworkCard({
     fetchOffers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artwork._id]);
+
+  // Body-Scroll sperren, solange das Vollbild-Modal offen ist
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  // Tastatursteuerung im Modal
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+      } else if (e.key === "ArrowRight") {
+        next();
+      } else if (e.key === "ArrowLeft") {
+        prev();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, index, images.length]);
 
   const userBid = user
     ? offers.find(
@@ -128,169 +243,202 @@ export default function ArtworkCard({
   const isAuctionEnded =
     artwork.status === "ended" || artwork.status === "canceled";
 
+  const openModalAt = (i = 0) => {
+    setIndex(i);
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+    setOpen(true);
+  };
+
+  const prev = () =>
+    setIndex((i) => (i - 1 + images.length) % Math.max(images.length, 1));
+  const next = () => setIndex((i) => (i + 1) % Math.max(images.length, 1));
+
+  // ======= Mouse Zoom & Pan (Modal) =======
+  const onWheel = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY; // hoch = Zoom in
+    const factor = delta > 0 ? 1.1 : 0.9;
+    setScale((s) => {
+      const ns = Math.min(8, Math.max(1, s * factor));
+      return ns;
+    });
+  };
+
+  const onMouseDown = (e) => {
+    if (scale === 1) return; // nur Pan wenn gezoomt
+    isPanningRef.current = true;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onMouseMove = (e) => {
+    if (!isPanningRef.current) return;
+    const dx = e.clientX - lastPosRef.current.x;
+    const dy = e.clientY - lastPosRef.current.y;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+    setTranslate((t) => ({ x: t.x + dx, y: t.y + dy }));
+  };
+  const onMouseUp = () => {
+    isPanningRef.current = false;
+  };
+
+  // ======= Touch: Swipe / Pinch / Pan =======
+  const onTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        time: Date.now(),
+      };
+    } else if (e.touches.length === 2) {
+      // Pinch-Start
+      const [t1, t2] = e.touches;
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      pinchStartRef.current = { dist, scale };
+    }
+  };
+
+  const onTouchMove = (e) => {
+    if (e.touches.length === 2 && pinchStartRef.current) {
+      // Pinch Zoom
+      const [t1, t2] = e.touches;
+      const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const ratio = dist / Math.max(1, pinchStartRef.current.dist);
+      const newScale = Math.min(
+        8,
+        Math.max(1, pinchStartRef.current.scale * ratio)
+      );
+      setScale(newScale);
+      e.preventDefault();
+      return;
+    }
+
+    // Pan mit einem Finger, wenn gezoomt
+    if (e.touches.length === 1 && scale > 1) {
+      const t = e.touches[0];
+      const prev = touchStartRef.current || { x: t.clientX, y: t.clientY };
+      const dx = t.clientX - prev.x;
+      const dy = t.clientY - prev.y;
+      touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
+      setTranslate((tr) => ({ x: tr.x + dx, y: tr.y + dy }));
+      e.preventDefault();
+    }
+  };
+
+  const onTouchEnd = (e) => {
+    // Swipe zum Bildwechsel nur, wenn nicht gezoomt
+    if (scale === 1 && touchStartRef.current) {
+      const endTime = Date.now();
+      const dt = endTime - touchStartRef.current.time;
+      const dx =
+        (touchStartRef.current.lastX || 0) - (touchStartRef.current.x || 0);
+      // Alternativ: finale Touchpositionen aus e.changedTouches nutzen
+    }
+
+    if (
+      scale === 1 &&
+      e.changedTouches &&
+      e.changedTouches[0] &&
+      touchStartRef.current
+    ) {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const dx = endX - touchStartRef.current.x;
+      const dy = endY - touchStartRef.current.y;
+      const adx = Math.abs(dx);
+      const ady = Math.abs(dy);
+      const dt = Date.now() - touchStartRef.current.time;
+
+      // einfache Swipe-Heuristik
+      if (dt < 500 && adx > 40 && adx > ady) {
+        if (dx < 0) next();
+        else prev();
+      }
+    }
+
+    // Reset Startpunkte, Pinch-Ende
+    touchStartRef.current = null;
+    pinchStartRef.current = null;
+  };
+
+  // Beim Öffnen/Wechsel Bild Reset Zoom
+  useEffect(() => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  }, [open, index]);
+
+  const isCompact = variant === "compact";
+
   return (
     <>
-      {/* Card */}
+      {/* CARD — volle Breite; Bild 75% Höhe, Info 25% */}
       <div
-        className={`card bg-black/30 border-10 border-black ${
-          isCompact ? "w-64" : "w-80"
-        } shadow-md rounded-2xl relative`}
+        className="
+          w-full
+          h-[22rem] sm:h-[24rem] md:h-[26rem]
+          grid grid-rows-[3fr_1fr]
+          rounded-2xl overflow-hidden
+          bg-black/30 shadow-md
+        "
       >
-        <figure>
+        {/* Bildbereich (75%) – Klick öffnet Modal */}
+        <button
+          type="button"
+          className="relative w-full overflow-hidden block"
+          onClick={() => openModalAt(0)}
+          title="Bild in Vollbild öffnen"
+        >
           <img
-   src={getFirstImageUrl(artwork) || "https://via.placeholder.com/400x300"}
+            src={
+              images[0] || "https://via.placeholder.com/800x600?text=Artwork"
+            }
             alt={artwork.title}
-            className={`${
-              isCompact ? "h-44" : "h-60"
-            } w-full object-cover rounded-t-lg`}
+            className="absolute inset-0 w-full h-full object-cover object-center select-none"
             onError={(e) => {
               e.currentTarget.src =
-                "https://via.placeholder.com/400x300?text=Artwork";
+                "https://via.placeholder.com/800x600?text=Artwork";
             }}
+            draggable={false}
           />
-        </figure>
+        </button>
 
-        <div className="card-body">
-          <h2
-            className={`card-title ${
-              isCompact ? "text-base" : "text-lg"
-            } font-extralight font-sans`}
-          >
-            {artwork.title}
-            <span className={`badge ${getStatusColor(artwork.status)}`}>
-              {artwork.status === "live" && "Live"}
-              {artwork.status === "draft" && "Draft"}
-              {artwork.status === "ended" && "Ended"}
-              {artwork.status === "canceled" && "Canceled"}
-            </span>
-          </h2>
-
-          {!isCompact && (
-            <p className="text-sm text-gray-300 line-clamp-2">
-              {artwork.description}
-            </p>
-          )}
-
-          {/* Preis-Information */}
-          <div className="mt-2">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-semibold text-whiteLetter">
-                Aktueller Preis:
-              </span>
+        {/* Info/Buttons (25%) — nur dünner Divider oben */}
+        <div className="p-3 sm:p-4 flex flex-col justify-between border-t border-white/10">
+          <div>
+            <h2 className="text-sm sm:text-base md:text-lg font-extralight font-sans flex items-center gap-2">
+              {artwork.title}
               <span
-                className={`badge badge-outline font-bold ${
-                  isCompact ? "text-base" : "text-lg"
-                }`}
+                className={`badge ${getStatusColor(
+                  artwork.status
+                )} hidden sm:inline-flex`}
               >
+                {artwork.status}
+              </span>
+            </h2>
+
+            {/* kurze Beschreibung nur ab md */}
+            {/* {artwork.description ? (
+              <p className="hidden md:block -mt-1 text-xs text-gray-300 line-clamp-1">
+                {artwork.description}
+              </p>
+            ) : null} */}
+
+            {/* Preiszeile */}
+            <div className="mt-1 flex items-center justify-between">
+              <span className="text-xs sm:text-sm font-sans font-extralight text-white">
+                Top bid
+              </span>
+              <span className="badge badge-outline font-bold text-xs sm:text-sm">
                 {displayPrice.toLocaleString("de-DE")}{" "}
                 {artwork.currency || "EUR"}
               </span>
             </div>
-
-            {!isCompact && (
-              <div className="text-xs text-gray-400 space-y-1">
-                <div className="flex justify-between">
-                  <span>Start: {artwork.startPrice} €</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Gebote: {offers.length}</span>
-                  {userBid && (
-                    <span className="text-blue-300 font-medium">
-                      Dein Gebot: {userBid.amount} €
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Höchstes Gebot Anzeige */}
-          {!isCompact && offers.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded p-2 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-green-700 font-medium">
-                  Höchstes Gebot:
-                </span>
-                <span className="text-green-800 font-bold">
-                  {offers[0].amount} € von{" "}
-                  {offers[0].userId?.userName || "Anonym"}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Erfolgs- oder Fehlermeldung */}
-          {bidSuccess && (
-            <div className="alert alert-success alert-sm">
-              <span className="text-xs">✓ Gebot erfolgreich abgegeben!</span>
-            </div>
-          )}
-          {bidError && (
-            <div className="alert alert-error alert-sm">
-              <span className="text-xs">{bidError}</span>
-            </div>
-          )}
-
-          {/* Bid Form */}
-          {showBidForm && isAuctionActive && isBuyer && (
-            <form onSubmit={handleBidSubmit} className="space-y-2">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-xs">
-                    Gebot (min. {minBid} €)
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min={minBid}
-                    step="0.01"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder={`${minBid}`}
-                    className="input input-bordered input-sm flex-1 text-black placeholder-black/60 bg-white"
-                    required
-                    disabled={submitting}
-                  />
-                  <span className="self-center text-xs text-gray-500">€</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-sm flex-1"
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <span className="loading loading-spinner loading-xs"></span>
-                  ) : userBid ? (
-                    "Gebot erhöhen"
-                  ) : (
-                    "Bieten"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowBidForm(false);
-                    setBidError("");
-                    setBidAmount("");
-                  }}
-                  className="btn btn-ghost btn-sm"
-                  disabled={submitting}
-                >
-                  Abbrechen
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Action Buttons */}
-          <div className="card-actions justify-end mt-4">
+          {/* Aktionen */}
+          <div className="flex items-center justify-end gap-2">
             <button
-              onClick={() => setOpen(true)}
-              className="btn btn-outline btn-sm font-sans font-extralight rounded-2xl"
+              onClick={() => openModalAt(0)}
+              className="btn btn-outline btn-xs sm:btn-sm font-sans font-extralight rounded-2xl"
             >
               Ansehen
             </button>
@@ -304,111 +452,173 @@ export default function ArtworkCard({
                   }
                   setShowBidForm(true);
                   setBidError("");
-                  setBidAmount(minBid.toString());
+                  setBidAmount(
+                    (displayPrice + (artwork.minIncrement || 5)).toString()
+                  );
                 }}
-                className="btn rounded-2xl btn-primary bg-coldYellow text-darkBackground hover:bg-coldYellow/80 font-extralight btn-l"
+                className="btn btn-primary btn-xs sm:btn-sm rounded-2xl bg-coldYellow text-darkBackground hover:bg-coldYellow/80 font-extralight"
               >
                 {userBid ? "Gebot erhöhen" : "Bieten"}
               </button>
             )}
-
-            {isAuctionEnded && (
-              <span className="badge badge-error">Beendet</span>
-            )}
-            {!isAuctionActive && !isAuctionEnded && (
-              <span className="badge badge-warning">Nicht aktiv</span>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Modal für Vollbild-Ansicht */}
-
-{open && (
-  <div
-    className="fixed inset-0 z-50 bg-transparent backdrop-blur-sm flex items-center justify-center p-4"
-    onClick={() => setOpen(false)}
-  >
-    <div
-      className="relative w-full max-w-5xl"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {/* Mobil: vertikal | Desktop: horizontal */}
-      <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
-        {/* Info links (Desktop) / unten (Mobil) */}
-        <aside className="w-full md:w-64 bg-white/95 text-black rounded-xl shadow-xl p-3 md:p-4 md:self-end md:order-first">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="text-sm font-semibold leading-snug line-clamp-2">
-              {artwork.title}
-            </h3>
-            <span className={`badge ${getStatusColor(artwork.status)} badge-sm`}>
-              {artwork.status}
-            </span>
-          </div>
-          {artwork.description && (
-            <p className="text-xs text-gray-600 mb-3 line-clamp-4">
-              {artwork.description}
-            </p>
-          )}
-          <div className="space-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="text-gray-500">Preis</span>
-              <span className="font-semibold">
-                {displayPrice.toLocaleString("de-DE")} {artwork.currency || "EUR"}
-              </span>
-            </div>
-            {artwork.startPrice != null && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Start</span>
-                <span>{artwork.startPrice} €</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span className="text-gray-500">Gebote</span>
-              <span>{offers.length}</span>
-            </div>
-            {offers.length > 0 && (
-              <div className="bg-green-50 border border-green-200 rounded p-2 text-[11px] mt-2">
-                <div className="flex justify-between">
-                  <span className="text-green-700">Höchstes Gebot</span>
-                  <span className="text-green-800 font-semibold">
-                    {offers[0].amount} €
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        </aside>
-
-        {/* Bild rechts (Desktop) / oben (Mobil) */}
-        <div className="relative w-full md:flex-1 rounded-2xl overflow-hidden md:order-last">
-          <img
-            src={getFirstImageUrl(artwork) || "https://via.placeholder.com/800x600?text=Artwork"}
-            alt={artwork.title}
-            onError={(e) => {
-              e.currentTarget.src = "https://via.placeholder.com/800x600?text=Artwork";
-            }}
-            className="w-full max-h-[80vh] md:max-h-[85vh] object-contain bg-transparent block"
-          />
-          {/* close button*/}
-          <button
-            onClick={() => setOpen(false)}
-            className="absolute top-3 right-3 btn btn-circle btn-sm z-20"
-            aria-label="Close"
+      {/* Vollbild-Modal: Swipe, Zoom, Pan, Klick außerhalb schließt */}
+      {open && (
+        <div
+          className="fixed inset-0 z-[999] bg-black/75 backdrop-blur-[6px] flex items-center justify-center"
+          onClick={() => setOpen(false)} // Klick außerhalb schließt
+        >
+          {/* Innen-Container: blockt Clicks zum Schließen ab */}
+          <div
+            className="relative w-screen h-screen flex items-center justify-center select-none"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={onWheel}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
           >
-            ✕
-          </button>
+            {/* Bild */}
+            <img
+              src={images[index]}
+              alt={artwork.title}
+              onError={(e) => {
+                e.currentTarget.src =
+                  "https://via.placeholder.com/1600x1200?text=Artwork";
+              }}
+              className="
+                w-auto h-auto
+                max-w-[100svw] max-h-[100svh]
+                object-contain
+                transition-transform
+                ease-out
+              "
+              style={{
+                transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+              }}
+              draggable={false}
+            />
+
+            {/* Prev / Next Controls */}
+            {images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={prev}
+                  className="absolute left-3 md:left-5 top-1/2 -translate-y-1/2 h-10 w-10 md:h-12 md:w-12 rounded-full bg-black/50 hover:bg-black/70 text-white text-xl md:text-2xl flex items-center justify-center"
+                  aria-label="Vorheriges Bild"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={next}
+                  className="absolute right-3 md:right-5 top-1/2 -translate-y-1/2 h-10 w-10 md:h-12 md:w-12 rounded-full bg-black/50 hover:bg-black/70 text-white text-xl md:text-2xl flex items-center justify-center"
+                  aria-label="Nächstes Bild"
+                >
+                  ›
+                </button>
+
+                {/* kleines Index-Badge */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-2 py-1 rounded-full bg-black/60 text-white text-xs">
+                  {index + 1} / {images.length}
+                </div>
+              </>
+            )}
+
+            {/* Close-Button */}
+            <button
+              onClick={() => setOpen(false)}
+              className="
+                absolute top-3 right-3
+                inline-flex items-center justify-center
+                h-10 w-10 rounded-full
+                bg-black/60 hover:bg-black/80
+                text-white text-xl
+                transition
+                focus:outline-none
+              "
+              aria-label="Close"
+              type="button"
+            >
+              ✕
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
+      {/* Inline-Gebotsformular */}
+      {showBidForm && isAuctionActive && isBuyer && (
+        <form onSubmit={handleBidSubmit} className="mt-2 space-y-2">
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text text-xs">
+                Gebot (min. {minBid} €)
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={minBid}
+                step="0.01"
+                value={bidAmount}
+                onChange={(e) => setBidAmount(e.target.value)}
+                placeholder={`${minBid}`}
+                className="input input-bordered input-sm flex-1 text-black placeholder-black/60 bg-white"
+                required
+                disabled={submitting}
+              />
+              <span className="self-center text-xs text-gray-500">€</span>
+            </div>
+          </div>
 
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm flex-1"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : userBid ? (
+                "Gebot erhöhen"
+              ) : (
+                "Bieten"
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowBidForm(false);
+                setBidError("");
+                setBidAmount("");
+              }}
+              className="btn btn-ghost btn-sm"
+              disabled={submitting}
+            >
+              Abbrechen
+            </button>
+          </div>
 
-
-
-
+          {/* Meldungen */}
+          {bidSuccess && (
+            <div className="alert alert-success alert-sm">
+              <span className="text-xs">✓ Gebot erfolgreich abgegeben!</span>
+            </div>
+          )}
+          {bidError && (
+            <div className="alert alert-error alert-sm">
+              <span className="text-xs">{bidError}</span>
+            </div>
+          )}
+        </form>
+      )}
     </>
   );
 }
