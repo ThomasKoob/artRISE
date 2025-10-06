@@ -70,140 +70,8 @@ const Auction = () => {
     );
   }, []);
 
-  // ---------- Social/Contact Buttons (robust + mehrere Quellen) ----------
-  const pickString = (...vals) =>
-    vals.find((v) => typeof v === "string" && v.trim().length > 0) || "";
-
-  const ensureHttps = (u) => {
-    if (!u) return "";
-    const s = u.trim();
-    if (!s) return "";
-    if (/^https?:\/\//i.test(s)) return s;
-    return `https://${s}`;
-  };
-
-  const handleOrUrl = (raw, baseUrl, withAt = false) => {
-    if (!raw) return "";
-    const s = raw.trim();
-    if (!s) return "";
-    if (/^https?:\/\//i.test(s)) return s; // bereits URL
-    if (s.includes(".")) return ensureHttps(s); // Domain → URL
-    const handle = s.replace(/^@/, ""); // Handle → Profil
-    return withAt ? `${baseUrl}/@${handle}` : `${baseUrl}/${handle}`;
-  };
-
   // Quelle für Artist-Daten: auction.artistId / auction.artist /
   // Fallback aus artworks[0].artistId oder artworks[0].artist
-  const artistLike = useMemo(() => {
-    const a = auction || {};
-    const fromAuction =
-      (a.artistId && typeof a.artistId === "object" && a.artistId) ||
-      a.artist ||
-      null;
-
-    if (fromAuction) return fromAuction;
-
-    const firstAw =
-      Array.isArray(artworks) && artworks.length ? artworks[0] : null;
-    if (!firstAw) return {};
-
-    return (
-      (firstAw.artistId &&
-        typeof firstAw.artistId === "object" &&
-        firstAw.artistId) ||
-      firstAw.artist ||
-      {}
-    );
-  }, [auction, artworks]);
-
-  // Social-Felder aus vielen möglichen Pfaden zusammensuchen
-  const social = useMemo(() => {
-    const a = auction || {};
-    const artist = artistLike || {};
-
-    const instagramRaw = pickString(
-      a.instagramUrl,
-      a.instagramURL,
-      a.instagram,
-      a?.socials?.instagram,
-      a?.links?.instagram,
-      a?.profile?.instagram,
-      artist.instagramUrl,
-      artist.instagramURL,
-      artist.instagram,
-      artist?.socials?.instagram,
-      artist?.links?.instagram,
-      artist?.profile?.instagram
-    );
-
-    const tiktokRaw = pickString(
-      a.tiktokUrl,
-      a.tiktokURL,
-      a.tiktok,
-      a?.socials?.tiktok,
-      a?.links?.tiktok,
-      a?.profile?.tiktok,
-      artist.tiktokUrl,
-      artist.tiktokURL,
-      artist.tiktok,
-      artist?.socials?.tiktok,
-      artist?.links?.tiktok,
-      artist?.profile?.tiktok
-    );
-
-    const websiteRaw = pickString(
-      a.websiteUrl,
-      a.websiteURL,
-      a.website,
-      a?.socials?.website,
-      a?.links?.website,
-      a?.profile?.website,
-      artist.websiteUrl,
-      artist.websiteURL,
-      artist.website,
-      artist?.socials?.website,
-      artist?.links?.website,
-      artist?.profile?.website
-    );
-
-    // E-Mail-Logik: explizit > Opt-in + Account-Email
-    const messageEmailRaw = pickString(
-      a.messageToArtistEmail,
-      artist.messageToArtistEmail
-    );
-    const acceptMessages =
-      Boolean(a.acceptMessages) || Boolean(artist.acceptMessages);
-    const accountEmail = pickString(
-      a.contactEmail,
-      artist.contactEmail,
-      a.email,
-      artist.email
-    );
-    const emailToUse = messageEmailRaw || (acceptMessages ? accountEmail : "");
-
-    return {
-      instagram: handleOrUrl(instagramRaw, "https://instagram.com"),
-      tiktok: handleOrUrl(tiktokRaw, "https://www.tiktok.com", true), // /@handle
-      website: ensureHttps(websiteRaw),
-      email: emailToUse,
-    };
-  }, [auction, artistLike]);
-
-  const hasAnySocial = !!(
-    social.instagram ||
-    social.tiktok ||
-    social.website ||
-    social.email
-  );
-  // ----------------------------------------------------------------------
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -244,11 +112,6 @@ const Auction = () => {
                   title={`Bid on: ${auction.title} on popAUC`}
                   url={auctionUrl}
                   summary={auction.description?.slice(0, 120) || ""}
-                />
-                <InstaTiktokShare
-                  url={auctionUrl}
-                  title={`Bid on: ${auction.title} on popAUC`}
-                  text={auction.description?.slice(0, 120) || ""}
                 />
               </div>
 
@@ -312,55 +175,6 @@ const Auction = () => {
                       >
                         {auction.description}
                       </p>
-                    )}
-
-                    {hasAnySocial && (
-                      <div className={`mt-4 flex flex-wrap gap-2`}>
-                        {social.instagram && (
-                          <a
-                            href={social.instagram}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-xs sm:btn-sm rounded-2xl bg-hellPink text-gruenOlive hover:bg-buttonPink hover:text-darkBackground"
-                          >
-                            Instagram
-                          </a>
-                        )}
-                        {social.tiktok && (
-                          <a
-                            href={social.tiktok}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-xs sm:btn-sm rounded-2xl bg-hellPink text-gruenOlive hover:bg-buttonPink hover:text-darkBackground"
-                          >
-                            TikTok
-                          </a>
-                        )}
-                        {social.website && (
-                          <a
-                            href={social.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-xs sm:btn-sm rounded-2xl bg-hellPink text-gruenOlive hover:bg-buttonPink hover:text-darkBackground"
-                          >
-                            Website
-                          </a>
-                        )}
-                        {social.email && (
-                          <a
-                            href={`mailto:${encodeURIComponent(
-                              social.email
-                            )}?subject=${encodeURIComponent(
-                              `Message about your auction: ${
-                                auction.title || ""
-                              }`
-                            )}`}
-                            className="btn btn-outline btn-xs sm:btn-sm rounded-2xl"
-                          >
-                            Message to Artist
-                          </a>
-                        )}
-                      </div>
                     )}
                   </div>
                 )}

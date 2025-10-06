@@ -109,7 +109,7 @@ const SignUp = () => {
           {/* Role Selection */}
           <div>
             <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
-              I am an...
+              I´m an...
             </label>
             <select
               name="role"
@@ -182,53 +182,6 @@ const SignUp = () => {
               className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
-
-          {/* Artist-only: Optional Social fields */}
-          {isArtist && (
-            <div className="pt-2 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
-                  Instagram URL (optional)
-                </label>
-                <input
-                  type="url"
-                  name="instagramUrl"
-                  placeholder="https://instagram.com/your_handle"
-                  value={formData.instagramUrl}
-                  onChange={handleChange}
-                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
-                  TikTok URL (optional)
-                </label>
-                <input
-                  type="url"
-                  name="tiktokUrl"
-                  placeholder="https://tiktok.com/@your_handle"
-                  value={formData.tiktokUrl}
-                  onChange={handleChange}
-                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
-                  Website URL (optional)
-                </label>
-                <input
-                  type="url"
-                  name="websiteUrl"
-                  placeholder="https://your-website.com"
-                  value={formData.websiteUrl}
-                  onChange={handleChange}
-                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Submit */}
           <button
