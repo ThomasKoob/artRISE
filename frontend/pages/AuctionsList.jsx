@@ -1,6 +1,6 @@
 // frontend/pages/AuctionsList.jsx
 import { useState, useRef, useMemo, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import CountdownTimer from "../components/CountdownTimer";
 import {
   getAllAuctions,
@@ -18,6 +18,7 @@ const AuctionsList = () => {
   const [error, setError] = useState(null);
 
   const randomIndexMapRef = useRef(new Map());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -25,10 +26,10 @@ const AuctionsList = () => {
         setLoading(true);
         const [auctionsRaw, artworksRaw] = await Promise.all([
           getAllAuctions(),
-          getAllArtworks(), // NEW
+          getAllArtworks(),
         ]);
         setAuctions(listFromApi(auctionsRaw));
-        setArtworks(listFromApi(artworksRaw)); // NEW
+        setArtworks(listFromApi(artworksRaw));
       } catch (err) {
         console.error("Full error object:", err);
         setError(err.message);
@@ -52,6 +53,14 @@ const AuctionsList = () => {
     });
   }, [artworks]);
 
+  // ✅ Anzahl der Artworks pro Auktion zählen
+  const getTotalArtworksForAuction = (auction) => {
+    const aIdStr = toIdStr(auction?._id || auction?.id);
+    if (!aIdStr) return 0;
+    return normalizedArtworks.filter((aw) => toIdStr(aw.auctionId) === aIdStr)
+      .length;
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-64">
@@ -67,9 +76,8 @@ const AuctionsList = () => {
           <span>Error loading auctions: {error}</span>
         </div>
         <div className="text-sm text-gray-600">
-          <p>Debug info:</p>
-          <p>• Check if your backend server is running</p>
-          <p>• Check browser console for more details</p>
+          <p>• Prüfe, ob dein Backend läuft</p>
+          <p>• Sieh in die Browser-Konsole für Details</p>
         </div>
       </div>
     );
@@ -114,82 +122,111 @@ const AuctionsList = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4">
-      <h1 className="text-3xl font-bold mb-8">All Auctions</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-2 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
+      <section className="p-2 border-black/50 ">
+        <h1 className="text-7xl  text-shadow-accent text-whiteLetter font-sans font-extralight mb-4 mt-0">
+          All Auctions
+        </h1>
 
-      <div className="mb-4 text-sm text-gray-600">
-        Found {auctions.length} auction(s)
-      </div>
-
+        <div className="mb-4 text-sm text-whiteLetter/80">
+          Found {auctions.length} auction(s)
+        </div>
+      </section>
       {auctions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {auctions.map((auction) => (
-            <div
-              key={auction._id || auction.id}
-              className="card bg-base-100 shadow-md overflow-hidden"
-            >
-              <figure className="h-48 relative">
-                <img
-                  src={getCoverForAuction(auction)}
-                  alt={auction.title || "Auction banner"}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://via.placeholder.com/800x400?text=Auction+Banner";
-                  }}
-                />
-                <span
-                  className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
-                    auction?.status
-                  )}`}
-                >
-                  {auction?.status || "draft"}
-                </span>
-              </figure>
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          {auctions.map((auction) => {
+            const artworksCount = getTotalArtworksForAuction(auction);
+            const auctionId = auction._id || auction.id;
 
-              <div className="card-body">
-                <h2 className="card-title text-lg">{auction.title}</h2>
-                <p className="text-gray-600 text-sm line-clamp-2">
-                  {auction.description}
-                </p>
-
-                <div className="flex justify-between items-center mt-2">
-                  {auction.status !== "ended" && auction.endDate && (
-                    <CountdownTimer
-                      endDate={auction.endDate}
-                      onExpired={() => {
-                        console.log(`Auction ${auction._id} has ended`);
-                      }}
-                    />
-                  )}
+            return (
+              <div
+                key={auctionId}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/auction/${auctionId}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/auction/${auctionId}`);
+                  }
+                }}
+                className="card bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
+               h-[22rem] sm:h-[24rem] md:h-[26rem]
+               grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
+                title={auction.title || "Auction"}
+                aria-label={`Open auction ${auction.title || ""}`}
+              >
+                {/* Cover */}
+                <div className="relative w-full h-full overflow-hidden">
+                  <img
+                    src={getCoverForAuction(auction)}
+                    alt={auction.title || "Auction banner"}
+                    className="absolute inset-0 w-full h-full object-cover
+                   transition-transform duration-300 ease-out transform-gpu
+                   group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/800x400?text=Auction+Banner";
+                    }}
+                  />
                 </div>
 
-                <div className="text-sm text-gray-500 mt-3 space-y-1">
-                  {auction.endDate && (
-                    <p>
-                      <span className="font-semibold">Ends:</span>{" "}
-                      {new Date(auction.endDate).toLocaleString()}
-                    </p>
-                  )}
-                  {auction.artistId?.name && (
-                    <p>
-                      <span className="font-semibold">Artist:</span>{" "}
-                      {auction.artistId.name}
-                    </p>
-                  )}
-                </div>
+                {/* Info/Actions */}
+                <div className="row-span-1 p-2 border-t border-base-200 flex flex-col">
+                  <h2 className="card-title font-sans font-extralight text-xl">
+                    {auction.title}
+                  </h2>
 
-                <div className="card-actions justify-end mt-4">
-                  <Link
-                    to={`/auction/${auction._id}`}
-                    className="btn btn-primary btn-sm"
-                  >
-                    View Auction
-                  </Link>
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="flex gap-2">
+                      {auction.status === "live" && (
+                        <span className="badge badge-success bg-hellGrun/80  text-darkBackground">
+                          Live
+                        </span>
+                      )}
+                      {auction.status === "upcoming" && (
+                        <span className="badge badge-info">Upcoming</span>
+                      )}
+                      {auction.status === "ended" && (
+                        <span className="badge badge-error bg-lightRedButton">
+                          Ended
+                        </span>
+                      )}
+                    </div>
+
+                    {auction.status !== "ended" && auction.endDate && (
+                      <CountdownTimer
+                        endDate={auction.endDate}
+                        onExpired={() => {
+                          console.log(`Auction ${auctionId} has ended`);
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* ✅ Anzahl der Artworks als kleine Fußnote */}
+                  <div className="mt-2 text-[11px] text-white/70">
+                    {artworksCount === 0
+                      ? "No artworks"
+                      : artworksCount === 1
+                      ? "1 artwork"
+                      : `${artworksCount} artworks`}
+                  </div>
+
+                  {/* Optionaler Button bleibt – klick auf Karte bleibt aktiv */}
+                  <div className="card-actions justify-end mt-3">
+                    <Link
+                      to={`/auction/${auctionId}`}
+                      className="btn rounded-2xl text-gruenOlive bg-hellPink hover:bg-buttonPink hover:text-darkBackground font-sans hover:font-extralight btn-xs"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View Auction
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center text-gray-500 mt-16">

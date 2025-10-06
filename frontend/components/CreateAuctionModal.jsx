@@ -461,25 +461,25 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-darkBackground/50 backdrop-blur-lg"
         onClick={onClose}
       />
 
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl mx-4"
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-violetHeader/30 border-1 border-hellPink/80 shadow-2xl mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0   px-6 py-4 flex items-center justify-between z-10">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">
+            <h2 className="text-xl font-sans font-extralight text-whiteLetter/80">
               {currentStep === 1 ? "New Auction" : "Add Art"}
             </h2>
             <p className="text-sm text-gray-500">Step {currentStep} from 2</p>
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center"
+            className="w-10 h-10 rounded-full hover:bg-hell flex items-center justify-center"
           >
             <X size={20} />
           </button>
@@ -494,7 +494,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               <div>
                 <label
                   htmlFor="title"
-                  className="block mb-1 text-sm font-medium text-gray-700"
+                  className="block mb-1 text-sm font-medium text-gw"
                 >
                   Artist name
                 </label>
@@ -519,7 +519,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               <div>
                 <label
                   htmlFor="description"
-                  className="block mb-1 text-sm font-medium text-gray-700"
+                  className="block mb-1 text-sm font-medium text-WhiteLetter/80"
                 >
                   Artist Bio
                 </label>
@@ -530,7 +530,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                     handleAuctionChange("description", e.target.value)
                   }
                   rows={4}
-                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
+                  className={`w-full px-4 py-2 border rounded-lg text-whiteLetter/80 focus:outline-none focus:ring-1 ${
                     errors.description
                       ? "border-red-500 focus:ring-red-500"
                       : "border-gray-300 focus:ring-blue-500"
@@ -556,7 +556,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       <img
                         src={avatarPreview}
                         alt="Avatar Preview"
-                        className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                        className="w-24 h-24 rounded-full object-cover bg-violetHeader/80 border-2 border-gray-300"
                       />
                       <button
                         type="button"
@@ -578,21 +578,21 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       ? "border-blue-500 bg-blue-50"
                       : errors.avatar
                       ? "border-red-500 bg-red-50"
-                      : "border-gray-300 bg-white hover:bg-gray-50"
+                      : "border-buttonPink/60 hover:border-buttonPink  hover:bg-hellPink/20"
                   }`}
                   onDragEnter={handleAvatarDragEnter}
                   onDragLeave={handleAvatarDragLeave}
                   onDragOver={handleAvatarDragOver}
                   onDrop={handleAvatarDrop}
                 >
-                  <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
+                  <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer bg-violetHeade/30">
                     <div className="flex flex-col items-center justify-center pointer-events-none">
-                      <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                      <p className="mb-1 text-sm text-gray-600">
+                      <Upload className="w-8 h-8 mb-2 text-whiteLetter/80" />
+                      <p className="mb-1 text-sm text-whiteLetter/60">
                         <span className="font-semibold">Click</span> or drag
                         picture here
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-whiteLetter/60">
                         PNG, JPG, GIF, WebP (max. 5MB)
                       </p>
                     </div>
@@ -730,7 +730,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       }
                       className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
                         errors[`artwork_${index}_title`]
-                          ? "border-red-500 focus:ring-red-500"
+                          ? "border-buttonPink focus:ring-lightRedButton"
                           : "border-gray-300 focus:ring-blue-500"
                       } text-gray-900`}
                     />
@@ -766,8 +766,8 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                           dragStates[index]
                             ? "border-blue-500 bg-blue-50"
                             : errors[`artwork_${index}_images`]
-                            ? "border-red-500 bg-red-50"
-                            : "border-gray-300 bg-white hover:bg-gray-50"
+                            ? "border-buttonPink bg-lightRedButton"
+                            : "border-coldYellow bg-white hover:bg-gray-50"
                         }`}
                         onDragEnter={(e) => handleDragEnter(index, e)}
                         onDragLeave={(e) => handleDragLeave(index, e)}
@@ -874,12 +874,12 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t px-6 py-4 flex justify-between">
+        <div className="sticky bottom-0  px-6 py-4 flex justify-between">
           {currentStep === 2 && (
             <button
               type="button"
               onClick={prevStep}
-              className="text-black px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="text-black px-6 py-2 border bg-lightRedButton border-gray-300 rounded-xl2 hover:bg-gray-50"
             >
               Back
             </button>
@@ -888,7 +888,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
             <button
               type="button"
               onClick={onClose}
-              className="text-black px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="text-darkBackground btn  px-6 py-2 border-1 border-buttonPink bg-lightRedButton  rounded-2xl hover:bg-lavenderViolett/40 hover:text-hellGrun/80"
             >
               Abort
             </button>
@@ -896,7 +896,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
               <button
                 type="button"
                 onClick={nextStep}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                className="px-6 py-2 bg-coldYellow/70 border-1 border-coldYellow hover:bg-coldYellow text-white hover:text-whiteWarm rounded-2xl"
               >
                 Next
               </button>

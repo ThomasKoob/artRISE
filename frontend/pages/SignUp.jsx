@@ -1,3 +1,4 @@
+// frontend/pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
@@ -11,13 +12,24 @@ const SignUp = () => {
     userName: "",
     email: "",
     password: "",
-    role: "buyer",
+    role: "buyer", // buyer | seller
+    // Optional (nur für Artists sichtbar)
+    instagramUrl: "",
+    tiktokUrl: "",
+    websiteUrl: "",
+    // Opt-in: Dürfen Interessenten dich anschreiben?
+    acceptMessages: false,
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((p) => ({
+      ...p,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   // UPDATED: No auto-login, redirect to check-email
@@ -62,6 +74,8 @@ const SignUp = () => {
   };
   const buttonConfig = getButtonConfig();
 
+  const isArtist = formData.role === "seller";
+
   return (
     <div className="flex justify-center px-4 pt-24 pb-8">
       <div className="w-full bg-darkBackground/30 max-w-md border-1 border-coldYellow/40 shadow-md rounded-xl p-8">
@@ -76,6 +90,22 @@ const SignUp = () => {
             </div>
           )}
 
+          {/* Role Selection */}
+          <div>
+            <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
+              I´m an...
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
+            >
+              <option value="buyer">Art lover</option>
+              <option value="seller">Artist</option>
+            </select>
+          </div>
+
           {/* Username */}
           <div>
             <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
@@ -88,11 +118,11 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength={3}
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
-          {/* Email */}
+          {/* Email + Opt-in Checkbox */}
           <div>
             <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
               Email
@@ -103,8 +133,22 @@ const SignUp = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
+
+            <label className="mt-2 inline-flex items-center gap-2 select-none">
+              <input
+                type="checkbox"
+                name="acceptMessages"
+                checked={formData.acceptMessages}
+                onChange={handleChange}
+                disabled={!isArtist}
+                className="checkbox checkbox-sm"
+              />
+              <span className={`text-sm ${!isArtist ? "opacity-60" : ""}`}>
+                Allow interested buyers to message you
+              </span>
+            </label>
           </div>
 
           {/* Password */}
@@ -119,24 +163,8 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
-              I am an...
-            </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
-            >
-              <option value="buyer">Art lover</option>
-              <option value="seller">Artist</option>
-            </select>
           </div>
 
           {/* Submit */}
