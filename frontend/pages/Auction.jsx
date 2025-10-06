@@ -1,11 +1,11 @@
+
 // frontend/pages/Auction.jsx
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router";
 import ArtworkCard from "../components/ArtworkCard";
 import CountdownTimer from "../components/CountdownTimer";
 import { getAuctionById, getAuctionArtworks } from "../api/api";
 import ShareMenu from "../components/ShareMenu";
-import InstaTiktokShare from "../components/InstaTiktokShare";
 
 const Auction = () => {
   const [artworks, setArtworks] = useState([]);
