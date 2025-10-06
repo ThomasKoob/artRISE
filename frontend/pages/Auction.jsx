@@ -1,4 +1,3 @@
-
 // frontend/pages/Auction.jsx
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router";
@@ -86,6 +85,29 @@ const Auction = () => {
     );
   }
 
+  // ---------------------------
+  // NEU: Werte für ShareMenu
+  // ---------------------------
+  const primaryArtwork =
+    Array.isArray(artworks) && artworks.length > 0 ? artworks[0] : null;
+
+  const artistName =
+    auction?.artistId?.name ||
+    auction?.artist?.name ||
+    primaryArtwork?.artistName ||
+    primaryArtwork?.artist?.name ||
+    "";
+
+  const artworkTitle = primaryArtwork?.title || auction?.title || "";
+
+  // Bildquelle: bevorzugt erstes Artwork-Bild, sonst Avatar aus der Auktion
+  const imageUrl =
+    primaryArtwork?.imageUrl ||
+    (Array.isArray(primaryArtwork?.images) ? primaryArtwork.images[0] : "") ||
+    auction?.avatarUrl ||
+    auction?.artistId?.avatarUrl ||
+    "";
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       <div className="mb-2 sticky top-20 z-50">
@@ -109,9 +131,12 @@ const Auction = () => {
               {/* Share-Buttons */}
               <div className="md:ml-auto flex flex-wrap items-center gap-2">
                 <ShareMenu
-                  title={`Bid on: ${auction.title} on popAUC`}
                   url={auctionUrl}
-                  summary={auction.description?.slice(0, 120) || ""}
+                  artistName={artistName}
+                  artworkTitle={artworkTitle}
+                  imageUrl={imageUrl}
+                  className="shrink-0"
+                  buttonLabel="Share"
                 />
               </div>
 
