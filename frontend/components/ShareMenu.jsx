@@ -1,45 +1,86 @@
 import { useState, useMemo } from "react";
 
-function enc(s) {
-  return encodeURIComponent(s);
+const enc = encodeURIComponent;
+const nl = "\n";
+
+function buildShareMessage({ artistName, artworkTitle, shareUrl }) {
+  const line1 = artistName
+    ? `${artistName} is running a pop-up auction on popAUC`
+    : `Pop-up auction on popAUC`;
+  const line2 = artworkTitle ? `“${artworkTitle}”` : "";
+  return [line1, line2, shareUrl].filter(Boolean).join(nl);
 }
 
 export default function ShareMenu({
-  title,
   url,
-  summary = "",
+  artistName = "",
+  artworkTitle = "",
+  imageUrl = "", // <— Profilbild ODER Artwork: öffentlich erreichbar (CORS!)
+  utm = "utm_source=share&utm_medium=button&utm_campaign=auction",
   className = "",
+  buttonLabel = "Share",
 }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const shareUrl = useMemo(() => {
-    const utm = "utm_source=share&utm_medium=button&utm_campaign=auction";
+    if (!url) return "";
     return url.includes("?") ? `${url}&${utm}` : `${url}?${utm}`;
-  }, [url]);
+  }, [url, utm]);
 
-  const text = summary || title;
+  const message = useMemo(
+    () => buildShareMessage({ artistName, artworkTitle, shareUrl }),
+    [artistName, artworkTitle, shareUrl]
+  );
 
   async function onNativeShare() {
-    const data = { title, text, url: shareUrl };
+    // 1) Versuche Bild + Text + Link (nur wo unterstützt)
+    if (imageUrl) {
+      try {
+        const res = await fetch(imageUrl, { credentials: "omit" });
+        // Hinweis: Das Bild muss CORS-fähig/öffentlich sein.
+        const blob = await res.blob();
+        const filename = imageUrl.split("/").pop() || "image.jpg";
+        const type = blob.type || "image/jpeg";
+        const file = new File([blob], filename, { type });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: artworkTitle || artistName || "popAUC",
+            text: message,
+            url: shareUrl, // viele OS zeigen dann Bild + Text + Link
+            files: [file],
+          });
+          return;
+        }
+      } catch {
+        // Wenn Bild-Download / CORS scheitert, weiter zu Text-Share
+      }
+    }
+
+    // 2) Fallback: nur Text + Link
     try {
       if (navigator.share) {
-        await navigator.share(data);
+        await navigator.share({
+          title: artworkTitle || artistName || "popAUC",
+          text: message,
+          url: shareUrl,
+        });
       } else {
-        await copyLink();
+        await copyMessage();
       }
-    } catch (e) {
+    } catch {
       /* ignore */
     }
   }
-  async function copyLink() {
+
+  async function copyMessage() {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(message);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // letzter Fallback
-      window.prompt("Copy this URL", shareUrl);
+      window.prompt("Copy this message", message);
     }
   }
 
@@ -47,18 +88,17 @@ export default function ShareMenu({
     {
       key: "whatsapp",
       label: "WhatsApp",
-      href: `https://wa.me/?text=${enc(`${text} ${shareUrl}`)}`,
+      href: `https://wa.me/?text=${enc(message)}`,
+    },
+    {
+      key: "telegram",
+      label: "Telegram",
+      href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(message)}`,
     },
     {
       key: "facebook",
       label: "Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`,
-    },
-
-    {
-      key: "telegram",
-      label: "Telegram",
-      href: `https://t.me/share/url?url=${enc(shareUrl)}&text=${enc(text)}`,
     },
     {
       key: "linkedin",
@@ -69,35 +109,39 @@ export default function ShareMenu({
     },
     {
       key: "email",
-      label: "E-Mail",
-      href: `mailto:?subject=${enc(title)}&body=${enc(
-        `${text}\n\n${shareUrl}`
-      )}`,
+      label: "E-mail",
+      href: `mailto:?subject=${enc(
+        artistName
+          ? `${artistName} — popAUC auction${
+              artworkTitle ? `: “${artworkTitle}”` : ""
+            }`
+          : `popAUC auction${artworkTitle ? `: “${artworkTitle}”` : ""}`
+      )}&body=${enc(message)}`,
     },
   ];
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* 1) Native Share (beste UX auf Mobilgeräten) */}
       <button
         onClick={onNativeShare}
-        className="rounded-xl px-3 py-2 border border-buttonPink  bg-greenButton/40 hover:bg-lightRedButton/40  transition text-sm"
-        aria-label="Teilen"
-        title="Teilen"
+        className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
+        aria-label="Share"
+        title="Share"
+        type="button"
       >
-        Teilen
+        {buttonLabel}
       </button>
 
-      {/* 2) Fallback-Menü mit klassischen Share-Links */}
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
-          className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40  transition text-sm"
+          className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
           aria-haspopup="menu"
           aria-expanded={open}
-          title="Weitere Optionen"
+          title="More options"
+          type="button"
         >
-          ⋯
+          …
         </button>
 
         {open && (
@@ -113,21 +157,22 @@ export default function ShareMenu({
                 target="_blank"
                 rel="noopener noreferrer"
                 role="menuitem"
-                className="block px-3 py-2 rounded-xl hover:bg-gray-100 text-sm"
+                className="block px-3 py-2 rounded-xl hover:bg-gray-100/20 text-sm"
               >
                 {l.label}
               </a>
             ))}
-
             <button
-              onClick={copyLink}
+              onClick={copyMessage}
               role="menuitem"
-              className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100 text-sm"
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100/20 text-sm"
+              type="button"
             >
-              {copied ? "Link kopiert ✓" : "Link kopieren"}
+              {copied ? "Message copied ✓" : "Copy message"}
             </button>
-
-            <div className="px-3 pb-2 pt-1 text-xs text-gray-500"></div>
+            <div className="px-3 pb-2 pt-1 text-xs opacity-60">
+              Native share tries to include the image; links use text + preview.
+            </div>
           </div>
         )}
       </div>
