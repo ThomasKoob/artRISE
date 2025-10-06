@@ -134,7 +134,7 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength={3}
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
@@ -149,7 +149,7 @@ const SignUp = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
 
             <label className="mt-2 inline-flex items-center gap-2 select-none">
@@ -179,7 +179,7 @@ const SignUp = () => {
               onChange={handleChange}
               required
               minLength={6}
-              className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
+              className="text-whiteLetter w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
           </div>
 
