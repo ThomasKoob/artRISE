@@ -689,7 +689,7 @@ export default function ArtworkCard({
                   setShowBidModal(true);
                 }}
               >
-                Abbrechen
+                Cancel
               </button>
 
               <button
