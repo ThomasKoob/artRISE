@@ -6,7 +6,7 @@ import { register } from "../api/api";
 
 const SignUp = () => {
   const navigate = useNavigate();
-  const { openLogin, login } = useLoginModal();
+  const { openLogin } = useLoginModal(); //Remove 'login' - no auto-login anymore
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -32,43 +32,27 @@ const SignUp = () => {
     }));
   };
 
+  // UPDATED: No auto-login, redirect to check-email
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // Payload vorbereiten
-      const payload = { ...formData };
+      console.log("Registering user...");
+      const response = await register(formData);
+      console.log("Registration successful:", response);
 
-      if (payload.role !== "seller") {
-        // Kein Artist → Socials/Opt-in raus
-        payload.instagramUrl = "";
-        payload.tiktokUrl = "";
-        payload.websiteUrl = "";
-        payload.acceptMessages = false;
-        payload.messageToArtistEmail = ""; // sicherheitshalber leer mitschicken
-      } else {
-        // Artist: Wenn Opt-in aktiv → Account-Email als messageToArtistEmail verwenden
-        payload.messageToArtistEmail = payload.acceptMessages
-          ? payload.email
-          : "";
-      }
-
-      // 1) Registrierung
-      await register(payload);
-
-      // 2) Auto-Login
-      await login({
-        email: formData.email,
-        password: formData.password,
+      // Redirect to "Check your email" page
+      navigate("/check-email", {
+        state: {
+          email: formData.email,
+          userName: formData.userName,
+        },
       });
-
-      // 3) Weiterleiten
-      navigate("/dashboard");
     } catch (err) {
       console.error("SignUp Error:", err);
-      setError(err.message || "Unbekannter Fehler");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -199,7 +183,7 @@ const SignUp = () => {
               onClick={openLogin}
               className="cursor-pointer text-greenButton/80 hover:text-greenButton hover:underline"
             >
-              LogIn
+              Log In
             </button>
           </p>
         </form>

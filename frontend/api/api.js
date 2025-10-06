@@ -250,14 +250,14 @@ export async function deleteUser(userId) {
 }
 
 // ============================================
-// AUTH API
+// AUTH API - UPDATED
 // ============================================
 
 /**
- * Register new user
+ * Register/Signup new user
  */
 export async function register(userData) {
-  return fetchJson("/api/auth/register", {
+  return fetchJson("/api/auth/signup", {
     method: "POST",
     body: JSON.stringify(userData),
   });
@@ -267,10 +267,22 @@ export async function register(userData) {
  * Login user
  */
 export async function login(credentials) {
-  return fetchJson("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify(credentials),
-  });
+  try {
+    const response = await fetchJson("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
+    });
+
+    return response;
+  } catch (error) {
+    // Enhanced error handling for unverified users
+    if (error.message.includes("verify your email")) {
+      const enhancedError = new Error(error.message);
+      enhancedError.needsVerification = true;
+      throw enhancedError;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -287,6 +299,25 @@ export async function logout() {
  */
 export async function getCurrentUser() {
   return fetchJson("/api/auth/me");
+}
+
+/**
+ * Verify email address
+ */
+export async function verifyEmail(token) {
+  return fetchJson(`/api/auth/verify-email?token=${token}`, {
+    method: "GET",
+  });
+}
+
+/**
+ *Resend verification email
+ */
+export async function resendVerificationEmail(email) {
+  return fetchJson("/api/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
 }
 
 // ============================================
@@ -382,13 +413,13 @@ export function getStatusBadgeClass(status = "draft") {
   }
 }
 
-// URL + IMAGE HELPERS 
+// URL + IMAGE HELPERS
 
 export function toAbsoluteUrl(u) {
   if (!u) return null;
-  if (/^https?:\/\//i.test(u)) return u;        // absolute
+  if (/^https?:\/\//i.test(u)) return u; // absolute
   if (u.startsWith("//")) return window.location.protocol + u;
-  // API_URL 
+  // API_URL
   return `${API_URL}${u.startsWith("/") ? "" : "/"}${u}`;
 }
 
@@ -435,18 +466,23 @@ export function getFirstImageUrl(obj) {
   if (Array.isArray(raw)) {
     const first = raw[0];
     if (typeof first === "string") return toAbsoluteUrl(first);
-    if (typeof first === "object") return toAbsoluteUrl(first?.url || first?.src);
+    if (typeof first === "object")
+      return toAbsoluteUrl(first?.url || first?.src);
     return null;
   }
 
   if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length) return toAbsoluteUrl(parsed[0]);
-    } catch { 
+      if (Array.isArray(parsed) && parsed.length)
+        return toAbsoluteUrl(parsed[0]);
+    } catch {
       // ignore
     }
-    const parts = raw.split(",").map(s => s.trim()).filter(Boolean);
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     return toAbsoluteUrl(parts[0] || raw);
   }
 
@@ -455,3 +491,45 @@ export function getFirstImageUrl(obj) {
   }
   return null;
 }
+// ==========================================
+// SHIPPING API
+// ==========================================
+
+/**
+ * Verify user is winner and can access shipping page
+ */
+export const verifyWinner = async (artworkId) => {
+  return await fetchJson(`${API_URL}/api/shipping/verify/${artworkId}`, {
+    credentials: "include",
+  });
+};
+
+/**
+ * Get shipping address for artwork
+ */
+export const getShippingAddress = async (artworkId) => {
+  return await fetchJson(`${API_URL}/api/shipping/${artworkId}`, {
+    credentials: "include",
+  });
+};
+
+/**
+ * Create or update shipping address
+ */
+export const saveShippingAddress = async (artworkId, addressData) => {
+  return await fetchJson(`${API_URL}/api/shipping/${artworkId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(addressData),
+  });
+};
+
+/**
+ * Get all user shipping addresses
+ */
+export const getUserShippingAddresses = async () => {
+  return await fetchJson(`${API_URL}/api/shipping`, {
+    credentials: "include",
+  });
+};

@@ -1,5 +1,5 @@
-// frontend/context/LoginModalContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router"; // ✅ Import hinzufügen
 import { LoginModal } from "../components/LoginModal";
 import {
   login as apiLogin,
@@ -18,11 +18,14 @@ export const useLoginModal = () => {
 };
 
 export const LoginModalProvider = ({ children }) => {
+  const navigate = useNavigate(); // ✅ Hook hinzufügen
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState("/dashboard"); // ✅ NEU
 
   // User beim App-Start laden
   useEffect(() => {
@@ -41,28 +44,47 @@ export const LoginModalProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const openLogin = () => {
+  // ✅ NEU: openLogin mit optionaler Redirect-URL
+  const openLogin = (redirectTo = "/dashboard") => {
     setIsOpen(true);
     setError("");
+    setNeedsVerification(false);
+    setRedirectAfterLogin(redirectTo); // ✅ Redirect-Ziel speichern
   };
 
   const closeLogin = () => {
     setIsOpen(false);
     setError("");
+    setNeedsVerification(false);
   };
 
   const login = async (credentials) => {
     setLoading(true);
     setError("");
+    setNeedsVerification(false);
+
     try {
       const response = await apiLogin(credentials);
       const userData = response.data || response;
       setUser(userData);
       setIsOpen(false);
+
+      // ✅ NEU: Automatische Weiterleitung nach erfolgreichem Login
+      console.log("✅ Login successful, redirecting to:", redirectAfterLogin);
+      navigate(redirectAfterLogin);
+
       return userData;
     } catch (err) {
-      const errorMessage = err.message || "Login fehlgeschlagen";
+      const errorMessage = err.message || "Login failed";
       setError(errorMessage);
+
+      if (
+        err.needsVerification ||
+        errorMessage.toLowerCase().includes("verify")
+      ) {
+        setNeedsVerification(true);
+      }
+
       throw err;
     } finally {
       setLoading(false);
@@ -73,10 +95,11 @@ export const LoginModalProvider = ({ children }) => {
     try {
       await apiLogout();
       setUser(null);
+      navigate("/"); // ✅ Nach Logout zur Startseite
     } catch (err) {
       console.error("Logout error:", err);
-      // Logout trotzdem durchführen
       setUser(null);
+      navigate("/");
     }
   };
 
@@ -99,6 +122,7 @@ export const LoginModalProvider = ({ children }) => {
           onSubmit={login}
           loading={loading}
           error={error}
+          needsVerification={needsVerification}
         />
       )}
     </LoginModalContext.Provider>

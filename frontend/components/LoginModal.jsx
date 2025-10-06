@@ -1,6 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-
-export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
+import { useNavigate } from "react-router";
+export const LoginModal = ({
+  onClose,
+  onSubmit,
+  loading,
+  error,
+  needsVerification,
+}) => {
+  const navigate = useNavigate(); // ✅ Hook hinzufügen
   const emailRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [values, setValues] = useState({ email: "", password: "" });
@@ -15,11 +22,12 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
 
   const validate = () => {
     const errs = {};
-    if (!values.email.trim()) errs.email = "E-Mail ist erforderlich";
+    if (!values.email.trim()) errs.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
-      errs.email = "Ungültige E-Mail";
-    if (!values.password) errs.password = "Passwort ist erforderlich";
-    else if (values.password.length < 6) errs.password = "Mindestens 6 Zeichen";
+      errs.email = "Invalid email";
+    if (!values.password) errs.password = "Password is required";
+    else if (values.password.length < 6)
+      errs.password = "At least 6 characters";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -27,7 +35,17 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    await onSubmit?.(values); // Erfolg/Fehler steuert der Context
+    await onSubmit?.(values);
+  };
+
+  // ✅ NEU: Handler für "Resend Email" Button
+  const handleResendEmail = () => {
+    onClose();
+    navigate("/check-email", {
+      state: {
+        email: values.email,
+      },
+    });
   };
 
   return (
@@ -45,11 +63,8 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 mb-4">
-          <h2
-            className="text-xl font-sans text-whiteLetter
-           font-extralight mb-1"
-          >
-            LogIn
+          <h2 className="text-xl font-sans text-whiteLetter font-extralight mb-1">
+            Log In
           </h2>
           <button
             onClick={onClose}
@@ -66,9 +81,20 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
           </button>
         </div>
 
+        {/* ✅ UPDATED: Error Display mit Verification-Link */}
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
+            <p className="mb-2">{error}</p>
+
+            {/* ✅ NEU: Zeige "Resend Email" Button wenn Email nicht verifiziert */}
+            {needsVerification && (
+              <button
+                onClick={handleResendEmail}
+                className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-800 underline"
+              >
+                Resend verification email →
+              </button>
+            )}
           </div>
         )}
 
@@ -78,7 +104,7 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
               htmlFor="email"
               className="text-sm font-sans text-whiteLetter font-extralight mb-1"
             >
-              E-Mail
+              Email
             </label>
             <input
               ref={emailRef}
@@ -101,7 +127,7 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
               htmlFor="password"
               className="block text-sm font-sans text-whiteLetter font-extralight mb-1"
             >
-              Passwort
+              Password
             </label>
             <div
               className={`flex items-center rounded-xl border ${
@@ -123,7 +149,7 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
                 onClick={() => setShowPassword((s) => !s)}
                 className="px-3 py-2 text-sm text-whiteLetter/50"
               >
-                {showPassword ? "Verbergen" : "Anzeigen"}
+                {showPassword ? "Hide" : "Show"}
               </button>
             </div>
             {errors.password && (
@@ -134,9 +160,9 @@ export const LoginModal = ({ onClose, onSubmit, loading, error }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full font-sans rounded-xl border-1 border-darkBackground hover:border-0 bg-buttonPink/70 hover:bg-buttonPink text-whtieLetter/80 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full font-sans rounded-xl border-1 border-darkBackground hover:border-0 bg-buttonPink/70 hover:bg-buttonPink text-whiteLetter/80 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Einloggen…" : "submit"}
+            {loading ? "Logging in..." : "Submit"}
           </button>
         </form>
       </div>
