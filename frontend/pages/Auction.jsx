@@ -13,7 +13,7 @@ const Auction = () => {
   const [error, setError] = useState(null);
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [qrOpen, setQrOpen] = useState(false); // <-- QR Modal
+  const [qrOpen, setQrOpen] = useState(false); // QR Modal
   const { auctionId } = useParams();
   const origin =
     (typeof window !== "undefined" && window.location.origin) || "";
@@ -22,7 +22,6 @@ const Auction = () => {
   const fetchAuctionData = useCallback(async () => {
     try {
       setLoading(true);
-
       const [auctionResult, artworksResult] = await Promise.all([
         getAuctionById(auctionId),
         getAuctionArtworks(auctionId),
@@ -79,22 +78,19 @@ const Auction = () => {
   const primaryArtwork =
     Array.isArray(artworks) && artworks.length > 0 ? artworks[0] : null;
 
-  const artistName =
-    auction?.artistId?.name ||
-    auction?.artist?.name ||
-    primaryArtwork?.artistName ||
-    primaryArtwork?.artist?.name ||
-    "";
+  // WICHTIG: Künstlername kommt explizit aus auction.title
+  const artistName = auction?.title || "";
 
-  const artworkTitle = primaryArtwork?.title || auction?.title || "";
+  // Artwork-Titel (falls vorhanden) – NICHT aus auction.title
+  const artworkTitle = primaryArtwork?.title || "";
 
-  // Nur erstes Artwork-Image
+  // Nur erstes Artwork-Image (kein Avatar-Fallback)
   const imageUrl =
     primaryArtwork?.imageUrl ||
     (Array.isArray(primaryArtwork?.images) ? primaryArtwork.images[0] : "") ||
     "";
 
-  // QR Code Bild (externer Generator; einfach & ohne Abhängigkeit)
+  // QR Code Bild
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
     auctionUrl
   )}`;
@@ -123,9 +119,9 @@ const Auction = () => {
               <div className="md:ml-auto flex flex-wrap items-center gap-2">
                 <ShareMenu
                   url={auctionUrl}
-                  artistName={artistName}
-                  artworkTitle={artworkTitle}
-                  imageUrl={imageUrl}
+                  artistName={artistName} // <- aus auction.title
+                  artworkTitle={artworkTitle} // <- aus primaryArtwork.title
+                  imageUrl={imageUrl} // <- erstes Artwork-Bild
                   className="shrink-0"
                   buttonLabel="Share"
                 />
@@ -271,7 +267,6 @@ const Auction = () => {
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(auctionUrl);
-                      // Optional: Toast/Feedback
                     } catch {
                       window.prompt("Copy URL", auctionUrl);
                     }
