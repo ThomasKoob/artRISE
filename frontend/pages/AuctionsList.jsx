@@ -122,7 +122,7 @@ const AuctionsList = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-2 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-8 mb-8 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
       <section className="p-2 border-black/50 ">
         <h1 className="text-5xl  text-shadow-accent text-whiteLetter font-sans font-extralight mb-4 mt-0">
           All Auctions{" "}
