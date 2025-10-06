@@ -45,7 +45,16 @@ const NavBar = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <div className=" font-light text-3xl sm:text-4xl  text-lavenderViolett hover:text-coldYellow hover:border-1 hover:border-coldYellow hover:shadow-2xl hover:font-bold font-sans">
+              <div
+                className="
+      font-light text-3xl sm:text-4xl font-sans whitespace-nowrap
+      text-lavenderViolett
+      border border-transparent rounded-md px-1
+      transition-colors transition-shadow transition-transform
+      transform-gpu
+      hover:text-coldYellow hover:border-coldYellow hover:shadow-2xl hover:scale-[1.02]
+    "
+              >
                 popAUC
               </div>
             </Link>

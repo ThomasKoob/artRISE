@@ -1,6 +1,7 @@
+// components/SellerDashboard.jsx
 import React from "react";
 import { useNavigate } from "react-router";
-import { Plus, Eye, Trash2, Images } from "lucide-react";
+import { Plus, Eye } from "lucide-react";
 import UserHeader from "./UserHeader";
 
 const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
@@ -11,55 +12,94 @@ const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
       <UserHeader user={user} />
 
       {!activeMyAuction ? (
-        // No Active Auction - Show Create Button
+        // No active auction → Create prompt
+        <section className="rounded-2xl border-2 border-black/50 bg-darkBackground/30 backdrop-blur-md shadow-lg shadow-black/70 p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg sm:text-xl font-light text-whiteLetter">
+                You don’t have an active auction yet
+              </h2>
+              <p className="text-white/70 text-sm">
+                Launch a pop-up auction in minutes and share it with your
+                community.
+              </p>
+            </div>
 
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onCreateAuction}
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <Plus size={20} />
-            Auktion erstellen
-          </button>
-        </div>
+            <button
+              onClick={onCreateAuction}
+              className="inline-flex items-center gap-2 rounded-2xl px-4 py-2
+                         bg-coldYellow text-darkBackground border border-darkBackground
+                         hover:bg-buttonPink/80 hover:text-darkBackground
+                         font-extralight shadow-md transition"
+              type="button"
+            >
+              <Plus size={18} />
+              Create auction
+            </button>
+          </div>
+        </section>
       ) : (
-        // Active Auction Card
-        <div className="bg-darkbackground/80 rounded-lg shadow overflow-hidden">
-          {activeMyAuction.bannerImageUrl && (
-            <img
-              src={activeMyAuction.bannerImageUrl}
-              alt={activeMyAuction.title}
-              className="w-full h-44 object-cover"
-              onError={(e) => {
-                e.currentTarget.src =
-                  "https://via.placeholder.com/800x300?text=Auction";
-              }}
-            />
-          )}
+        // Active auction card
+        <section className="rounded-2xl overflow-hidden border-2 border-black/50 bg-darkBackground/30 backdrop-blur-md shadow-lg shadow-black/70">
+          {/* Banner */}
+          <div className="w-full h-44 bg-black/20">
+            {activeMyAuction.bannerImageUrl ? (
+              <img
+                src={activeMyAuction.bannerImageUrl}
+                alt={activeMyAuction.title || "Auction banner"}
+                className="w-full h-44 object-cover"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://via.placeholder.com/1200x300?text=Auction";
+                }}
+              />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-white/50 text-sm">
+                No banner image
+              </div>
+            )}
+          </div>
 
-          <div className="p-5">
-            <h1 className="text-xl text-black font-sans">My Auction</h1>
-            <h2 className="text-xl font sans font-semibold text-black">
+          {/* Content */}
+          <div className="p-5 sm:p-6">
+            <h1 className="text-sm uppercase tracking-wide text-white/60 mb-1">
+              My auction
+            </h1>
+
+            {/* IMPORTANT: auction.title is the artist name */}
+            <h2 className="text-xl sm:text-2xl font-light text-whiteLetter">
               {activeMyAuction.title}
             </h2>
 
             {activeMyAuction.endDate && (
-              <p className="text-sm text-gray-600 mt-2">
-                Ende: {new Date(activeMyAuction.endDate).toLocaleString()}
+              <p className="text-white/70 text-sm mt-2">
+                Ends:&nbsp;
+                {new Date(activeMyAuction.endDate).toLocaleString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </p>
             )}
 
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
-                className="bg-lightRedButton rounded-2xl hover:bg-blue-600 text-white py-2 px-3  flex items-center justify-center gap-1"
+                className="rounded-2xl px-3 py-2 bg-coldYellow text-darkBackground
+                           border border-darkBackground hover:bg-buttonPink/80
+                           font-extralight flex items-center justify-center gap-2 transition"
                 onClick={() => navigate(`/auction/${activeMyAuction._id}`)}
+                type="button"
+                title="Open public auction page"
               >
-                <Eye size={16} /> View
+                <Eye size={16} />
+                View
               </button>
             </div>
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

@@ -111,7 +111,7 @@ const Auction = () => {
           <div>
             {/* Kopfzeile */}
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4 mb-4 sm:mb-6">
-              <h1 className="text-lg sm:text-xl md:text-3xl font-extralight">
+              <h1 className=" font-sans sm:text-xl md:text-7xl font-thin">
                 {auction.title}
               </h1>
 
@@ -168,7 +168,7 @@ const Auction = () => {
           md:w-72 md:h-72
           lg:w-80 lg:h-80
           rounded-lg overflow-hidden
-          border bg-darkBackground border-black/40 shadow-black/30 shadow-lg
+          border bg-darkBackground  border-black/40 shadow-black/30 shadow-lg
         "
                   >
                     <img
