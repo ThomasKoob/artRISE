@@ -1,13 +1,14 @@
 import { Router } from "express";
 import {
   signup,
+  register, // Alias
   login,
   logout,
   me,
   verifyEmail,
   resendVerificationEmail,
 } from "../controllers/auth.controller.js";
-import auth from "../middlewares/auth.js"; // Your existing middleware
+import auth from "../middlewares/auth.js";
 import { validate } from "../middlewares/validate.js";
 import {
   registerSchema,
@@ -18,9 +19,9 @@ import {
 
 const router = Router();
 
-// Public Routes (no auth required)
+// ✅ Public Routes
 router.post("/signup", validate(registerSchema), signup);
-router.post("/register", validate(registerSchema), signup); // Alias for compatibility
+router.post("/register", validate(registerSchema), signup); // Beide funktionieren
 router.post("/login", validate(loginSchema), login);
 router.get("/verify-email", validate(verifyEmailSchema), verifyEmail);
 router.post(
@@ -29,8 +30,8 @@ router.post(
   resendVerificationEmail
 );
 
-// Protected Routes (auth required)
+// ✅ Protected Routes
 router.post("/logout", logout);
-router.get("/me", auth, me);
+router.get("/me", auth, me); // ✅ Diese Route!
 
 export default router;

@@ -1,5 +1,7 @@
-//test
 import Offer from "../models/Offer.js";
+import Artwork from "../models/Artwork.js";
+import Auction from "../models/Auction.js";
+import { handleBidPlaced } from "../services/notification.service.js";
 
 export const getOffers = async (req, res) => {
   try {
@@ -22,17 +24,14 @@ export const getOfferById = async (req, res) => {
   }
 };
 
-// NEUE FUNKTION: Alle Offers für ein Artwork abrufen
 export const getOffersByArtwork = async (req, res) => {
   try {
     const { artworkId } = req.params;
 
-    // Alle Offers für dieses Artwork finden, sortiert nach Betrag
     const offers = await Offer.find({ artworkId })
       .populate("userId", "userName email avatarUrl")
-      .sort({ amount: -1, createdAt: 1 }); // Höchste zuerst
+      .sort({ amount: -1, createdAt: 1 });
 
-    // Statistiken berechnen
     const highestBid = offers.length > 0 ? offers[0].amount : 0;
     const totalBids = offers.length;
     const uniqueBidders = [
@@ -57,49 +56,120 @@ export const getOffersByArtwork = async (req, res) => {
   }
 };
 
-// VERBESSERTE FUNKTION: Erlaubt Gebots-Erhöhungen
+// ✅ UPDATED: Mit Email-Benachrichtigungen
 export const createOffer = async (req, res) => {
   try {
     const { artworkId, userId, amount } = req.body;
 
-    if (!artworkId || !userId || amount == null)
-      throw new Error("artworkId, userId, and amount are required");
+    if (!artworkId || !userId || amount == null) {
+      return res.status(400).json({
+        success: false,
+        error: "artworkId, userId, and amount are required",
+      });
+    }
 
-    // Prüfen ob User bereits ein Gebot hat
+    // ✅ Get artwork
+    const artwork = await Artwork.findById(artworkId);
+    if (!artwork) {
+      return res.status(404).json({
+        success: false,
+        error: "Artwork not found",
+      });
+    }
+
+    // ✅ Get auction for minIncrementDefault
+    const auction = await Auction.findById(artwork.auctionId);
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        error: "Auction not found",
+      });
+    }
+
+    // ✅ Check if auction is still active
+    if (artwork.status === "ended" || new Date() > new Date(artwork.endDate)) {
+      return res.status(400).json({
+        success: false,
+        error: "This auction has ended",
+      });
+    }
+
+    // ✅ Get current highest bid
+    const highestOffer = await Offer.findOne({ artworkId }).sort({
+      amount: -1,
+    });
+
+    // ✅ Calculate minimum bid (using auction's minIncrementDefault)
+    const minIncrement = auction.minIncrementDefault || 5;
+    const minBidAmount = highestOffer
+      ? highestOffer.amount + minIncrement
+      : artwork.startPrice;
+
+    if (amount < minBidAmount) {
+      return res.status(400).json({
+        success: false,
+        error: `Minimum bid is €${minBidAmount.toFixed(2)}`,
+        minBidAmount,
+        currentHighestBid: highestOffer?.amount || 0,
+        minIncrement,
+      });
+    }
+
+    // Check if user already has a bid
     const existingOffer = await Offer.findOne({ artworkId, userId });
 
     let offer;
     let message;
+    let isNewBid = false;
 
     if (existingOffer) {
-      // Gebots-Erhöhung: Update des existierenden Gebots
+      // Bid increase
       if (amount <= existingOffer.amount) {
         return res.status(400).json({
           success: false,
-          error: `Neues Gebot muss höher als dein aktuelles Gebot von ${existingOffer.amount} € sein`,
+          error: `New bid must be higher than your current bid of €${existingOffer.amount.toFixed(
+            2
+          )}`,
         });
       }
 
-      // Update das existierende Gebot
+      // ✅ Mongoose Middleware will add to bidHistory automatically
       existingOffer.amount = amount;
       offer = await existingOffer.save();
-      message = "Gebot erfolgreich erhöht";
+      message = "Bid increased successfully";
     } else {
-      // Erstelle ein neues Gebot
-      offer = await Offer.create({ artworkId, userId, amount });
-      message = "Gebot erfolgreich platziert";
+      // New bid
+      offer = await Offer.create({
+        artworkId,
+        userId,
+        amount,
+        bidHistory: [{ amount, timestamp: new Date() }], // ✅ Initialize history
+      });
+      message = "Bid placed successfully";
+      isNewBid = true;
     }
 
-    // Populated offer zurückgeben
+    // Populate offer
     offer = await Offer.findById(offer._id).populate(
       "userId",
       "userName email avatarUrl"
     );
 
+    // ✅ Send email notifications (async, don't block response)
+    handleBidPlaced(offer, artwork, auction).catch((error) => {
+      console.error("Email notification error (non-critical):", error);
+    });
+
     res.status(201).json({
       success: true,
       offer,
       message,
+      isNewBid,
+      stats: {
+        currentHighestBid: amount,
+        nextMinBid: amount + minIncrement,
+        minIncrement,
+      },
     });
   } catch (error) {
     console.error("Error creating/updating offer:", error);
@@ -134,7 +204,6 @@ export const deleteOffer = async (req, res) => {
     if (!offer)
       return res.status(404).json({ error: `Offer with ID:${id} not found` });
 
-    // Verwende deleteOne statt remove (deprecated)
     await offer.deleteOne();
     res.json({ message: "Offer deleted" });
   } catch (error) {

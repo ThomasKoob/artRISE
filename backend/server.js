@@ -7,6 +7,7 @@ import api from "./routes/index.js";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
+import { startAuctionCronJobs } from "./jobs/auctionChecker.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +25,7 @@ const corsOptions = {
       "http://localhost:5174",
     ].filter(Boolean);
 
-    // ✅ Wichtig: Erlaube Requests ohne Origin (Postman, etc.)
+    // Wichtig: Erlaube Requests ohne Origin (Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
@@ -34,7 +35,7 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // ✅ Wichtig!
+  credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   maxAge: 86400,
@@ -93,6 +94,9 @@ connectDB()
       if (process.env.CLIENT_URL) {
         console.log(`Allowed client: ${process.env.CLIENT_URL}`);
       }
+
+      // Start Cron Jobs nach erfolgreichem Server-Start
+      startAuctionCronJobs();
     });
   })
   .catch((error) => {
