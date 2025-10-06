@@ -468,14 +468,20 @@ export default function ArtworkCard({
             >
               View
             </button>
-
-            {isAuctionActive && isBuyer && (
+            {isAuctionActive && (
               <button
                 onClick={() => {
+                  // Zuerst prüfen ob eingeloggt
                   if (!user) {
                     openLogin();
                     return;
                   }
+                  // Dann prüfen ob Buyer
+                  if (!isBuyer) {
+                    setBidError("Only buyers can place bids.");
+                    return;
+                  }
+                  // Wenn alles OK → Bid Modal öffnen
                   setBidError("");
                   setBidAmount(
                     (displayPrice + (artwork.minIncrement || 5)).toString()

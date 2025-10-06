@@ -313,8 +313,7 @@ const Home = () => {
               />
             ) : (
               <div className="text-white/80">
-                Keine Kunstwerke verfügbar oder keine zugehörige Auktion
-                gefunden.
+                No artworks or auctions found.
               </div>
             )}
           </div>
@@ -326,7 +325,7 @@ const Home = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl text-white font-sans font-extralight">
-              Live Auktionen
+              Live auctions
             </h2>
             <p className="text-sm text-gray-300">
               {liveAuctions.length} live · {allAuctions.length} gesamt

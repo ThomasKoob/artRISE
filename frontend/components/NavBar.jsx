@@ -166,7 +166,7 @@ const NavBar = () => {
               onClick={() => setMobileOpen(false)}
               className="block px-3 py-2 rounded-lg text-whiteLetter hover:bg-white/10"
             >
-              Gallery
+              Auctions
             </Link>
           </div>
 
@@ -174,7 +174,7 @@ const NavBar = () => {
           <div className="mx-4 my-3 border-t border-white/10" />
 
           {/* Auth-Bereich im Drawer */}
-          <div className="p-4 space-y-2">
+          <div className="p-1 space-y-2 ">
             {!isInitializing && !user && (
               <>
                 <Link
