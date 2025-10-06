@@ -12,15 +12,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     endDate: "",
   });
 
+  // نخلّي images string (باش منغيّرش اللوجيك متاع التحقق)
   const [artworks, setArtworks] = useState([
-    {
-      title: "",
-      description: "",
-      images: "",
-      startPrice: "",
-      price: "",
-      currency: "EUR",
-    },
+    { title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" },
   ]);
 
   const [imageFiles, setImageFiles] = useState({});
@@ -38,17 +32,13 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Auktionsdaten aktualisieren
   const handleAuctionChange = (field, value) => {
-    setAuctionData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setAuctionData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
+        const ne = { ...prev };
+        delete ne[field];
+        return ne;
       });
     }
   };
@@ -56,14 +46,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   // Avatar Handlers
   const processAvatarFile = (file) => {
     if (!file) return;
-
-    const valid = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
+    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (!valid.includes(file.type)) {
       setErrors((p) => ({ ...p, avatar: "Ungültiges Bildformat" }));
       return;
@@ -72,240 +55,115 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
       setErrors((p) => ({ ...p, avatar: "Datei zu groß (max. 5MB)" }));
       return;
     }
-
     setAvatarFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result);
-    };
+    reader.onloadend = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
     setErrors((p) => {
-      const newErrors = { ...p };
-      delete newErrors.avatar;
-      return newErrors;
+      const ne = { ...p };
+      delete ne.avatar;
+      return ne;
     });
   };
 
-  const handleAvatarFileChange = (e) => {
-    processAvatarFile(e.target.files[0]);
-  };
-
-  const handleAvatarDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAvatarDragging(true);
-  };
-
-  const handleAvatarDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAvatarDragging(false);
-  };
-
-  const handleAvatarDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
+  const handleAvatarFileChange = (e) => processAvatarFile(e.target.files[0]);
+  const handleAvatarDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setAvatarDragging(true); };
+  const handleAvatarDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setAvatarDragging(false); };
+  const handleAvatarDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
   const handleAvatarDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setAvatarDragging(false);
-
+    e.preventDefault(); e.stopPropagation(); setAvatarDragging(false);
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processAvatarFile(files[0]);
-    }
+    if (files?.length) processAvatarFile(files[0]);
   };
 
   const uploadAvatar = async () => {
     if (!avatarFile) return null;
     setUploadingAvatar(true);
-
     const formData = new FormData();
     formData.append("file", avatarFile);
     formData.append("upload_preset", UPLOAD_PRESET);
-
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Cloudinary Error:", data);
-        throw new Error(data.error?.message || "Upload fehlgeschlagen");
-      }
-
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || "Upload fehlgeschlagen");
       return data.secure_url;
     } catch (err) {
-      console.error("Upload Error:", err);
+      console.error(err);
       throw new Error(err.message || "Avatar-Upload fehlgeschlagen");
     } finally {
       setUploadingAvatar(false);
     }
   };
 
-  // Kunstwerk hinzufügen
+  // Artworks
   const addArtwork = () => {
     if (artworks.length < 10) {
-      setArtworks((prev) => [
-        ...prev,
-        {
-          title: "",
-          description: "",
-          images: "",
-          startPrice: "",
-          price: "",
-          currency: "EUR",
-        },
-      ]);
+      setArtworks((prev) => [...prev, { title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" }]);
     }
   };
 
-  // Kunstwerk entfernen
   const removeArtwork = (index) => {
     if (artworks.length > 1) {
       setArtworks((prev) => prev.filter((_, i) => i !== index));
-      const newFiles = { ...imageFiles };
-      const newPreviews = { ...imagePreviews };
-      const newUploading = { ...uploadingImages };
-      const newDrag = { ...dragStates };
-      delete newFiles[index];
-      delete newPreviews[index];
-      delete newUploading[index];
-      delete newDrag[index];
-      setImageFiles(newFiles);
-      setImagePreviews(newPreviews);
-      setUploadingImages(newUploading);
-      setDragStates(newDrag);
+      const nf = { ...imageFiles }, np = { ...imagePreviews }, nu = { ...uploadingImages }, nd = { ...dragStates };
+      delete nf[index]; delete np[index]; delete nu[index]; delete nd[index];
+      setImageFiles(nf); setImagePreviews(np); setUploadingImages(nu); setDragStates(nd);
     }
   };
 
-  // Kunstwerk-Daten aktualisieren
   const handleArtworkChange = (index, field, value) => {
-    setArtworks((prev) =>
-      prev.map((artwork, i) =>
-        i === index ? { ...artwork, [field]: value } : artwork
-      )
-    );
-
+    setArtworks((prev) => prev.map((a, i) => (i === index ? { ...a, [field]: value } : a)));
     if (field === "startPrice") {
-      setArtworks((prev) =>
-        prev.map((artwork, i) =>
-          i === index ? { ...artwork, price: value } : artwork
-        )
-      );
+      setArtworks((prev) => prev.map((a, i) => (i === index ? { ...a, price: value } : a)));
     }
   };
 
-  // Validiert und verarbeitet Bild-Datei
   const processImageFile = (idx, file) => {
     if (!file) return;
-
-    const valid = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-    ];
+    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
     if (!valid.includes(file.type)) {
-      setErrors((p) => ({
-        ...p,
-        [`artwork_${idx}_images`]: "Ungültiges Bildformat",
-      }));
+      setErrors((p) => ({ ...p, [`artwork_${idx}_images`]: "Ungültiges Bildformat" }));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setErrors((p) => ({
-        ...p,
-        [`artwork_${idx}_images`]: "Datei zu groß (max. 10MB)",
-      }));
+      setErrors((p) => ({ ...p, [`artwork_${idx}_images`]: "Datei zu groß (max. 10MB)" }));
       return;
     }
-
     setImageFiles((p) => ({ ...p, [idx]: file }));
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreviews((p) => ({ ...p, [idx]: reader.result }));
-    };
+    reader.onloadend = () => setImagePreviews((p) => ({ ...p, [idx]: reader.result }));
     reader.readAsDataURL(file);
     setErrors((p) => {
-      const newErrors = { ...p };
-      delete newErrors[`artwork_${idx}_images`];
-      return newErrors;
+      const ne = { ...p };
+      delete ne[`artwork_${idx}_images`];
+      return ne;
     });
   };
 
-  const handleFileChange = (idx, e) => {
-    processImageFile(idx, e.target.files[0]);
-  };
-
-  // Drag & Drop Handler
-  const handleDragEnter = (idx, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStates((p) => ({ ...p, [idx]: true }));
-  };
-
-  const handleDragLeave = (idx, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStates((p) => ({ ...p, [idx]: false }));
-  };
-
-  const handleDragOver = (idx, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
+  const handleFileChange = (idx, e) => processImageFile(idx, e.target.files[0]);
+  const handleDragEnter = (idx, e) => { e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: true })); };
+  const handleDragLeave = (idx, e) => { e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: false })); };
+  const handleDragOver = (idx, e) => { e.preventDefault(); e.stopPropagation(); };
   const handleDrop = (idx, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragStates((p) => ({ ...p, [idx]: false }));
-
+    e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: false }));
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      processImageFile(idx, files[0]);
-    }
+    if (files?.length) processImageFile(idx, files[0]);
   };
 
-  // Upload zu Cloudinary
   const uploadToCloudinary = async (idx) => {
     const file = imageFiles[idx];
     if (!file) return null;
-
     setUploadingImages((p) => ({ ...p, [idx]: true }));
-
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
-
     try {
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("Cloudinary Error:", data);
-        throw new Error(data.error?.message || "Upload fehlgeschlagen");
-      }
-
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || "Upload fehlgeschlagen");
       return data.secure_url;
     } catch (err) {
-      console.error("Upload Error:", err);
+      console.error(err);
       throw new Error(err.message || "Bild-Upload fehlgeschlagen");
     } finally {
       setUploadingImages((p) => ({ ...p, [idx]: false }));
@@ -313,143 +171,73 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   };
 
   const validateStep1 = () => {
-    const newErrors = {};
-
-    if (!auctionData.title.trim()) newErrors.title = "Titel ist erforderlich";
-    if (!auctionData.description.trim())
-      newErrors.description = "Beschreibung ist erforderlich";
-
-    if (!auctionData.avatarUrl && !avatarFile) {
-      newErrors.avatar = "Avatar ist erforderlich";
-    }
-
+    const ne = {};
+    if (!auctionData.title.trim()) ne.title = "Titel ist erforderlich";
+    if (!auctionData.description.trim()) ne.description = "Beschreibung ist erforderlich";
+    if (!auctionData.avatarUrl && !avatarFile) ne.avatar = "Avatar ist erforderlich";
     if (!auctionData.endDate) {
-      newErrors.endDate = "Enddatum ist erforderlich";
+      ne.endDate = "Enddatum ist erforderlich";
     } else {
-      const endDate = new Date(auctionData.endDate);
-      const now = new Date();
-      if (endDate <= now) {
-        newErrors.endDate = "Enddatum muss in der Zukunft liegen";
-      }
+      const end = new Date(auctionData.endDate);
+      if (end <= new Date()) ne.endDate = "Enddatum muss in der Zukunft liegen";
     }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(ne);
+    return Object.keys(ne).length === 0;
   };
 
   const validateStep2 = () => {
-    const newErrors = {};
+    const ne = {};
     let hasError = false;
-
-    artworks.forEach((artwork, index) => {
-      if (!artwork.title.trim()) {
-        newErrors[`artwork_${index}_title`] = "Titel ist erforderlich";
-        hasError = true;
-      }
-
-      if (!artwork.description.trim()) {
-        newErrors[`artwork_${index}_description`] =
-          "Beschreibung ist erforderlich";
-        hasError = true;
-      }
-
-      if (!artwork.images.trim() && !imageFiles[index]) {
-        newErrors[`artwork_${index}_images`] = "Bild ist erforderlich";
-        hasError = true;
-      }
-
-      if (!artwork.startPrice || artwork.startPrice <= 0) {
-        newErrors[`artwork_${index}_startPrice`] =
-          "Startpreis muss größer als 0 sein";
-        hasError = true;
-      }
+    artworks.forEach((a, i) => {
+      if (!a.title.trim()) { ne[`artwork_${i}_title`] = "Titel ist erforderlich"; hasError = true; }
+      if (!a.description.trim()) { ne[`artwork_${i}_description`] = "Beschreibung ist erforderlich"; hasError = true; }
+      if (!a.images.trim() && !imageFiles[i]) { ne[`artwork_${i}_images`] = "Bild ist erforderlich"; hasError = true; }
+      if (!a.startPrice || a.startPrice <= 0) { ne[`artwork_${i}_startPrice`] = "Startpreis muss größer als 0 sein"; hasError = true; }
     });
-
-    setErrors(newErrors);
+    setErrors(ne);
     return !hasError;
   };
 
-  const nextStep = () => {
-    if (currentStep === 1 && validateStep1()) {
-      setCurrentStep(2);
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep(1);
-    setErrors({});
-  };
+  const nextStep = () => { if (currentStep === 1 && validateStep1()) setCurrentStep(2); };
+  const prevStep = () => { setCurrentStep(1); setErrors({}); };
 
   const handleSubmit = async () => {
     if (!validateStep2()) return;
-
     setLoading(true);
-
     try {
-      // 1. Avatar hochladen falls vorhanden
       let avatarUrl = auctionData.avatarUrl;
-      if (avatarFile) {
-        avatarUrl = await uploadAvatar();
-      }
+      if (avatarFile) avatarUrl = await uploadAvatar();
 
-      // 2. Upload aller Bilder zu Cloudinary
       const uploadedArtworks = await Promise.all(
-        artworks.map(async (artwork, idx) => {
-          let imageUrl = artwork.images;
-
-          if (imageFiles[idx]) {
-            imageUrl = await uploadToCloudinary(idx);
-          }
-
+        artworks.map(async (a, idx) => {
+          let imageUrl = a.images;
+          if (imageFiles[idx]) imageUrl = await uploadToCloudinary(idx);
           return {
-            ...artwork,
+            ...a,
             images: imageUrl,
-            startPrice: parseFloat(artwork.startPrice),
-            price: parseFloat(artwork.price || artwork.startPrice),
+            startPrice: parseFloat(a.startPrice),
+            price: parseFloat(a.price || a.startPrice),
             endDate: new Date(auctionData.endDate).toISOString(),
           };
         })
       );
 
       const submitData = {
-        auction: {
-          ...auctionData,
-          avatarUrl,
-          endDate: new Date(auctionData.endDate).toISOString(),
-        },
+        auction: { ...auctionData, avatarUrl, endDate: new Date(auctionData.endDate).toISOString() },
         artworks: uploadedArtworks,
       };
 
       await onSubmit(submitData);
 
-      // Reset form
-      setAuctionData({
-        title: "",
-        description: "",
-        avatarUrl: "",
-        endDate: "",
-      });
-      setArtworks([
-        {
-          title: "",
-          description: "",
-          images: "",
-          startPrice: "",
-          price: "",
-          currency: "EUR",
-        },
-      ]);
-      setImageFiles({});
-      setImagePreviews({});
-      setUploadingImages({});
-      setDragStates({});
-      setAvatarFile(null);
-      setAvatarPreview(null);
-      setCurrentStep(1);
-      setErrors({});
+      // reset
+      setAuctionData({ title: "", description: "", avatarUrl: "", endDate: "" });
+      setArtworks([{ title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" }]);
+      setImageFiles({}); setImagePreviews({}); setUploadingImages({}); setDragStates({});
+      setAvatarFile(null); setAvatarPreview(null);
+      setCurrentStep(1); setErrors({});
       onClose();
-    } catch (error) {
-      console.error("Error creating auction:", error);
+    } catch (e) {
+      console.error("Error creating auction:", e);
       setErrors({ submit: "Error creating auction" });
     } finally {
       setLoading(false);
@@ -459,111 +247,74 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-darkBackground/50 backdrop-blur-lg"
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-[120] flex sm:items-center items-end justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-darkBackground/50 backdrop-blur-lg" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-violetHeader/30 border-1 border-hellPink/80 shadow-2xl mx-4"
+        className="relative w-full max-w-full sm:max-w-2xl
+                   sm:rounded-2xl rounded-t-2xl bg-violetHeader/30 border border-hellPink/80
+                   shadow-2xl mx-0 flex flex-col overflow-hidden
+                   min-h-[70dvh] max-h-[100dvh] sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0   px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 left-0 right-0 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-20 bg-violetHeader/70 backdrop-blur border-b border-white/10">
           <div>
-            <h2 className="text-xl font-sans font-extralight text-whiteLetter/80">
-              {currentStep === 1 ? "New Auction" : "Add Art"}
-            </h2>
-            <p className="text-sm text-gray-500">Step {currentStep} from 2</p>
+            <h2 className="text-xl font-sans font-extralight text-white/80">{currentStep === 1 ? "New Auction" : "Add Art"}</h2>
+            <p className="text-sm text-white/60">Step {currentStep} from 2</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full hover:bg-hell flex items-center justify-center"
-          >
+          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center">
             <X size={20} />
           </button>
         </div>
 
         {/* Body */}
-        <div className="px-6 py-6">
-          {/* Step 1: Auction Data */}
+        <div className="px-4 sm:px-6 py-4 sm:py-6 overflow-y-auto flex-1 pb-[7.5rem] sm:pb-32 overscroll-contain touch-pan-y">
           {currentStep === 1 && (
             <div className="space-y-5">
               {/* Title */}
               <div>
-                <label
-                  htmlFor="title"
-                  className="block mb-1 text-sm font-medium text-gw"
-                >
-                  Artist name
-                </label>
+                <label htmlFor="title" className="block mb-1 text-sm font-medium text-white">Artist name</label>
                 <input
                   type="text"
                   id="title"
                   value={auctionData.title}
                   onChange={(e) => handleAuctionChange("title", e.target.value)}
-                  className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
-                    errors.title
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
+                  className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+                              border ${errors.title ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                              focus:outline-none focus:ring-1`}
                   placeholder="Hans Wurst"
                 />
-                {errors.title && (
-                  <p className="text-sm text-red-600 mt-1">{errors.title}</p>
-                )}
+                {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
               </div>
 
               {/* Description */}
               <div>
-                <label
-                  htmlFor="description"
-                  className="block mb-1 text-sm font-medium text-WhiteLetter/80"
-                >
-                  Artist Bio
-                </label>
+                <label htmlFor="description" className="block mb-1 text-sm font-medium text-white">Artist Bio</label>
                 <textarea
                   id="description"
                   value={auctionData.description}
-                  onChange={(e) =>
-                    handleAuctionChange("description", e.target.value)
-                  }
+                  onChange={(e) => handleAuctionChange("description", e.target.value)}
                   rows={4}
-                  className={`w-full px-4 py-2 border rounded-lg text-whiteLetter/80 focus:outline-none focus:ring-1 ${
-                    errors.description
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
+                  className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+                              border ${errors.description ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                              focus:outline-none focus:ring-1`}
                   placeholder="Your Story about you"
                 />
-                {errors.description && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {errors.description}
-                  </p>
-                )}
+                {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
               </div>
 
               {/* Avatar Upload */}
               <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">
-                  Profile Picture
-                </label>
+                <label className="block mb-1 text-sm font-medium text-white">Profile Picture</label>
 
                 {avatarPreview && (
                   <div className="mb-3 flex justify-center">
                     <div className="relative">
-                      <img
-                        src={avatarPreview}
-                        alt="Avatar Preview"
-                        className="w-24 h-24 rounded-full object-cover bg-violetHeader/80 border-2 border-gray-300"
-                      />
+                      <img src={avatarPreview} alt="Avatar Preview" className="w-24 h-24 rounded-full object-cover bg-violetHeader/80 border-2 border-white/20" />
                       <button
                         type="button"
-                        onClick={() => {
-                          setAvatarFile(null);
-                          setAvatarPreview(null);
-                        }}
+                        onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
                         className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
                       >
                         <X size={14} />
@@ -574,185 +325,100 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
 
                 <div
                   className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
-                    avatarDragging
-                      ? "border-blue-500 bg-blue-50"
-                      : errors.avatar
-                      ? "border-red-500 bg-red-50"
-                      : "border-buttonPink/60 hover:border-buttonPink  hover:bg-hellPink/20"
+                    avatarDragging ? "border-blue-500 bg-blue-50"
+                    : errors.avatar ? "border-red-500 bg-red-50"
+                    : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                   }`}
                   onDragEnter={handleAvatarDragEnter}
                   onDragLeave={handleAvatarDragLeave}
                   onDragOver={handleAvatarDragOver}
                   onDrop={handleAvatarDrop}
                 >
-                  <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer bg-violetHeade/30">
+                  <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
                     <div className="flex flex-col items-center justify-center pointer-events-none">
-                      <Upload className="w-8 h-8 mb-2 text-whiteLetter/80" />
-                      <p className="mb-1 text-sm text-whiteLetter/60">
-                        <span className="font-semibold">Click</span> or drag
-                        picture here
-                      </p>
-                      <p className="text-xs text-whiteLetter/60">
-                        PNG, JPG, GIF, WebP (max. 5MB)
-                      </p>
+                      <Upload className="w-8 h-8 mb-2 text-white/70" />
+                      <p className="mb-1 text-sm text-white/70"><span className="font-semibold">Click</span> or drag picture here</p>
+                      <p className="text-xs text-white/60">PNG, JPG, GIF, WebP (max. 5MB)</p>
                     </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      onChange={handleAvatarFileChange}
-                    />
+                    <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleAvatarFileChange} />
                   </label>
                 </div>
 
-                {avatarFile && (
-                  <p className="mt-2 text-xs text-green-600">
-                    ✓ {avatarFile.name} selected
-                  </p>
-                )}
-                {uploadingAvatar && (
-                  <p className="mt-2 text-xs text-blue-600">Uploading...</p>
-                )}
-                {errors.avatar && (
-                  <p className="mt-2 text-xs text-red-600">{errors.avatar}</p>
-                )}
+                {avatarFile && <p className="mt-2 text-xs text-green-500">✓ {avatarFile.name} selected</p>}
+                {uploadingAvatar && <p className="mt-2 text-xs text-blue-400">Uploading...</p>}
+                {errors.avatar && <p className="mt-2 text-xs text-red-500">{errors.avatar}</p>}
               </div>
 
               {/* End Date */}
               <div>
-                <label
-                  htmlFor="endDate"
-                  className="block mb-1 text-sm font-medium text-gray-700"
-                >
-                  Auction-End
-                </label>
+                <label htmlFor="endDate" className="block mb-1 text-sm font-medium text-white">Auction-End</label>
                 <div className="relative">
                   <input
                     type="datetime-local"
                     id="endDate"
                     value={auctionData.endDate}
-                    onChange={(e) =>
-                      handleAuctionChange("endDate", e.target.value)
-                    }
-                    className={`w-full px-4 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-1 ${
-                      errors.endDate
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:ring-blue-500"
-                    }`}
+                    onChange={(e) => handleAuctionChange("endDate", e.target.value)}
+                    className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+                                border ${errors.endDate ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                focus:outline-none focus:ring-1`}
                   />
                   <div
-                    className="absolute right-5 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
-                    onClick={() =>
-                      document.getElementById("endDate").showPicker()
-                    }
+                    className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 cursor-pointer text-white/60 hover:text-white/80"
+                    onClick={() => document.getElementById("endDate").showPicker()}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect
-                        x="3"
-                        y="4"
-                        width="18"
-                        height="18"
-                        rx="2"
-                        ry="2"
-                      ></rect>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                       <line x1="16" y1="2" x2="16" y2="6"></line>
                       <line x1="8" y1="2" x2="8" y2="6"></line>
                       <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
                   </div>
                 </div>
-
-                {errors.endDate && (
-                  <p className="text-sm text-red-600 mt-1">{errors.endDate}</p>
-                )}
+                {errors.endDate && <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>}
               </div>
             </div>
           )}
 
-          {/* Step 2: Artworks */}
+          {/* Step 2 */}
           {currentStep === 2 && (
             <div>
-              <div className="sticky top-0 bg-white z-10 pb-4 border-b mb-6 -mx-6 px-6 -mt-6 pt-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-800">
-                    Art ({artworks.length}/10)
-                  </h3>
-                  {artworks.length < 10 && (
-                    <button
-                      type="button"
-                      onClick={addArtwork}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2"
-                    >
-                      <Plus size={18} />
-                      Add
-                    </button>
-                  )}
-                </div>
+              <div className="pb-4 mb-6 border-b border-white/10">
+                <h3 className="text-lg font-medium text-white">Art ({artworks.length}/10)</h3>
               </div>
 
               <div className="space-y-6">
                 {artworks.map((artwork, index) => (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4"
-                  >
+                  <div key={index} className="min-w-0 border border-white/10 rounded-xl p-4 sm:p-5 bg-white/5 space-y-4 shadow-inner">
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium text-gray-800">
-                        Art {index + 1}
-                      </h4>
+                      <h4 className="font-medium text-white">Art {index + 1}</h4>
                       {artworks.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeArtwork(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          ✕
-                        </button>
+                        <button type="button" onClick={() => removeArtwork(index)} className="text-red-400 hover:text-red-500">✕</button>
                       )}
                     </div>
 
+                    {/* Title */}
                     <input
                       type="text"
-                      placeholder="Titel"
+                      placeholder="Title"
                       value={artwork.title}
-                      onChange={(e) =>
-                        handleArtworkChange(index, "title", e.target.value)
-                      }
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
-                        errors[`artwork_${index}_title`]
-                          ? "border-buttonPink focus:ring-lightRedButton"
-                          : "border-gray-300 focus:ring-blue-500"
-                      } text-gray-900`}
+                      onChange={(e) => handleArtworkChange(index, "title", e.target.value)}
+                      className={`w-full px-4 py-2 rounded-lg bg_white/5 text-white placeholder-white/60
+                                  border ${errors[`artwork_${index}_title`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                  focus:outline-none focus:ring-1`.replace("bg_white/5", "bg-white/5")}
                     />
+                    {errors[`artwork_${index}_title`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_title`]}</p>}
 
-                    {/* Bild Upload Bereich */}
+                    {/* Image Upload */}
                     <div>
                       {imagePreviews[index] && (
                         <div className="mb-3 relative">
-                          <img
-                            src={imagePreviews[index]}
-                            alt="Preview"
-                            className="w-full h-48 object-cover rounded-lg"
-                          />
+                          <img src={imagePreviews[index]} alt="Preview" className="w-full h-36 sm:h-48 object-cover rounded-lg" />
                           <button
                             type="button"
                             onClick={() => {
-                              const newFiles = { ...imageFiles };
-                              const newPreviews = { ...imagePreviews };
-                              delete newFiles[index];
-                              delete newPreviews[index];
-                              setImageFiles(newFiles);
-                              setImagePreviews(newPreviews);
+                              const nf = { ...imageFiles }, np = { ...imagePreviews };
+                              delete nf[index]; delete np[index];
+                              setImageFiles(nf); setImagePreviews(np);
                             }}
                             className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                           >
@@ -763,11 +429,9 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
 
                       <div
                         className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
-                          dragStates[index]
-                            ? "border-blue-500 bg-blue-50"
-                            : errors[`artwork_${index}_images`]
-                            ? "border-buttonPink bg-lightRedButton"
-                            : "border-coldYellow bg-white hover:bg-gray-50"
+                          dragStates[index] ? "border-blue-500 bg-blue-50"
+                          : errors[`artwork_${index}_images`] ? "border-red-500 bg-red-50"
+                          : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                         }`}
                         onDragEnter={(e) => handleDragEnter(index, e)}
                         onDragLeave={(e) => handleDragLeave(index, e)}
@@ -776,95 +440,59 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                       >
                         <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
                           <div className="flex flex-col items-center justify-center pointer-events-none">
-                            <Upload className="w-8 h-8 mb-2 text-gray-400" />
-                            <p className="mb-1 text-sm text-gray-600">
-                              <span className="font-semibold">Click</span> or
-                              drag picture here
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              PNG, JPG, GIF, WebP (max. 10MB)
-                            </p>
+                            <Upload className="w-8 h-8 mb-2 text-white/70" />
+                            <p className="mb-1 text-sm text-white/70"><span className="font-semibold">Click</span> or drag picture here</p>
+                            <p className="text-xs text-white/60">PNG, JPG, GIF, WebP (max. 10MB)</p>
                           </div>
-                          <input
-                            type="file"
-                            className="hidden"
-                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                            onChange={(e) => handleFileChange(index, e)}
-                          />
+                          <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={(e) => handleFileChange(index, e)} />
                         </label>
                       </div>
 
-                      {imageFiles[index] && (
-                        <p className="mt-2 text-xs text-green-600">
-                          ✓ {imageFiles[index].name} selected
-                        </p>
-                      )}
-                      {uploadingImages[index] && (
-                        <p className="mt-2 text-xs text-blue-600">
-                          Uploading...
-                        </p>
-                      )}
-                      {errors[`artwork_${index}_images`] && (
-                        <p className="mt-2 text-xs text-red-600">
-                          {errors[`artwork_${index}_images`]}
-                        </p>
-                      )}
+                      {imageFiles[index] && <p className="mt-2 text-xs text-green-500">✓ {imageFiles[index].name} selected</p>}
+                      {uploadingImages[index] && <p className="mt-2 text-xs text-blue-400">Uploading...</p>}
+                      {errors[`artwork_${index}_images`] && <p className="mt-2 text-xs text-red-500">{errors[`artwork_${index}_images`]}</p>}
                     </div>
 
+                    {/* Description */}
                     <textarea
                       placeholder="Description"
                       value={artwork.description}
-                      onChange={(e) =>
-                        handleArtworkChange(
-                          index,
-                          "description",
-                          e.target.value
-                        )
-                      }
+                      onChange={(e) => handleArtworkChange(index, "description", e.target.value)}
                       rows={3}
-                      className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
-                        errors[`artwork_${index}_description`]
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-blue-500"
-                      } text-gray-900`}
+                      className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+                                  border ${errors[`artwork_${index}_description`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                  focus:outline-none focus:ring-1`}
                     />
+                    {errors[`artwork_${index}_description`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_description`]}</p>}
 
                     <div className="grid grid-cols-2 gap-4">
                       <input
                         type="number"
                         min="1"
                         step="0.01"
-                        placeholder="Startprice (€)"
+                        placeholder="Start price (€)"
                         value={artwork.startPrice}
-                        onChange={(e) =>
-                          handleArtworkChange(
-                            index,
-                            "startPrice",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-1 ${
-                          errors[`artwork_${index}_startPrice`]
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-blue-500"
-                        } text-gray-900`}
+                        onChange={(e) => handleArtworkChange(index, "startPrice", e.target.value)}
+                        className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+                                    border ${errors[`artwork_${index}_startPrice`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                    focus:outline-none focus:ring-1`}
                       />
                     </div>
 
-                    {(errors[`artwork_${index}_title`] ||
-                      errors[`artwork_${index}_description`] ||
-                      errors[`artwork_${index}_startPrice`]) && (
-                      <p className="text-xs text-red-600">
-                        {errors[`artwork_${index}_title`] ||
-                          errors[`artwork_${index}_description`] ||
-                          errors[`artwork_${index}_startPrice`]}
-                      </p>
-                    )}
+                    {errors[`artwork_${index}_startPrice`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_startPrice`]}</p>}
                   </div>
                 ))}
 
+                {artworks.length < 10 && (
+                  <div className="pt-2 flex justify-center">
+                    <button type="button" onClick={addArtwork} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2">
+                      <Plus size={18} /> Add
+                    </button>
+                  </div>
+                )}
+
                 {errors.submit && (
-                  <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+                  <div className="p-4 bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg">
                     {errors.submit}
                   </div>
                 )}
@@ -874,41 +502,42 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0  px-6 py-4 flex justify-between">
+        <div className="sticky bottom-0 left-0 right-0 z-30 px-4 sm:px-6 py-3 sm:py-4
+                        pb-[calc(env(safe-area-inset-bottom)+12px)]
+                        bg-violetHeader/70 backdrop-blur border-t border-white/10
+                        flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
           {currentStep === 2 && (
             <button
               type="button"
               onClick={prevStep}
-              className="text-black px-6 py-2 border bg-lightRedButton border-gray-300 rounded-xl2 hover:bg-gray-50"
+              className="w-full sm:w-auto px-6 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/80"
             >
               Back
             </button>
           )}
-          <div className="flex gap-3 ml-auto">
+
+          <div className="flex gap-2 sm:gap-3 sm:ml-auto w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="text-darkBackground btn  px-6 py-2 border-1 border-buttonPink bg-lightRedButton  rounded-2xl hover:bg-lavenderViolett/40 hover:text-hellGrun/80"
+              className="w-full sm:w-auto px-6 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/80"
             >
-              Abort
+              Cancel
             </button>
+
             {currentStep === 1 ? (
               <button
                 type="button"
                 onClick={nextStep}
-                className="px-6 py-2 bg-coldYellow/70 border-1 border-coldYellow hover:bg-coldYellow text-white hover:text-whiteWarm rounded-2xl"
+                className="w-full sm:w-auto px-6 py-2 rounded-2xl bg-coldYellow/70 border border-coldYellow text-white hover:bg-coldYellow"
               >
                 Next
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={
-                  loading ||
-                  uploadingAvatar ||
-                  Object.values(uploadingImages).some((v) => v)
-                }
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                disabled={loading || uploadingAvatar || Object.values(uploadingImages).some(Boolean)}
+                className="w-full sm:w-auto px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
               >
                 {loading ? "Creating..." : "Create Auction"}
               </button>
