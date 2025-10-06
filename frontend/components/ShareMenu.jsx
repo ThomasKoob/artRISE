@@ -1,44 +1,62 @@
 import { useState, useMemo } from "react";
 
+/** Helpers */
 const enc = encodeURIComponent;
-const nl = "\n";
+const NL = "\n";
 
+/** Einheitliche Message für alle Kanäle */
 function buildShareMessage({ artistName, artworkTitle, shareUrl }) {
   const line1 = artistName
     ? `${artistName} is running a pop-up auction on popAUC`
     : `Pop-up auction on popAUC`;
   const line2 = artworkTitle ? `“${artworkTitle}”` : "";
-  return [line1, line2, shareUrl].filter(Boolean).join(nl);
+  return [line1, line2, shareUrl].filter(Boolean).join(NL);
+}
+
+/** Instagram-taugliche Kurz-Caption (ohne Link) */
+function buildCaption({ artistName, artworkTitle }) {
+  const titleLine = artworkTitle ? `“${artworkTitle}”` : "";
+  const artistLine = artistName
+    ? `${artistName} — pop-up auction on popAUC`
+    : `pop-up auction on popAUC`;
+  return [titleLine, artistLine].filter(Boolean).join("\n");
 }
 
 export default function ShareMenu({
-  url,
-  artistName = "",
-  artworkTitle = "",
-  imageUrl = "", // <— Profilbild ODER Artwork: öffentlich erreichbar (CORS!)
+  url, // Pflicht: kanonische Auktions-URL (ohne UTM)
+  artistName = "", // z. B. "xyc"
+  artworkTitle = "", // z. B. "Untitled #3"
+  imageUrl = "", // optional: öffentlich erreichbares Bild (Profil/Artwork), CORS!
   utm = "utm_source=share&utm_medium=button&utm_campaign=auction",
   className = "",
   buttonLabel = "Share",
 }) {
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedMsg, setCopiedMsg] = useState(false);
+  const [copiedCaption, setCopiedCaption] = useState(false);
 
+  // Finaler Link mit UTM
   const shareUrl = useMemo(() => {
     if (!url) return "";
     return url.includes("?") ? `${url}&${utm}` : `${url}?${utm}`;
   }, [url, utm]);
 
+  // Einheitliche Texte
   const message = useMemo(
     () => buildShareMessage({ artistName, artworkTitle, shareUrl }),
     [artistName, artworkTitle, shareUrl]
   );
+  const caption = useMemo(
+    () => buildCaption({ artistName, artworkTitle }),
+    [artistName, artworkTitle]
+  );
 
+  /** Native Share: versucht Bild+Text+Link; sonst Text+Link; sonst Copy */
   async function onNativeShare() {
-    // 1) Versuche Bild + Text + Link (nur wo unterstützt)
+    // 1) Versuche Bild mitzuschicken (nur, wenn Browser Files im Share unterstützt)
     if (imageUrl) {
       try {
         const res = await fetch(imageUrl, { credentials: "omit" });
-        // Hinweis: Das Bild muss CORS-fähig/öffentlich sein.
         const blob = await res.blob();
         const filename = imageUrl.split("/").pop() || "image.jpg";
         const type = blob.type || "image/jpeg";
@@ -48,17 +66,17 @@ export default function ShareMenu({
           await navigator.share({
             title: artworkTitle || artistName || "popAUC",
             text: message,
-            url: shareUrl, // viele OS zeigen dann Bild + Text + Link
+            url: shareUrl,
             files: [file],
           });
           return;
         }
       } catch {
-        // Wenn Bild-Download / CORS scheitert, weiter zu Text-Share
+        // Bild konnte nicht geladen/geteilt werden -> weiter mit Text+Link
       }
     }
 
-    // 2) Fallback: nur Text + Link
+    // 2) Text + Link
     try {
       if (navigator.share) {
         await navigator.share({
@@ -70,20 +88,52 @@ export default function ShareMenu({
         await copyMessage();
       }
     } catch {
-      /* ignore */
+      // abgebrochen/ignoriert
     }
   }
 
+  /** Vollständige Message (Text + Link) kopieren */
   async function copyMessage() {
     try {
       await navigator.clipboard.writeText(message);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setCopiedMsg(true);
+      setTimeout(() => setCopiedMsg(false), 1500);
     } catch {
       window.prompt("Copy this message", message);
     }
   }
 
+  /** Nur Caption (für Instagram) kopieren */
+  async function copyCaption() {
+    try {
+      await navigator.clipboard.writeText(caption);
+      setCopiedCaption(true);
+      setTimeout(() => setCopiedCaption(false), 1500);
+    } catch {
+      window.prompt("Copy this caption", caption);
+    }
+  }
+
+  /** Bild herunterladen (für Instagram-Flow: Bild speichern + Caption einfügen) */
+  async function downloadImage() {
+    if (!imageUrl) return;
+    try {
+      const res = await fetch(imageUrl, { credentials: "omit" });
+      const blob = await res.blob();
+      const filename = imageUrl.split("/").pop() || "image.jpg";
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch {
+      // optional: Fehlerbehandlung/Toast
+    }
+  }
+
+  /** Kanalspezifische Links (FB/LinkedIn ignorieren Text und nutzen OG) */
   const links = [
     {
       key: "whatsapp",
@@ -122,6 +172,7 @@ export default function ShareMenu({
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
+      {/* 1) Native Share (beste UX mobil) */}
       <button
         onClick={onNativeShare}
         className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
@@ -132,6 +183,7 @@ export default function ShareMenu({
         {buttonLabel}
       </button>
 
+      {/* 2) Fallback-Menü */}
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -150,6 +202,7 @@ export default function ShareMenu({
             className="absolute right-0 mt-2 w-56 rounded-2xl border-1 bg-darkBackground/60 text-buttonPink shadow-lg p-1 z-50"
             onMouseLeave={() => setOpen(false)}
           >
+            {/* Klassische Share-Links */}
             {links.map((l) => (
               <a
                 key={l.key}
@@ -162,16 +215,42 @@ export default function ShareMenu({
                 {l.label}
               </a>
             ))}
+
+            {/* Copy Message */}
             <button
               onClick={copyMessage}
               role="menuitem"
               className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100/20 text-sm"
               type="button"
             >
-              {copied ? "Message copied ✓" : "Copy message"}
+              {copiedMsg ? "Message copied ✓" : "Copy message"}
             </button>
+
+            {/* Instagram-Flow: Bild speichern + Caption kopieren */}
+            {imageUrl && (
+              <button
+                onClick={downloadImage}
+                role="menuitem"
+                className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100/20 text-sm"
+                type="button"
+              >
+                Download image
+              </button>
+            )}
+
+            <button
+              onClick={copyCaption}
+              role="menuitem"
+              className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100/20 text-sm"
+              type="button"
+            >
+              {copiedCaption ? "Caption copied ✓" : "Copy caption"}
+            </button>
+
+            {/* Hinweis */}
             <div className="px-3 pb-2 pt-1 text-xs opacity-60">
-              Native share tries to include the image; links use text + preview.
+              Instagram: save the image, create a Post/Story, then paste the
+              caption. On mobile, try the Share button and pick Instagram.
             </div>
           </div>
         )}
