@@ -34,7 +34,7 @@ const NavBar = () => {
               className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10"
               aria-label="Open menu"
               aria-expanded={mobileOpen}
-              title="Menü"
+              title="Menu"
             >
               {mobileOpen ? (
                 <X size={22} className="text-coldYellow" />
@@ -51,18 +51,18 @@ const NavBar = () => {
             </Link>
 
             {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-6 ml-6 text-e99f4c font-sans text-whiteLetter text-xl font-extralight">
+            <div className="hidden items-center md:flex  gap-6 ml-6 text-e99f4c font-sans text-whiteLetter text-xl font-extralight">
               <Link
                 to="/"
                 className="hover:text-buttonPink/70 rounded-xl transition-colors"
               >
-                Home
+                HOME
               </Link>
               <Link
                 to="/auction"
                 className="hover:text-coldYellow rounded-xl transition-colors"
               >
-                Auctions
+                AUCTIONS{" "}
               </Link>
               {/* DE: ggf. mehr Links */}
             </div>
@@ -77,30 +77,30 @@ const NavBar = () => {
               <>
                 <Link
                   to="/signup"
-                  className="hidden  sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border-2 border-darkBackground  hover:bg-buttonPink font-extralight shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border-2 border-darkBackground  hover:bg-buttonPink/80 font-extralight shadow-md transition"
                 >
                   <UserPlus size={18} className="mr-1" />
                   SignUp
                 </Link>
                 <button
                   onClick={openLogin}
-                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink/70 font-extralight shadow-md transition"
                 >
-                  <LogIn size={18} className="mr-1" />
+                  <LogIn size={12} className="mr-1" />
                   LogIn
                 </button>
               </>
             ) : (
               // Eingeloggt
               <>
-                <span className="hidden sm:inline-flex px-3 py-2 text-sm text-gray-300">
-                  Hallo, {user.userName || user.email}
+                <span className="hidden sm:inline-flex px-3 py-2 text-sm font-extralight font-sans text-whiteLetter">
+                  {user.userName || user.email}
                 </span>
 
                 {/* Dashboard (Desktop) */}
                 <Link
                   to="/dashboard"
-                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
                 >
                   <User size={20} />
                 </Link>
@@ -108,7 +108,7 @@ const NavBar = () => {
                 {/* LogOut (Desktop) — ICON ONLY, next to Dashboard */}
                 <button
                   onClick={logout}
-                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/80 text-white hover:bg-buttonPink shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/60 text- hover:bg-buttonPink shadow-md transition"
                   aria-label="Log out"
                   title="Log out"
                 >
@@ -142,7 +142,7 @@ const NavBar = () => {
           }`}
         >
           <div className="h-16 flex items-center justify-between px-4 border-b border-darkBackground/30">
-            <span className="text-xl text-whiteLetter">Menü</span>
+            <span className="text-xl text-whiteLetter">Menu</span>
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -159,14 +159,14 @@ const NavBar = () => {
               onClick={() => setMobileOpen(false)}
               className="block px-3 py-2 rounded-lg text-whiteLetter hover:bg-white/10"
             >
-              Home
+              HOME
             </Link>
             <Link
               to="/auction"
               onClick={() => setMobileOpen(false)}
               className="block px-3 py-2 rounded-lg text-whiteLetter hover:bg-white/10"
             >
-              Auctions
+              AUCTIONS{" "}
             </Link>
           </div>
 

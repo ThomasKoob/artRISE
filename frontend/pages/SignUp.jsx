@@ -245,7 +245,7 @@ const SignUp = () => {
                   required
                   className="checkbox checkbox-sm mt-0.5"
                 />
-                <span className="text-sm text-whiteLetter/90">
+                <span className="text-sm font-extralight font-sans text-whiteLetter/90">
                   I accept the{" "}
                   <button
                     type="button"
@@ -268,7 +268,7 @@ const SignUp = () => {
               {buttonConfig.text}
             </button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center font-sans font-extralight text-md text-whiteLetter/80">
               Already have an account?{" "}
               <button
                 type="button"

@@ -12,29 +12,19 @@ const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
 
       {!activeMyAuction ? (
         // No Active Auction - Show Create Button
-        <div className="bg-green-50 p-6 rounded-lg border-l-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-green-800">
-                Neue Auktion
-              </h3>
-              <p className="text-green-700">
-                Erstellen Sie eine neue Auktion. Sie können später Kunstwerke
-                hinzufügen.
-              </p>
-            </div>
-            <button
-              onClick={onCreateAuction}
-              className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
-            >
-              <Plus size={20} />
-              Auktion erstellen
-            </button>
-          </div>
+
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onCreateAuction}
+            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
+          >
+            <Plus size={20} />
+            Auktion erstellen
+          </button>
         </div>
       ) : (
         // Active Auction Card
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-darkbackground/80 rounded-lg shadow overflow-hidden">
           {activeMyAuction.bannerImageUrl && (
             <img
               src={activeMyAuction.bannerImageUrl}
@@ -48,12 +38,11 @@ const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
           )}
 
           <div className="p-5">
-            <h2 className="text-xl font-semibold text-black">
+            <h1 className="text-xl text-black font-sans">My Auction</h1>
+            <h2 className="text-xl font sans font-semibold text-black">
               {activeMyAuction.title}
             </h2>
-            <p className="text-gray-700 mt-1 line-clamp-3">
-              {activeMyAuction.description}
-            </p>
+
             {activeMyAuction.endDate && (
               <p className="text-sm text-gray-600 mt-2">
                 Ende: {new Date(activeMyAuction.endDate).toLocaleString()}
@@ -63,10 +52,10 @@ const SellerDashboard = ({ user, activeMyAuction, onCreateAuction }) => {
             {/* Action Buttons */}
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded flex items-center justify-center gap-1"
+                className="bg-lightRedButton rounded-2xl hover:bg-blue-600 text-white py-2 px-3  flex items-center justify-center gap-1"
                 onClick={() => navigate(`/auction/${activeMyAuction._id}`)}
               >
-                <Eye size={16} /> Ansehen
+                <Eye size={16} /> View
               </button>
             </div>
           </div>

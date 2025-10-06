@@ -28,7 +28,7 @@ function sanitizeSubject(s) {
     .trim();
 }
 
-/** Mailto-Builder mit encodeURIComponent (keine '+') */
+/** Mailto-Builder mit encodeURIComponent (verhindert '+' statt Space) */
 function buildMailtoHref({ subject, body }) {
   const qs = [
     subject ? `subject=${encodeURIComponent(subject)}` : null,
@@ -41,8 +41,8 @@ function buildMailtoHref({ subject, body }) {
 
 export default function ShareMenu({
   url, // kanonische Auktions-URL (ohne UTM)
-  artistName = "",
-  artworkTitle = "",
+  artistName = "", // <- kommt aus auction.title
+  artworkTitle = "", // <- kommt aus primaryArtwork.title (falls vorhanden)
   imageUrl = "", // öffentlich + CORS, sonst wird nur Text geteilt
   utm = "utm_source=share&utm_medium=button&utm_campaign=auction",
   className = "",
@@ -68,7 +68,7 @@ export default function ShareMenu({
     [artistName, artworkTitle]
   );
 
-  // E-Mail-Betreff (ASCII + korrekt encodiert -> keine '+')
+  // E-Mail-Betreff (ASCII & korrekt encodiert -> keine '+')
   const emailSubject = useMemo(() => {
     const base = artistName
       ? `${artistName} on popAUC${artworkTitle ? ` - "${artworkTitle}"` : ""}`
@@ -180,7 +180,7 @@ export default function ShareMenu({
         shareUrl
       )}`,
     },
-    { key: "email", label: "E-mail", href: mailtoHref }, // <— fix
+    { key: "email", label: "E-mail", href: mailtoHref }, // robustes mailto
   ];
 
   return (
