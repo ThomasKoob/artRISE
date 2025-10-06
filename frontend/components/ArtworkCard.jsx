@@ -1,3 +1,4 @@
+// frontend/components/ArtworkCard.jsx
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 import { getArtworkOffers, createOffer } from "../api/api";
@@ -19,18 +20,14 @@ function getImageList(aw) {
   ];
 
   const urls = [];
-
   for (const c of candidates) {
     if (!c) continue;
 
-    // Array von Strings / Objekten
     if (Array.isArray(c)) {
       for (const item of c) {
         if (!item) continue;
-        if (typeof item === "string") {
-          urls.push(item);
-        } else if (typeof item === "object") {
-          // gängige Felder
+        if (typeof item === "string") urls.push(item);
+        else if (typeof item === "object") {
           const u = item.url || item.src || item.link || item.path;
           if (u) urls.push(u);
         }
@@ -38,9 +35,7 @@ function getImageList(aw) {
       continue;
     }
 
-    // String
     if (typeof c === "string") {
-      // JSON-Array im String?
       try {
         const parsed = JSON.parse(c);
         if (Array.isArray(parsed)) {
@@ -52,10 +47,7 @@ function getImageList(aw) {
           }
           continue;
         }
-      } catch {
-        /* ignore */
-      }
-      // Kommagetrennt
+      } catch {}
       const parts = c
         .split(",")
         .map((s) => s.trim())
@@ -64,25 +56,18 @@ function getImageList(aw) {
         urls.push(...parts);
         continue;
       }
-      // sonst die Roh-URL
       urls.push(c);
       continue;
     }
 
-    // Objekt (z.B. {url:...})
     if (typeof c === "object") {
-      // media/files können Arrays sein – oben schon behandelt
       const u = c.url || c.src || c.link || c.path;
       if (u) urls.push(u);
     }
   }
 
-  // Fallback
-  if (!urls.length) {
+  if (!urls.length)
     urls.push("https://via.placeholder.com/800x600?text=Artwork");
-  }
-
-  // Deduplizieren
   return Array.from(new Set(urls));
 }
 
@@ -109,8 +94,10 @@ export default function ArtworkCard({
   const touchStartRef = useRef(null);
   const pinchStartRef = useRef(null);
 
+  // 🔁 Gebots-Flow (Modal + Bestätigung)
   const [bidAmount, setBidAmount] = useState("");
-  const [showBidForm, setShowBidForm] = useState(false);
+  const [showBidModal, setShowBidModal] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bidSuccess, setBidSuccess] = useState(false);
   const [bidError, setBidError] = useState("");
@@ -123,6 +110,28 @@ export default function ArtworkCard({
   const highestBid = offers.length > 0 ? offers[0].amount : 0;
   const displayPrice = Math.max(currentPrice, highestBid);
   const minBid = displayPrice + (artwork.minIncrement || 5);
+
+  //  NEU: Anzeige-Helfer
+  const startPrice = artwork?.startPrice ?? 0;
+  const topBidAmount = offers.length > 0 ? offers[0].amount : null;
+  const bidsCount = offers.length;
+
+  //  NEU: Artist & Auktionsbeschreibung (rein für Anzeige)
+  const artistName =
+    artwork?.artistName ||
+    artwork?.artist?.name ||
+    artwork?.artistId?.name ||
+    artwork?.artist ||
+    "";
+  const artworkDescription = artwork?.description || "";
+
+  const auctionDescription =
+    artwork?.auction?.description ||
+    artwork?.artistId?.description ||
+    artwork?.artistDescription ||
+    artwork?.auctionDescription ||
+    artwork?.auctionDesc ||
+    "";
 
   // Gebote laden
   const fetchOffers = async () => {
@@ -165,13 +174,9 @@ export default function ArtworkCard({
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-      } else if (e.key === "ArrowRight") {
-        next();
-      } else if (e.key === "ArrowLeft") {
-        prev();
-      }
+      if (e.key === "Escape") setOpen(false);
+      else if (e.key === "ArrowRight") next();
+      else if (e.key === "ArrowLeft") prev();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -183,9 +188,8 @@ export default function ArtworkCard({
       )
     : null;
 
-  const handleBidSubmit = async (e) => {
-    e.preventDefault();
-
+  // nur noch aus Confirm-Modal
+  const handleSubmitBid = async () => {
     if (!user) {
       openLogin();
       return;
@@ -213,12 +217,13 @@ export default function ArtworkCard({
 
       setBidSuccess(true);
       setBidAmount("");
-      setShowBidForm(false);
+      setShowConfirmModal(false);
+      setShowBidModal(false);
       await fetchOffers();
       onBidSuccess?.(data.offer, artwork);
       setTimeout(() => setBidSuccess(false), 2500);
     } catch (error) {
-      setBidError(error.message);
+      setBidError(error.message || "Gebot fehlgeschlagen");
     } finally {
       setSubmitting(false);
     }
@@ -254,19 +259,15 @@ export default function ArtworkCard({
     setIndex((i) => (i - 1 + images.length) % Math.max(images.length, 1));
   const next = () => setIndex((i) => (i + 1) % Math.max(images.length, 1));
 
-  // ======= Mouse Zoom & Pan (Modal) =======
+  // ======= Mouse Zoom & Pan (Bild-Modal) =======
   const onWheel = (e) => {
-    e.preventDefault();
-    const delta = -e.deltaY; // hoch = Zoom in
+    const delta = -e.deltaY;
     const factor = delta > 0 ? 1.1 : 0.9;
-    setScale((s) => {
-      const ns = Math.min(8, Math.max(1, s * factor));
-      return ns;
-    });
+    setScale((s) => Math.min(8, Math.max(1, s * factor)));
   };
 
   const onMouseDown = (e) => {
-    if (scale === 1) return; // nur Pan wenn gezoomt
+    if (scale === 1) return;
     isPanningRef.current = true;
     lastPosRef.current = { x: e.clientX, y: e.clientY };
   };
@@ -290,7 +291,6 @@ export default function ArtworkCard({
         time: Date.now(),
       };
     } else if (e.touches.length === 2) {
-      // Pinch-Start
       const [t1, t2] = e.touches;
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
       pinchStartRef.current = { dist, scale };
@@ -299,7 +299,6 @@ export default function ArtworkCard({
 
   const onTouchMove = (e) => {
     if (e.touches.length === 2 && pinchStartRef.current) {
-      // Pinch Zoom
       const [t1, t2] = e.touches;
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
       const ratio = dist / Math.max(1, pinchStartRef.current.dist);
@@ -308,11 +307,9 @@ export default function ArtworkCard({
         Math.max(1, pinchStartRef.current.scale * ratio)
       );
       setScale(newScale);
-      e.preventDefault();
       return;
     }
 
-    // Pan mit einem Finger, wenn gezoomt
     if (e.touches.length === 1 && scale > 1) {
       const t = e.touches[0];
       const prev = touchStartRef.current || { x: t.clientX, y: t.clientY };
@@ -320,18 +317,15 @@ export default function ArtworkCard({
       const dy = t.clientY - prev.y;
       touchStartRef.current = { x: t.clientX, y: t.clientY, time: Date.now() };
       setTranslate((tr) => ({ x: tr.x + dx, y: tr.y + dy }));
-      e.preventDefault();
     }
   };
 
   const onTouchEnd = (e) => {
-    // Swipe zum Bildwechsel nur, wenn nicht gezoomt
     if (scale === 1 && touchStartRef.current) {
       const endTime = Date.now();
       const dt = endTime - touchStartRef.current.time;
       const dx =
         (touchStartRef.current.lastX || 0) - (touchStartRef.current.x || 0);
-      // Alternativ: finale Touchpositionen aus e.changedTouches nutzen
     }
 
     if (
@@ -347,15 +341,11 @@ export default function ArtworkCard({
       const adx = Math.abs(dx);
       const ady = Math.abs(dy);
       const dt = Date.now() - touchStartRef.current.time;
-
-      // einfache Swipe-Heuristik
       if (dt < 500 && adx > 40 && adx > ady) {
         if (dx < 0) next();
         else prev();
       }
     }
-
-    // Reset Startpunkte, Pinch-Ende
     touchStartRef.current = null;
     pinchStartRef.current = null;
   };
@@ -415,65 +405,100 @@ export default function ArtworkCard({
               </span>
             </h2>
 
-            {/* kurze Beschreibung nur ab md */}
-            {/* {artwork.description ? (
-              <p className="hidden md:block -mt-1 text-xs text-gray-300 line-clamp-1">
-                {artwork.description}
-              </p>
-            ) : null} */}
+            {/*  NEU: Artist + Auktionsbeschreibung */}
+            {(artistName || artworkDescription) && (
+              <div className="mt-0.5">
+                {artistName && (
+                  <div className="text-[11px] sm:text-xs text-white/80 font-sans">
+                    {artistName}
+                  </div>
+                )}
 
-            {/* Preiszeile */}
-            <div className="mt-1 flex items-center justify-between">
-              <span className="text-xs sm:text-sm font-sans font-extralight text-white">
-                Top bid
-              </span>
-              <span className="badge badge-outline font-bold text-xs sm:text-sm">
-                {displayPrice.toLocaleString("de-DE")}{" "}
-                {artwork.currency || "EUR"}
-              </span>
+                {(artistName || artworkDescription) && (
+                  <p className="text-[11px] sm:text-xs text-white/60 line-clamp-2">
+                    {artworkDescription}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Preise */}
+            <div className="mt-2 space-y-1">
+              {/*  NEU: Startpreis immer zeigen */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] sm:text-xs font-sans font-extralight text-white/80">
+                  Start price
+                </span>
+                <span className="badge badge-ghost text-xs sm:text-sm">
+                  {Number(startPrice || 0).toLocaleString("de-DE")}{" "}
+                  {artwork.currency || "EUR"}
+                </span>
+              </div>
+
+              {/* Top bid: nur echte Gebote, sonst „—“ */}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] sm:text-xs font-sans font-extralight text-white">
+                  Top bid
+                </span>
+                <span className="badge badge-outline font-bold text-xs sm:text-sm">
+                  {topBidAmount != null
+                    ? `${topBidAmount.toLocaleString("de-DE")} ${
+                        artwork.currency || "EUR"
+                      }`
+                    : "—"}
+                </span>
+              </div>
+
+              {/*  NEU: Anzahl Gebote als Fußnote */}
+              <div className="text-[10px] sm:text-[11px] text-white/50 mt-0.5">
+                {bidsCount === 0
+                  ? "No bids yet"
+                  : bidsCount === 1
+                  ? "1 bid"
+                  : `${bidsCount} bids`}
+              </div>
             </div>
           </div>
 
           {/* Aktionen */}
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex mt-2 items-center justify-end gap-2">
             <button
               onClick={() => openModalAt(0)}
-              className="btn btn-outline btn-xs sm:btn-sm font-sans font-extralight rounded-2xl"
+              className="btn btn-outline  btn-xs sm:btn-sm font-sans font-extralight rounded-2xl"
             >
-              Ansehen
+              View
             </button>
 
-            {isAuctionActive && isBuyer && !showBidForm && (
+            {isAuctionActive && isBuyer && (
               <button
                 onClick={() => {
                   if (!user) {
                     openLogin();
                     return;
                   }
-                  setShowBidForm(true);
                   setBidError("");
                   setBidAmount(
                     (displayPrice + (artwork.minIncrement || 5)).toString()
                   );
+                  setShowBidModal(true);
                 }}
-                className="btn btn-primary btn-xs sm:btn-sm rounded-2xl bg-coldYellow text-darkBackground hover:bg-coldYellow/80 font-extralight"
+                className="btn btn-primary font-medium btn-xs sm:btn-sm rounded-2xl bg-coldYellow text-darkBackground hover:bg-coldYellow/80"
               >
-                {userBid ? "Gebot erhöhen" : "Bieten"}
+                {userBid ? "Raise bid" : "Bid"}
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Vollbild-Modal: Swipe, Zoom, Pan, Klick außerhalb schließt */}
+      {/* Vollbild-Modal: Swipe, Zoom, Pan */}
       {open && (
         <div
-          className="fixed inset-0 z-[999] bg-black/75 backdrop-blur-[6px] flex items-center justify-center"
-          onClick={() => setOpen(false)} // Klick außerhalb schließt
+          className="fixed inset-0 z-[999] bg-black/75 backdrop-blur-[6px] flex items-center justify-center overscroll-contain"
+          onClick={() => setOpen(false)}
         >
-          {/* Innen-Container: blockt Clicks zum Schließen ab */}
           <div
-            className="relative w-screen h-screen flex items-center justify-center select-none"
+            className="relative w-screen h-screen flex items-center justify-center select-none touch-none"
             onClick={(e) => e.stopPropagation()}
             onWheel={onWheel}
             onMouseDown={onMouseDown}
@@ -484,7 +509,6 @@ export default function ArtworkCard({
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
           >
-            {/* Bild */}
             <img
               src={images[index]}
               alt={artwork.title}
@@ -492,20 +516,13 @@ export default function ArtworkCard({
                 e.currentTarget.src =
                   "https://via.placeholder.com/1600x1200?text=Artwork";
               }}
-              className="
-                w-auto h-auto
-                max-w-[100svw] max-h-[100svh]
-                object-contain
-                transition-transform
-                ease-out
-              "
+              className="w-auto h-auto max-w-[100svw] max-h-[100svh] object-contain transition-transform ease-out"
               style={{
                 transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
               }}
               draggable={false}
             />
 
-            {/* Prev / Next Controls */}
             {images.length > 1 && (
               <>
                 <button
@@ -525,25 +542,15 @@ export default function ArtworkCard({
                   ›
                 </button>
 
-                {/* kleines Index-Badge */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-2 py-1 rounded-full bg-black/60 text-white text-xs">
                   {index + 1} / {images.length}
                 </div>
               </>
             )}
 
-            {/* Close-Button */}
             <button
               onClick={() => setOpen(false)}
-              className="
-                absolute top-3 right-3
-                inline-flex items-center justify-center
-                h-10 w-10 rounded-full
-                bg-black/60 hover:bg-black/80
-                text-white text-xl
-                transition
-                focus:outline-none
-              "
+              className="absolute top-3 right-3 inline-flex items-center justify-center h-10 w-10 rounded-full bg-black/60 hover:bg-black/80 text-white text-xl transition focus:outline-none"
               aria-label="Close"
               type="button"
             >
@@ -553,71 +560,151 @@ export default function ArtworkCard({
         </div>
       )}
 
-      {/* Inline-Gebotsformular */}
-      {showBidForm && isAuctionActive && isBuyer && (
-        <form onSubmit={handleBidSubmit} className="mt-2 space-y-2">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-xs">
-                Gebot (min. {minBid} €)
+      {/* Eingabe-Modal */}
+      {showBidModal && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center"
+          onClick={() => setShowBidModal(false)}
+        >
+          <div
+            className="relative w-full sm:max-w-sm mx-2 sm:mx-0 rounded-2xl border border-black/20 bg-darkBackground/50 text-white p-4 shadow-xl shadow-black/60"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-sans font-light mb-3">New bid</h3>
+
+            <div className="text-sm text-white/70 mb-3">
+              Current bid:{" "}
+              <span className="text-white font-medium">
+                {displayPrice.toLocaleString("de-DE")}{" "}
+                {artwork.currency || "EUR"}
               </span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="number"
-                min={minBid}
-                step="0.01"
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                placeholder={`${minBid}`}
-                className="input input-bordered input-sm flex-1 text-black placeholder-black/60 bg-white"
-                required
+              <span className="opacity-70">
+                {" "}
+                · Minimum bid: {minBid.toLocaleString("de-DE")}{" "}
+                {artwork.currency || "EUR"}
+              </span>
+            </div>
+
+            <label className="text-xl opacity-80 mb-1 block">Bid amount</label>
+            <input
+              type="number"
+              min={minBid}
+              step="5.0"
+              value={bidAmount}
+              onChange={(e) => setBidAmount(e.target.value)}
+              placeholder={`${minBid}`}
+              className="input input-bordered w-full rounded-xl bg-white text-black placeholder-black/60 focus:bg-white"
+              autoFocus
+            />
+
+            {bidError && (
+              <div className="alert alert-error mt-3 py-2">
+                <span className="text-xl">{bidError}</span>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm rounded-xl text-white/80 hover:text-white"
+                onClick={() => setShowBidModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    openLogin();
+                    return;
+                  }
+                  if (!isBuyer) {
+                    setBidError("Nur Käufer dürfen bieten.");
+                    return;
+                  }
+                  const amount = parseFloat(bidAmount);
+                  if (isNaN(amount) || amount < minBid) {
+                    setBidError(`Gebot muss mindestens ${minBid} € betragen`);
+                    return;
+                  }
+                  setBidError("");
+                  setShowBidModal(false);
+                  setShowConfirmModal(true);
+                }}
+                className="btn btn-sm rounded-2xl bg-hellPink text-gruenOlive hover:bg-buttonPink hover:text-darkBackground shadow"
+              >
+                Confirm bid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bestätigungs-Modal */}
+      {showConfirmModal && (
+        <div
+          className="fixed inset-0 z-[1001] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          <div
+            className="relative w-full sm:max-w-sm mx-2 sm:mx-0 rounded-2xl block border border-black/20 bg-darkBackground/50 text-white p-4 shadow-xl shadow-black/60"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-sans font-extrabold">Place bid?</h3>
+            <p className="text-sm font-bold opacity-90 mt-2">
+              You’re placing a bid of{" "}
+              <span className="font-medium text-white">
+                {parseFloat(bidAmount || 0).toLocaleString("de-DE", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                {artwork.currency || "EUR"}
+              </span>{" "}
+              on <span className="font-extralight">{artwork.title}</span>. Are
+              you sure?
+              <p className="font-extralight">
+                {" "}
+                Bids are binding. You´ll be charged if you win.
+              </p>
+            </p>
+
+            {bidError && (
+              <div className="alert alert-error mt-3 py-2">
+                <span className="text-xs">{bidError}</span>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm rounded-xl text-white/80 hover:text-white"
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setShowBidModal(true);
+                }}
+              >
+                Abbrechen
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSubmitBid}
                 disabled={submitting}
-              />
-              <span className="self-center text-xs text-gray-500">€</span>
+                className="btn btn-sm rounded-2xl bg-hellPink text-gruenOlive hover:bg-buttonPink hover:text-darkBackground shadow disabled:opacity-60"
+              >
+                {submitting ? "Sende…" : "Bieten"}
+              </button>
             </div>
           </div>
+        </div>
+      )}
 
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm flex-1"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : userBid ? (
-                "Gebot erhöhen"
-              ) : (
-                "Bieten"
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowBidForm(false);
-                setBidError("");
-                setBidAmount("");
-              }}
-              className="btn btn-ghost btn-sm"
-              disabled={submitting}
-            >
-              Abbrechen
-            </button>
+      {bidSuccess && (
+        <div className="mt-2">
+          <div className="alert alert-success alert-sm">
+            <span className="text-xs">✓ A new bid has been placed!</span>
           </div>
-
-          {/* Meldungen */}
-          {bidSuccess && (
-            <div className="alert alert-success alert-sm">
-              <span className="text-xs">✓ Gebot erfolgreich abgegeben!</span>
-            </div>
-          )}
-          {bidError && (
-            <div className="alert alert-error alert-sm">
-              <span className="text-xs">{bidError}</span>
-            </div>
-          )}
-        </form>
+        </div>
       )}
     </>
   );

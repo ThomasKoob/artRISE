@@ -1,3 +1,4 @@
+// frontend/pages/SignUp.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
@@ -11,13 +12,24 @@ const SignUp = () => {
     userName: "",
     email: "",
     password: "",
-    role: "buyer",
+    role: "buyer", // buyer | seller
+    // Optional (nur für Artists sichtbar)
+    instagramUrl: "",
+    tiktokUrl: "",
+    websiteUrl: "",
+    // Opt-in: Dürfen Interessenten dich anschreiben?
+    acceptMessages: false,
   });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((p) => ({
+      ...p,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -26,21 +38,33 @@ const SignUp = () => {
     setLoading(true);
 
     try {
+      // Payload vorbereiten
+      const payload = { ...formData };
+
+      if (payload.role !== "seller") {
+        // Kein Artist → Socials/Opt-in raus
+        payload.instagramUrl = "";
+        payload.tiktokUrl = "";
+        payload.websiteUrl = "";
+        payload.acceptMessages = false;
+        payload.messageToArtistEmail = ""; // sicherheitshalber leer mitschicken
+      } else {
+        // Artist: Wenn Opt-in aktiv → Account-Email als messageToArtistEmail verwenden
+        payload.messageToArtistEmail = payload.acceptMessages
+          ? payload.email
+          : "";
+      }
+
       // 1) Registrierung
-      console.log("Registering user...");
-      await register(formData);
-      console.log("Registration successful");
+      await register(payload);
 
       // 2) Auto-Login
-      console.log("Attempting auto-login...");
-      const userData = await login({
+      await login({
         email: formData.email,
         password: formData.password,
       });
-      console.log("Login successful:", userData);
 
       // 3) Weiterleiten
-      console.log("Redirecting to dashboard...");
       navigate("/dashboard");
     } catch (err) {
       console.error("SignUp Error:", err);
@@ -66,6 +90,8 @@ const SignUp = () => {
   };
   const buttonConfig = getButtonConfig();
 
+  const isArtist = formData.role === "seller";
+
   return (
     <div className="flex justify-center px-4 pt-24 pb-8">
       <div className="w-full bg-darkBackground/30 max-w-md border-1 border-coldYellow/40 shadow-md rounded-xl p-8">
@@ -79,6 +105,22 @@ const SignUp = () => {
               {error}
             </div>
           )}
+
+          {/* Role Selection */}
+          <div>
+            <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
+              I am an...
+            </label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
+            >
+              <option value="buyer">Art lover</option>
+              <option value="seller">Artist</option>
+            </select>
+          </div>
 
           {/* Username */}
           <div>
@@ -96,7 +138,7 @@ const SignUp = () => {
             />
           </div>
 
-          {/* Email */}
+          {/* Email + Opt-in Checkbox */}
           <div>
             <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
               Email
@@ -109,6 +151,20 @@ const SignUp = () => {
               required
               className="text-black w-full px-4 py-2 rounded-lg border border-buttonPink/50 focus:border-buttonPink focus:ring-1 focus:ring-blue-500 outline-none transition"
             />
+
+            <label className="mt-2 inline-flex items-center gap-2 select-none">
+              <input
+                type="checkbox"
+                name="acceptMessages"
+                checked={formData.acceptMessages}
+                onChange={handleChange}
+                disabled={!isArtist}
+                className="checkbox checkbox-sm"
+              />
+              <span className={`text-sm ${!isArtist ? "opacity-60" : ""}`}>
+                Allow interested buyers to message you
+              </span>
+            </label>
           </div>
 
           {/* Password */}
@@ -127,21 +183,52 @@ const SignUp = () => {
             />
           </div>
 
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-sans text-whiteLetter/70 mb-1">
-              I am an...
-            </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
-            >
-              <option value="buyer">Art lover</option>
-              <option value="seller">Artist</option>
-            </select>
-          </div>
+          {/* Artist-only: Optional Social fields */}
+          {isArtist && (
+            <div className="pt-2 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
+                  Instagram URL (optional)
+                </label>
+                <input
+                  type="url"
+                  name="instagramUrl"
+                  placeholder="https://instagram.com/your_handle"
+                  value={formData.instagramUrl}
+                  onChange={handleChange}
+                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
+                  TikTok URL (optional)
+                </label>
+                <input
+                  type="url"
+                  name="tiktokUrl"
+                  placeholder="https://tiktok.com/@your_handle"
+                  value={formData.tiktokUrl}
+                  onChange={handleChange}
+                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-whiteLetter/70 mb-1">
+                  Website URL (optional)
+                </label>
+                <input
+                  type="url"
+                  name="websiteUrl"
+                  placeholder="https://your-website.com"
+                  value={formData.websiteUrl}
+                  onChange={handleChange}
+                  className="text-black w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-lightRedButton focus:ring-1 focus:ring-lightRedButton/50 outline-none transition bg-white/80"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Submit */}
           <button

@@ -1,5 +1,6 @@
+// frontend/pages/AuctionsList.jsx
 import { useState, useRef, useMemo, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import CountdownTimer from "../components/CountdownTimer";
 import {
   getAllAuctions,
@@ -17,6 +18,7 @@ const AuctionsList = () => {
   const [error, setError] = useState(null);
 
   const randomIndexMapRef = useRef(new Map());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -50,6 +52,14 @@ const AuctionsList = () => {
       return { ...a, auctionId: toIdStr(aid) };
     });
   }, [artworks]);
+
+  // ✅ Anzahl der Artworks pro Auktion zählen
+  const getTotalArtworksForAuction = (auction) => {
+    const aIdStr = toIdStr(auction?._id || auction?.id);
+    if (!aIdStr) return 0;
+    return normalizedArtworks.filter((aw) => toIdStr(aw.auctionId) === aIdStr)
+      .length;
+  };
 
   if (loading) {
     return (
@@ -112,7 +122,7 @@ const AuctionsList = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-6 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-4 border-1 border-black mt-2 rounded-2xl bg-violetHeader/60 backdrop-blur shadow-lg shadow-black">
       <section className="p-2 border-black/50 ">
         <h1 className="text-7xl  text-shadow-accent text-whiteLetter font-sans font-extralight mb-4 mt-0">
           All Auctions
@@ -123,73 +133,100 @@ const AuctionsList = () => {
         </div>
       </section>
       {auctions.length > 0 ? (
-        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-10  ">
-          {auctions.map((auction) => (
-            <div
-              key={auction._id || auction.id}
-              className="card bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden
-             h-[22rem] sm:h-[24rem] md:h-[26rem]
-             grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
-            >
-              {/* Cover: skaliert nur das Bild, Layout bleibt stabil */}
-              <div className="relative w-full h-full overflow-hidden">
-                <img
-                  src={getCoverForAuction(auction)}
-                  alt={auction.title || "Auction banner"}
-                  className="absolute inset-0 w-full h-full object-cover
-                 transition-transform duration-300 ease-out transform-gpu
-                 group-hover:scale-105" // hier passiert die „Vorwärts“-Wirkung
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://via.placeholder.com/800x400?text=Auction+Banner";
-                  }}
-                />
-              </div>
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-10">
+          {auctions.map((auction) => {
+            const artworksCount = getTotalArtworksForAuction(auction);
+            const auctionId = auction._id || auction.id;
 
-              {/* Info/Actions = 1/3 – nur Divider oben */}
-              <div className="row-span-1 p-2 border-t border-base-200 flex flex-col">
-                <h2 className="card-title font-sans font-extralight text-xl">
-                  {auction.title}
-                </h2>
+            return (
+              <div
+                key={auctionId}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/auction/${auctionId}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/auction/${auctionId}`);
+                  }
+                }}
+                className="card bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
+               h-[22rem] sm:h-[24rem] md:h-[26rem]
+               grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
+                title={auction.title || "Auction"}
+                aria-label={`Open auction ${auction.title || ""}`}
+              >
+                {/* Cover */}
+                <div className="relative w-full h-full overflow-hidden">
+                  <img
+                    src={getCoverForAuction(auction)}
+                    alt={auction.title || "Auction banner"}
+                    className="absolute inset-0 w-full h-full object-cover
+                   transition-transform duration-300 ease-out transform-gpu
+                   group-hover:scale-105"
+                    onError={(e) => {
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/800x400?text=Auction+Banner";
+                    }}
+                  />
+                </div>
 
-                <div className="flex justify-between items-center mt-8">
-                  <div className="flex gap-2">
-                    {auction.status === "live" && (
-                      <span className="badge badge-success bg-hellGrun/80  text-darkBackground">
-                        Live
-                      </span>
-                    )}
-                    {auction.status === "upcoming" && (
-                      <span className="badge badge-info">Upcoming</span>
-                    )}
-                    {auction.status === "ended" && (
-                      <span className="badge badge-error bg-lightRedButton">
-                        Ended
-                      </span>
+                {/* Info/Actions */}
+                <div className="row-span-1 p-2 border-t border-base-200 flex flex-col">
+                  <h2 className="card-title font-sans font-extralight text-xl">
+                    {auction.title}
+                  </h2>
+
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="flex gap-2">
+                      {auction.status === "live" && (
+                        <span className="badge badge-success bg-hellGrun/80  text-darkBackground">
+                          Live
+                        </span>
+                      )}
+                      {auction.status === "upcoming" && (
+                        <span className="badge badge-info">Upcoming</span>
+                      )}
+                      {auction.status === "ended" && (
+                        <span className="badge badge-error bg-lightRedButton">
+                          Ended
+                        </span>
+                      )}
+                    </div>
+
+                    {auction.status !== "ended" && auction.endDate && (
+                      <CountdownTimer
+                        endDate={auction.endDate}
+                        onExpired={() => {
+                          console.log(`Auction ${auctionId} has ended`);
+                        }}
+                      />
                     )}
                   </div>
 
-                  {auction.status !== "ended" && auction.endDate && (
-                    <CountdownTimer
-                      endDate={auction.endDate}
-                      onExpired={() => {
-                        console.log(`Auction ${auction._id} has ended`);
-                      }}
-                    />
-                  )}
-                </div>
+                  {/* ✅ Anzahl der Artworks als kleine Fußnote */}
+                  <div className="mt-2 text-[11px] text-white/70">
+                    {artworksCount === 0
+                      ? "No artworks"
+                      : artworksCount === 1
+                      ? "1 artwork"
+                      : `${artworksCount} artworks`}
+                  </div>
 
-                <div className="card-actions justify-end mt-3">
-                  <Link
-                    to={`/auction/${auction._id}`}
-                    className="btn rounded-2xl font- text-gruenOlive bg-hellPink  hover:bg-buttonPink hover:text-darkBackground font-sans hover:font-extralight btn-xs"
-                  >
-                    View Auction
-                  </Link>
+                  {/* Optionaler Button bleibt – klick auf Karte bleibt aktiv */}
+                  <div className="card-actions justify-end mt-3">
+                    <Link
+                      to={`/auction/${auctionId}`}
+                      className="btn rounded-2xl text-gruenOlive bg-hellPink hover:bg-buttonPink hover:text-darkBackground font-sans hover:font-extralight btn-xs"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View Auction
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center text-gray-500 mt-16">

@@ -28,7 +28,9 @@ export default function ShareMenu({
       } else {
         await copyLink();
       }
-    } catch {}
+    } catch (e) {
+      /* ignore */
+    }
   }
   async function copyLink() {
     try {

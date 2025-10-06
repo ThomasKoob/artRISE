@@ -62,7 +62,7 @@ const NavBar = () => {
                 to="/auction"
                 className="hover:text-coldYellow rounded-xl transition-colors"
               >
-                Gallery
+                Auctions
               </Link>
               {/* DE: ggf. mehr Links */}
             </div>
