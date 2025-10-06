@@ -491,3 +491,45 @@ export function getFirstImageUrl(obj) {
   }
   return null;
 }
+// ==========================================
+// SHIPPING API
+// ==========================================
+
+/**
+ * Verify user is winner and can access shipping page
+ */
+export const verifyWinner = async (artworkId) => {
+  return await fetchJson(`${API_URL}/api/shipping/verify/${artworkId}`, {
+    credentials: "include",
+  });
+};
+
+/**
+ * Get shipping address for artwork
+ */
+export const getShippingAddress = async (artworkId) => {
+  return await fetchJson(`${API_URL}/api/shipping/${artworkId}`, {
+    credentials: "include",
+  });
+};
+
+/**
+ * Create or update shipping address
+ */
+export const saveShippingAddress = async (artworkId, addressData) => {
+  return await fetchJson(`${API_URL}/api/shipping/${artworkId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(addressData),
+  });
+};
+
+/**
+ * Get all user shipping addresses
+ */
+export const getUserShippingAddresses = async () => {
+  return await fetchJson(`${API_URL}/api/shipping`, {
+    credentials: "include",
+  });
+};

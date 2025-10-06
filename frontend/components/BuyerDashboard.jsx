@@ -1,14 +1,23 @@
-// frontend/components/BuyerDashboard.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Gavel, Eye, ArrowUpRight } from "lucide-react";
-import { Link } from "react-router";
+import { Gavel, Eye, ArrowUpRight, Package, Truck } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 import UserHeader from "./UserHeader";
-import { getArtworkById, getArtworkOffers, updateOffer } from "../api/api";
+import {
+  getArtworkById,
+  getArtworkOffers,
+  updateOffer,
+  getUserShippingAddresses, // NEW
+} from "../api/api";
 
 const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
+  const navigate = useNavigate();
   const [myOffers, setMyOffers] = useState(initialOffers || []);
   const [artworkDetails, setArtworkDetails] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // NEW: Won Auctions State
+  const [wonAuctions, setWonAuctions] = useState([]);
+  const [loadingWon, setLoadingWon] = useState(false);
 
   /** Robust: Auction-ID aus Artwork extrahieren */
   function getAuctionIdFromArtwork(artwork) {
@@ -23,6 +32,19 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
     }
     return artwork.auctionID || null;
   }
+
+  // NEW: Load Won Auctions
+  const fetchWonAuctions = async () => {
+    setLoadingWon(true);
+    try {
+      const response = await getUserShippingAddresses();
+      setWonAuctions(response.data || []);
+    } catch (error) {
+      console.error("Failed to load won auctions:", error);
+    } finally {
+      setLoadingWon(false);
+    }
+  };
 
   // Details für Gebote laden
   const fetchDetailedOffers = async () => {
@@ -65,12 +87,14 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
 
   useEffect(() => {
     fetchDetailedOffers();
+    fetchWonAuctions(); // NEW
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [myOffers]);
 
   // Statistiken
   const stats = useMemo(() => {
-    if (!myOffers.length) return { total: 0, winning: 0, totalValue: 0 };
+    if (!myOffers.length)
+      return { total: 0, winning: 0, totalValue: 0, won: wonAuctions.length };
     let winning = 0;
     let totalValue = 0;
     myOffers.forEach((offer) => {
@@ -83,8 +107,13 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
       }
       totalValue += offer.amount || 0;
     });
-    return { total: myOffers.length, winning, totalValue };
-  }, [myOffers, artworkDetails, user._id]);
+    return {
+      total: myOffers.length,
+      winning,
+      totalValue,
+      won: wonAuctions.length,
+    };
+  }, [myOffers, artworkDetails, user._id, wonAuctions]);
 
   // Hilfsfunktion: minBid berechnen
   const computeMinBidForOffer = (offer) => {
@@ -141,12 +170,46 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
     }
   };
 
+  // NEW: Status Badge Helper
+  const getStatusBadge = (status) => {
+    const statusConfig = {
+      pending: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        label: "Adresse ausstehend",
+      },
+      confirmed: {
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        label: "Bestätigt",
+      },
+      shipped: {
+        bg: "bg-purple-100",
+        text: "text-purple-800",
+        label: "Versandt",
+      },
+      delivered: {
+        bg: "bg-green-100",
+        text: "text-green-800",
+        label: "Zugestellt",
+      },
+    };
+    const config = statusConfig[status] || statusConfig.pending;
+    return (
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}
+      >
+        {config.label}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <UserHeader user={user} />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-blue-50 p-6 rounded-lg border-l-4 border-blue-500">
           <h3 className="text-lg font-semibold text-blue-800">Meine Gebote</h3>
           <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
@@ -166,7 +229,98 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
           </p>
           <p className="text-purple-700 text-sm">Summe aller Gebote</p>
         </div>
+        {/* NEW: Won Auctions Stat */}
+        <div className="bg-amber-50 p-6 rounded-lg border-l-4 border-amber-500">
+          <h3 className="text-lg font-semibold text-amber-800">Gewonnen</h3>
+          <p className="text-3xl font-bold text-amber-600">{stats.won}</p>
+          <p className="text-amber-700 text-sm">Auktionen gewonnen</p>
+        </div>
       </div>
+
+      {/* NEW: Won Auctions Section */}
+      {wonAuctions.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-black flex items-center gap-2">
+              <Package size={24} className="text-amber-600" />
+              Gewonnene Auktionen
+            </h2>
+            <button
+              onClick={fetchWonAuctions}
+              disabled={loadingWon}
+              className="btn btn-ghost btn-sm"
+              title="Aktualisieren"
+            >
+              {loadingWon ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                "🔄"
+              )}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {wonAuctions.map((item) => (
+              <div
+                key={item._id}
+                className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                {item.artworkId?.images && (
+                  <div className="w-full h-48 bg-gray-100">
+                    <img
+                      src={item.artworkId.images}
+                      alt={item.artworkId.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) =>
+                        (e.currentTarget.src =
+                          "https://via.placeholder.com/300x200?text=Artwork")
+                      }
+                    />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h3 className="font-medium text-black mb-2">
+                    {item.artworkId?.title || "Artwork"}
+                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-amber-600 font-bold text-lg">
+                      €
+                      {item.artworkId?.endPrice?.toFixed(2) ||
+                        item.artworkId?.price?.toFixed(2)}
+                    </span>
+                    {getStatusBadge(item.status)}
+                  </div>
+
+                  {/* Shipping Info */}
+                  {item.status !== "pending" && (
+                    <div className="text-xs text-gray-600 mb-3 space-y-1">
+                      <p className="font-medium">{item.fullName}</p>
+                      <p>
+                        {item.city}, {item.country}
+                      </p>
+                      {item.trackingNumber && (
+                        <p className="flex items-center gap-1">
+                          <Truck size={12} />
+                          Tracking: {item.trackingNumber}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => navigate(`/shipping/${item.artworkId._id}`)}
+                    className="w-full btn btn-sm btn-primary"
+                  >
+                    {item.status === "pending"
+                      ? "Versandadresse eingeben"
+                      : "Details anzeigen"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Meine Gebote Liste */}
       <div className="bg-white rounded-lg shadow p-6">

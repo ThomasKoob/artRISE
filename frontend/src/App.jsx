@@ -7,6 +7,7 @@ import SignUp from "../pages/SignUp.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
 import CheckEmail from "../pages/CheckEmail.jsx";
 import VerifyEmail from "../pages/VerifyEmail.jsx";
+import ShippingPage from "../pages/ShippingPage.jsx";
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
           <Route path="signup" element={<SignUp />} />
           <Route path="check-email" element={<CheckEmail />} />
           <Route path="verify-email" element={<VerifyEmail />} />
+          <Route path="/shipping/:artworkId" element={<ShippingPage />} />
         </Route>
         <Route path="*" element={<h1>Page not found</h1>} />
       </Routes>
