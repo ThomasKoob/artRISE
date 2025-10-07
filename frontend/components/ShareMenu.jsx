@@ -6,27 +6,44 @@ const NL = "\n";
 
 /** Einheitliche Message für alle Kanäle */
 function buildShareMessage({ artistName, artworkTitle, shareUrl }) {
-  const line1 = artistName
-    ? `${artistName} is running a pop-up auction on popAUC`
-    : `Pop-up auction on popAUC`;
-  const line2 = artworkTitle ? `“${artworkTitle}”` : "";
+  const line1 = artistName ? `${artistName} on popAUC` : `popAUC`;
+  const line2 = artworkTitle ? `"${artworkTitle}"` : ""; // ASCII-Quotes
   return [line1, line2, shareUrl].filter(Boolean).join(NL);
 }
 
-/** Instagram-taugliche Kurz-Caption (ohne Link) */
+/** Instagram-Kurz-Caption (ohne Link) */
 function buildCaption({ artistName, artworkTitle }) {
-  const titleLine = artworkTitle ? `“${artworkTitle}”` : "";
-  const artistLine = artistName
-    ? `${artistName} — pop-up auction on popAUC`
-    : `pop-up auction on popAUC`;
+  const titleLine = artworkTitle ? `"${artworkTitle}"` : "";
+  const artistLine = artistName ? `${artistName} on popAUC` : `popAUC`;
   return [titleLine, artistLine].filter(Boolean).join("\n");
 }
 
+/** Problematische Zeichen fürs Subject entschärfen (nur ASCII lassen) */
+function sanitizeSubject(s) {
+  return String(s || "")
+    .replace(/[“”„”]/g, '"')
+    .replace(/[’‘]/g, "'")
+    .replace(/[—–]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Mailto-Builder mit encodeURIComponent (verhindert '+' statt Space) */
+function buildMailtoHref({ subject, body }) {
+  const qs = [
+    subject ? `subject=${encodeURIComponent(subject)}` : null,
+    body ? `body=${encodeURIComponent(body)}` : null,
+  ]
+    .filter(Boolean)
+    .join("&");
+  return `mailto:?${qs}`;
+}
+
 export default function ShareMenu({
-  url, // Pflicht: kanonische Auktions-URL (ohne UTM)
-  artistName = "", // z. B. "xyc"
-  artworkTitle = "", // z. B. "Untitled #3"
-  imageUrl = "", // optional: öffentlich erreichbares Bild (Profil/Artwork), CORS!
+  url, // kanonische Auktions-URL (ohne UTM)
+  artistName = "", // <- kommt aus auction.title
+  artworkTitle = "", // <- kommt aus primaryArtwork.title (falls vorhanden)
+  imageUrl = "", // öffentlich + CORS, sonst wird nur Text geteilt
   utm = "utm_source=share&utm_medium=button&utm_campaign=auction",
   className = "",
   buttonLabel = "Share",
@@ -41,7 +58,7 @@ export default function ShareMenu({
     return url.includes("?") ? `${url}&${utm}` : `${url}?${utm}`;
   }, [url, utm]);
 
-  // Einheitliche Texte
+  // Texte
   const message = useMemo(
     () => buildShareMessage({ artistName, artworkTitle, shareUrl }),
     [artistName, artworkTitle, shareUrl]
@@ -51,9 +68,21 @@ export default function ShareMenu({
     [artistName, artworkTitle]
   );
 
-  /** Native Share: versucht Bild+Text+Link; sonst Text+Link; sonst Copy */
+  // E-Mail-Betreff (ASCII & korrekt encodiert -> keine '+')
+  const emailSubject = useMemo(() => {
+    const base = artistName
+      ? `${artistName} on popAUC${artworkTitle ? ` - "${artworkTitle}"` : ""}`
+      : `popAUC${artworkTitle ? ` - "${artworkTitle}"` : ""}`;
+    return sanitizeSubject(base);
+  }, [artistName, artworkTitle]);
+
+  const mailtoHref = useMemo(
+    () => buildMailtoHref({ subject: emailSubject, body: message }),
+    [emailSubject, message]
+  );
+
+  /** Native Share: Bild+Text+Link (wo unterstützt), sonst Text+Link, sonst Copy */
   async function onNativeShare() {
-    // 1) Versuche Bild mitzuschicken (nur, wenn Browser Files im Share unterstützt)
     if (imageUrl) {
       try {
         const res = await fetch(imageUrl, { credentials: "omit" });
@@ -72,11 +101,9 @@ export default function ShareMenu({
           return;
         }
       } catch {
-        // Bild konnte nicht geladen/geteilt werden -> weiter mit Text+Link
+        /* fall back to text share */
       }
     }
-
-    // 2) Text + Link
     try {
       if (navigator.share) {
         await navigator.share({
@@ -88,11 +115,10 @@ export default function ShareMenu({
         await copyMessage();
       }
     } catch {
-      // abgebrochen/ignoriert
+      /* ignore */
     }
   }
 
-  /** Vollständige Message (Text + Link) kopieren */
   async function copyMessage() {
     try {
       await navigator.clipboard.writeText(message);
@@ -103,7 +129,6 @@ export default function ShareMenu({
     }
   }
 
-  /** Nur Caption (für Instagram) kopieren */
   async function copyCaption() {
     try {
       await navigator.clipboard.writeText(caption);
@@ -114,7 +139,6 @@ export default function ShareMenu({
     }
   }
 
-  /** Bild herunterladen (für Instagram-Flow: Bild speichern + Caption einfügen) */
   async function downloadImage() {
     if (!imageUrl) return;
     try {
@@ -129,11 +153,10 @@ export default function ShareMenu({
       link.remove();
       URL.revokeObjectURL(link.href);
     } catch {
-      // optional: Fehlerbehandlung/Toast
+      /* ignore */
     }
   }
 
-  /** Kanalspezifische Links (FB/LinkedIn ignorieren Text und nutzen OG) */
   const links = [
     {
       key: "whatsapp",
@@ -157,22 +180,12 @@ export default function ShareMenu({
         shareUrl
       )}`,
     },
-    {
-      key: "email",
-      label: "E-mail",
-      href: `mailto:?subject=${enc(
-        artistName
-          ? `${artistName} — popAUC auction${
-              artworkTitle ? `: “${artworkTitle}”` : ""
-            }`
-          : `popAUC auction${artworkTitle ? `: “${artworkTitle}”` : ""}`
-      )}&body=${enc(message)}`,
-    },
+    { key: "email", label: "E-mail", href: mailtoHref }, // robustes mailto
   ];
 
   return (
     <div className={`inline-flex items-center gap-2 ${className}`}>
-      {/* 1) Native Share (beste UX mobil) */}
+      {/* Native Share */}
       <button
         onClick={onNativeShare}
         className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
@@ -183,7 +196,7 @@ export default function ShareMenu({
         {buttonLabel}
       </button>
 
-      {/* 2) Fallback-Menü */}
+      {/* Fallback-Menü */}
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
@@ -202,7 +215,6 @@ export default function ShareMenu({
             className="absolute right-0 mt-2 w-56 rounded-2xl border-1 bg-darkBackground/60 text-buttonPink shadow-lg p-1 z-50"
             onMouseLeave={() => setOpen(false)}
           >
-            {/* Klassische Share-Links */}
             {links.map((l) => (
               <a
                 key={l.key}
@@ -216,7 +228,6 @@ export default function ShareMenu({
               </a>
             ))}
 
-            {/* Copy Message */}
             <button
               onClick={copyMessage}
               role="menuitem"
@@ -226,7 +237,6 @@ export default function ShareMenu({
               {copiedMsg ? "Message copied ✓" : "Copy message"}
             </button>
 
-            {/* Instagram-Flow: Bild speichern + Caption kopieren */}
             {imageUrl && (
               <button
                 onClick={downloadImage}
@@ -247,7 +257,6 @@ export default function ShareMenu({
               {copiedCaption ? "Caption copied ✓" : "Copy caption"}
             </button>
 
-            {/* Hinweis */}
             <div className="px-3 pb-2 pt-1 text-xs opacity-60">
               Instagram: save the image, create a Post/Story, then paste the
               caption. On mobile, try the Share button and pick Instagram.

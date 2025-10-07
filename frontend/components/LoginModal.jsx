@@ -8,7 +8,7 @@ export const LoginModal = ({
   error,
   needsVerification,
 }) => {
-  const navigate = useNavigate(); // ✅ Hook hinzufügen
+  const navigate = useNavigate();
   const emailRef = useRef(null);
   const [showPassword, setShowPassword] = useState(false);
   const [values, setValues] = useState({ email: "", password: "" });
@@ -39,13 +39,18 @@ export const LoginModal = ({
     await onSubmit?.(values);
   };
 
-  // ✅ NEU: Handler für "Resend Email" Button
   const handleResendEmail = () => {
     onClose();
     navigate("/check-email", {
-      state: {
-        email: values.email,
-      },
+      state: { email: values.email },
+    });
+  };
+
+  // Zur SignUp Page wechseln
+  const handleGoToSignup = () => {
+    onClose();
+    navigate("/signup", {
+      state: { email: values.email },
     });
   };
 
@@ -70,6 +75,7 @@ export const LoginModal = ({
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"
+            aria-label="Close"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path
@@ -82,12 +88,9 @@ export const LoginModal = ({
           </button>
         </div>
 
-        {/* ✅ UPDATED: Error Display mit Verification-Link */}
         {error && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             <p className="mb-2">{error}</p>
-
-            {/* ✅ NEU: Zeige "Resend Email" Button wenn Email nicht verifiziert */}
             {needsVerification && (
               <button
                 onClick={handleResendEmail}
@@ -170,6 +173,20 @@ export const LoginModal = ({
             {loading ? "Logging in..." : "Submit"}
           </button>
         </form>
+
+        {/* ✅ NEU: SignUp-Link unter dem Formular */}
+        <div className="mt-4 text-center">
+          <span className="text-md font-sans text-whiteLetter/60">
+            No account yet?
+          </span>{" "}
+          <button
+            type="button"
+            onClick={handleGoToSignup}
+            className="text-md font-bold font-sans hover:text-lavenderViolett text-whiteLetter"
+          >
+            Create an account
+          </button>
+        </div>
       </div>
     </div>
   );

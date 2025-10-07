@@ -216,9 +216,9 @@ const NavBar = () => {
                 </a>
                 <button
                   onClick={openLogin}
-                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink/70 font-extralight shadow-md transition"
                 >
-                  <LogIn size={18} className="mr-1" />
+                  <LogIn size={12} className="mr-1" />
                   LogIn
                 </button>
               </>
@@ -237,7 +237,7 @@ const NavBar = () => {
 
                 <button
                   onClick={logout}
-                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/80 text-white hover:bg-buttonPink shadow-md transition"
+                  className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/60 text- hover:bg-buttonPink shadow-md transition"
                   aria-label="Log out"
                   title="Log out"
                 >

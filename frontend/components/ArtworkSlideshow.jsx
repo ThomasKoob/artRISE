@@ -60,7 +60,7 @@ export default function ArtworkSlideshow({
       </button>
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
         <div className="max-w-4xl">
-          <h3 className="text-xl font-semibold line-clamp-1">
+          <h3 className="text-xl font-extralight font-sans line-clamp-1 mb-2">
             {cur.title || "Ohne Titel"}
           </h3>
           {cur?.price != null && (
@@ -77,7 +77,7 @@ export default function ArtworkSlideshow({
       {safeItems.length > 1 && (
         <>
           <button
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 text-xl rounded-full border-1 border-darkBackground bg-black/30 hover:bg-darkBackground hover:border-1 hover:border-darkBackground flex items-center justify-center"
             onClick={() =>
               setI((p) => (p - 1 + safeItems.length) % safeItems.length)
             }
@@ -86,13 +86,13 @@ export default function ArtworkSlideshow({
             ‹
           </button>
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white flex items-center justify-center"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 text-xl rounded-full border-1 border-darkBackground bg-black/30 hover:bg-darkBackground hover:border-1 hover:border-darkBackground flex items-center justify-center"
             onClick={() => setI((p) => (p + 1) % safeItems.length)}
             aria-label="Next"
           >
             ›
           </button>
-          <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1">
+          {/* <div className="absolute bottom-3 inset-x-0 flex justify-center gap-1">
             {safeItems.map((_, idx) => (
               <span
                 key={idx}
@@ -102,7 +102,7 @@ export default function ArtworkSlideshow({
                 onClick={() => setI(idx)}
               />
             ))}
-          </div>
+          </div> */}
         </>
       )}
     </div>

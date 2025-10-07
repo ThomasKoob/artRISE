@@ -13,6 +13,7 @@ const Auction = () => {
   const [error, setError] = useState(null);
 
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [qrOpen, setQrOpen] = useState(false); // QR Modal
   const { auctionId } = useParams();
   const origin =
     (typeof window !== "undefined" && window.location.origin) || "";
@@ -21,14 +22,10 @@ const Auction = () => {
   const fetchAuctionData = useCallback(async () => {
     try {
       setLoading(true);
-
       const [auctionResult, artworksResult] = await Promise.all([
         getAuctionById(auctionId),
         getAuctionArtworks(auctionId),
       ]);
-
-      console.log("Auction result:", auctionResult);
-      console.log("Artworks result:", artworksResult);
 
       const auctionData = auctionResult.success
         ? auctionResult.data
@@ -36,12 +33,6 @@ const Auction = () => {
       const artworksData = artworksResult.success
         ? artworksResult.data
         : artworksResult;
-
-      console.log("Processed auction data:", auctionData);
-      console.log("Avatar URL direkt:", auctionData.avatarUrl);
-      console.log("Avatar URL über artistId:", auctionData.artistId?.avatarUrl);
-      console.log("Processed artworks data:", artworksData);
-      console.log("Artworks count:", artworksData?.length);
 
       setAuction(auctionData);
       setArtworks(Array.isArray(artworksData) ? artworksData : []);
@@ -61,16 +52,12 @@ const Auction = () => {
   }, [auctionId, fetchAuctionData]);
 
   const handleBidSuccess = useCallback((offer, artwork) => {
-    console.log("Bid success:", offer, artwork);
     setArtworks((prev) =>
       prev.map((art) =>
         art._id === artwork._id ? { ...art, price: offer.amount } : art
       )
     );
   }, []);
-
-  // Quelle für Artist-Daten: auction.artistId / auction.artist /
-  // Fallback aus artworks[0].artistId oder artworks[0].artist
 
   if (error) {
     return (
@@ -86,27 +73,27 @@ const Auction = () => {
   }
 
   // ---------------------------
-  // NEU: Werte für ShareMenu
+  // Werte für ShareMenu
   // ---------------------------
   const primaryArtwork =
     Array.isArray(artworks) && artworks.length > 0 ? artworks[0] : null;
 
-  const artistName =
-    auction?.artistId?.name ||
-    auction?.artist?.name ||
-    primaryArtwork?.artistName ||
-    primaryArtwork?.artist?.name ||
-    "";
+  // WICHTIG: Künstlername kommt explizit aus auction.title
+  const artistName = auction?.title || "";
 
-  const artworkTitle = primaryArtwork?.title || auction?.title || "";
+  // Artwork-Titel (falls vorhanden) – NICHT aus auction.title
+  const artworkTitle = primaryArtwork?.title || "";
 
-  // Bildquelle: bevorzugt erstes Artwork-Bild, sonst Avatar aus der Auktion
+  // Nur erstes Artwork-Image (kein Avatar-Fallback)
   const imageUrl =
     primaryArtwork?.imageUrl ||
     (Array.isArray(primaryArtwork?.images) ? primaryArtwork.images[0] : "") ||
-    auction?.avatarUrl ||
-    auction?.artistId?.avatarUrl ||
     "";
+
+  // QR Code Bild
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(
+    auctionUrl
+  )}`;
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -124,20 +111,31 @@ const Auction = () => {
           <div>
             {/* Kopfzeile */}
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4 mb-4 sm:mb-6">
-              <h1 className="text-lg sm:text-xl md:text-3xl font-extralight">
+              <h1 className=" font-sans sm:text-xl md:text-7xl font-thin">
                 {auction.title}
               </h1>
 
-              {/* Share-Buttons */}
+              {/* Actions rechts */}
               <div className="md:ml-auto flex flex-wrap items-center gap-2">
                 <ShareMenu
                   url={auctionUrl}
-                  artistName={artistName}
-                  artworkTitle={artworkTitle}
-                  imageUrl={imageUrl}
+                  artistName={artistName} // <- aus auction.title
+                  artworkTitle={artworkTitle} // <- aus primaryArtwork.title
+                  imageUrl={imageUrl} // <- erstes Artwork-Bild
                   className="shrink-0"
                   buttonLabel="Share"
                 />
+
+                {/* QR Button */}
+                <button
+                  type="button"
+                  onClick={() => setQrOpen(true)}
+                  className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
+                  title="Show QR code"
+                  aria-label="Show QR code"
+                >
+                  QR
+                </button>
               </div>
 
               {/* Timer */}
@@ -151,7 +149,6 @@ const Auction = () => {
                       endDate={auction.endDate}
                       size="lg"
                       onExpired={() => {
-                        console.log(`Auction ${auction._id} has ended`);
                         fetchAuctionData();
                       }}
                     />
@@ -171,7 +168,7 @@ const Auction = () => {
           md:w-72 md:h-72
           lg:w-80 lg:h-80
           rounded-lg overflow-hidden
-          border bg-darkBackground border-black/40 shadow-black/30 shadow-lg
+          border bg-darkBackground  border-black/40 shadow-black/30 shadow-lg
         "
                   >
                     <img
@@ -230,6 +227,58 @@ const Auction = () => {
           )}
         </div>
       </section>
+
+      {/* QR Modal */}
+      {qrOpen && (
+        <div
+          className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-[6px] flex items-center justify-center p-4"
+          onClick={() => setQrOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-base-100 text-base-content shadow-xl border border-white/10 p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-light">Scan to open auction</h3>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setQrOpen(false)}
+                aria-label="Close QR modal"
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-3">
+              <img
+                src={qrSrc}
+                alt="Auction QR code"
+                className="w-64 h-64 rounded-lg border border-white/10 bg-white p-2"
+                loading="lazy"
+              />
+              <div className="w-full">
+                <p className="text-xs opacity-70 break-all mb-2">
+                  {auctionUrl}
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm w-full"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(auctionUrl);
+                    } catch {
+                      window.prompt("Copy URL", auctionUrl);
+                    }
+                  }}
+                >
+                  Copy link
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

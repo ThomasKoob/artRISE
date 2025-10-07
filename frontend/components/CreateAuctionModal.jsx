@@ -78,7 +78,14 @@ const [showConfirm, setShowConfirm] = useState(false);
   });
 
   const [artworks, setArtworks] = useState([
-    { title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" },
+    {
+      title: "",
+      description: "",
+      images: "",
+      startPrice: "",
+      price: "",
+      currency: "EUR",
+    },
   ]);
 
   const [imageFiles, setImageFiles] = useState({});
@@ -110,7 +117,13 @@ const [showConfirm, setShowConfirm] = useState(false);
   // Avatar Handlers
   const processAvatarFile = (file) => {
     if (!file) return;
-    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const valid = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (!valid.includes(file.type)) {
       setErrors((p) => ({ ...p, avatar: "Ungültiges Bildformat" }));
       return;
@@ -131,11 +144,24 @@ const [showConfirm, setShowConfirm] = useState(false);
   };
 
   const handleAvatarFileChange = (e) => processAvatarFile(e.target.files[0]);
-  const handleAvatarDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); setAvatarDragging(true); };
-  const handleAvatarDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setAvatarDragging(false); };
-  const handleAvatarDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleAvatarDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(true);
+  };
+  const handleAvatarDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(false);
+  };
+  const handleAvatarDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   const handleAvatarDrop = (e) => {
-    e.preventDefault(); e.stopPropagation(); setAvatarDragging(false);
+    e.preventDefault();
+    e.stopPropagation();
+    setAvatarDragging(false);
     const files = e.dataTransfer.files;
     if (files?.length) processAvatarFile(files[0]);
   };
@@ -147,9 +173,13 @@ const [showConfirm, setShowConfirm] = useState(false);
     formData.append("file", avatarFile);
     formData.append("upload_preset", UPLOAD_PRESET);
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData }
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Upload fehlgeschlagen");
+      if (!res.ok)
+        throw new Error(data.error?.message || "Upload fehlgeschlagen");
       return data.secure_url;
     } catch (err) {
       console.error(err);
@@ -162,40 +192,76 @@ const [showConfirm, setShowConfirm] = useState(false);
   // Artworks
   const addArtwork = () => {
     if (artworks.length < 10) {
-      setArtworks((prev) => [...prev, { title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" }]);
+      setArtworks((prev) => [
+        ...prev,
+        {
+          title: "",
+          description: "",
+          images: "",
+          startPrice: "",
+          price: "",
+          currency: "EUR",
+        },
+      ]);
     }
   };
 
   const removeArtwork = (index) => {
     if (artworks.length > 1) {
       setArtworks((prev) => prev.filter((_, i) => i !== index));
-      const nf = { ...imageFiles }, np = { ...imagePreviews }, nu = { ...uploadingImages }, nd = { ...dragStates };
-      delete nf[index]; delete np[index]; delete nu[index]; delete nd[index];
-      setImageFiles(nf); setImagePreviews(np); setUploadingImages(nu); setDragStates(nd);
+      const nf = { ...imageFiles },
+        np = { ...imagePreviews },
+        nu = { ...uploadingImages },
+        nd = { ...dragStates };
+      delete nf[index];
+      delete np[index];
+      delete nu[index];
+      delete nd[index];
+      setImageFiles(nf);
+      setImagePreviews(np);
+      setUploadingImages(nu);
+      setDragStates(nd);
     }
   };
 
   const handleArtworkChange = (index, field, value) => {
-    setArtworks((prev) => prev.map((a, i) => (i === index ? { ...a, [field]: value } : a)));
+    setArtworks((prev) =>
+      prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
+    );
     if (field === "startPrice") {
-      setArtworks((prev) => prev.map((a, i) => (i === index ? { ...a, price: value } : a)));
+      setArtworks((prev) =>
+        prev.map((a, i) => (i === index ? { ...a, price: value } : a))
+      );
     }
   };
 
   const processImageFile = (idx, file) => {
     if (!file) return;
-    const valid = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    const valid = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
     if (!valid.includes(file.type)) {
-      setErrors((p) => ({ ...p, [`artwork_${idx}_images`]: "Ungültiges Bildformat" }));
+      setErrors((p) => ({
+        ...p,
+        [`artwork_${idx}_images`]: "Ungültiges Bildformat",
+      }));
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      setErrors((p) => ({ ...p, [`artwork_${idx}_images`]: "Datei zu groß (max. 10MB)" }));
+      setErrors((p) => ({
+        ...p,
+        [`artwork_${idx}_images`]: "Datei zu groß (max. 10MB)",
+      }));
       return;
     }
     setImageFiles((p) => ({ ...p, [idx]: file }));
     const reader = new FileReader();
-    reader.onloadend = () => setImagePreviews((p) => ({ ...p, [idx]: reader.result }));
+    reader.onloadend = () =>
+      setImagePreviews((p) => ({ ...p, [idx]: reader.result }));
     reader.readAsDataURL(file);
     setErrors((p) => {
       const ne = { ...p };
@@ -205,11 +271,24 @@ const [showConfirm, setShowConfirm] = useState(false);
   };
 
   const handleFileChange = (idx, e) => processImageFile(idx, e.target.files[0]);
-  const handleDragEnter = (idx, e) => { e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: true })); };
-  const handleDragLeave = (idx, e) => { e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: false })); };
-  const handleDragOver = (idx, e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragEnter = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: true }));
+  };
+  const handleDragLeave = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: false }));
+  };
+  const handleDragOver = (idx, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
   const handleDrop = (idx, e) => {
-    e.preventDefault(); e.stopPropagation(); setDragStates((p) => ({ ...p, [idx]: false }));
+    e.preventDefault();
+    e.stopPropagation();
+    setDragStates((p) => ({ ...p, [idx]: false }));
     const files = e.dataTransfer.files;
     if (files?.length) processImageFile(idx, files[0]);
   };
@@ -222,9 +301,13 @@ const [showConfirm, setShowConfirm] = useState(false);
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
     try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: "POST", body: formData });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        { method: "POST", body: formData }
+      );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Upload fehlgeschlagen");
+      if (!res.ok)
+        throw new Error(data.error?.message || "Upload fehlgeschlagen");
       return data.secure_url;
     } catch (err) {
       console.error(err);
@@ -237,8 +320,10 @@ const [showConfirm, setShowConfirm] = useState(false);
   const validateStep1 = () => {
     const ne = {};
     if (!auctionData.title.trim()) ne.title = "Titel ist erforderlich";
-    if (!auctionData.description.trim()) ne.description = "Beschreibung ist erforderlich";
-    if (!auctionData.avatarUrl && !avatarFile) ne.avatar = "Avatar ist erforderlich";
+    if (!auctionData.description.trim())
+      ne.description = "Beschreibung ist erforderlich";
+    if (!auctionData.avatarUrl && !avatarFile)
+      ne.avatar = "Avatar ist erforderlich";
     if (!auctionData.endDate) {
       ne.endDate = "Enddatum ist erforderlich";
     } else {
@@ -253,17 +338,34 @@ const [showConfirm, setShowConfirm] = useState(false);
     const ne = {};
     let hasError = false;
     artworks.forEach((a, i) => {
-      if (!a.title.trim()) { ne[`artwork_${i}_title`] = "Titel ist erforderlich"; hasError = true; }
-      if (!a.description.trim()) { ne[`artwork_${i}_description`] = "Beschreibung ist erforderlich"; hasError = true; }
-      if (!a.images.trim() && !imageFiles[i]) { ne[`artwork_${i}_images`] = "Bild ist erforderlich"; hasError = true; }
-      if (!a.startPrice || a.startPrice <= 0) { ne[`artwork_${i}_startPrice`] = "Startpreis muss größer als 0 sein"; hasError = true; }
+      if (!a.title.trim()) {
+        ne[`artwork_${i}_title`] = "Titel ist erforderlich";
+        hasError = true;
+      }
+      if (!a.description.trim()) {
+        ne[`artwork_${i}_description`] = "Beschreibung ist erforderlich";
+        hasError = true;
+      }
+      if (!a.images.trim() && !imageFiles[i]) {
+        ne[`artwork_${i}_images`] = "Bild ist erforderlich";
+        hasError = true;
+      }
+      if (!a.startPrice || a.startPrice <= 0) {
+        ne[`artwork_${i}_startPrice`] = "Startpreis muss größer als 0 sein";
+        hasError = true;
+      }
     });
     setErrors(ne);
     return !hasError;
   };
 
-  const nextStep = () => { if (currentStep === 1 && validateStep1()) setCurrentStep(2); };
-  const prevStep = () => { setCurrentStep(1); setErrors({}); };
+  const nextStep = () => {
+    if (currentStep === 1 && validateStep1()) setCurrentStep(2);
+  };
+  const prevStep = () => {
+    setCurrentStep(1);
+    setErrors({});
+  };
 
   const handleSubmit = async () => {
     if (!validateStep2()) return;
@@ -287,18 +389,41 @@ const [showConfirm, setShowConfirm] = useState(false);
       );
 
       const submitData = {
-        auction: { ...auctionData, avatarUrl, endDate: new Date(auctionData.endDate).toISOString() },
+        auction: {
+          ...auctionData,
+          avatarUrl,
+          endDate: new Date(auctionData.endDate).toISOString(),
+        },
         artworks: uploadedArtworks,
       };
 
       await onSubmit(submitData);
 
       // reset
-      setAuctionData({ title: "", description: "", avatarUrl: "", endDate: "" });
-      setArtworks([{ title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" }]);
-      setImageFiles({}); setImagePreviews({}); setUploadingImages({}); setDragStates({});
-      setAvatarFile(null); setAvatarPreview(null);
-      setCurrentStep(1); setErrors({});
+      setAuctionData({
+        title: "",
+        description: "",
+        avatarUrl: "",
+        endDate: "",
+      });
+      setArtworks([
+        {
+          title: "",
+          description: "",
+          images: "",
+          startPrice: "",
+          price: "",
+          currency: "EUR",
+        },
+      ]);
+      setImageFiles({});
+      setImagePreviews({});
+      setUploadingImages({});
+      setDragStates({});
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      setCurrentStep(1);
+      setErrors({});
       onClose();
     } catch (e) {
       console.error("Error creating auction:", e);
@@ -312,7 +437,10 @@ const [showConfirm, setShowConfirm] = useState(false);
 
   return (
     <div className="fixed inset-0 z-[120] flex sm:items-center items-end justify-center p-0 sm:p-4">
-      <div className="absolute inset-0 bg-darkBackground/50 backdrop-blur-lg" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-darkBackground/50 backdrop-blur-lg"
+        onClick={onClose}
+      />
 
       <div
         className="relative w-full max-w-full sm:max-w-2xl
@@ -324,10 +452,15 @@ const [showConfirm, setShowConfirm] = useState(false);
         {/* Header */}
         <div className="sticky top-0 left-0 right-0 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between z-20 bg-violetHeader/70 backdrop-blur border-b border-white/10">
           <div>
-            <h2 className="text-xl font-sans font-extralight text-white/80">{currentStep === 1 ? "New Auction" : "Add Art"}</h2>
+            <h2 className="text-xl font-sans font-extralight text-white/80">
+              {currentStep === 1 ? "New Auction" : "Add Art"}
+            </h2>
             <p className="text-sm text-white/60">Step {currentStep} from 2</p>
           </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center">
+          <button
+            onClick={onClose}
+            className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center"
+          >
             <X size={20} />
           </button>
         </div>
@@ -338,47 +471,82 @@ const [showConfirm, setShowConfirm] = useState(false);
             <div className="space-y-5">
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block mb-1 text-sm font-medium text-white">Artist name</label>
+                <label
+                  htmlFor="title"
+                  className="block mb-1 text-sm font-medium text-white"
+                >
+                  Artist name
+                </label>
                 <input
                   type="text"
                   id="title"
                   value={auctionData.title}
                   onChange={(e) => handleAuctionChange("title", e.target.value)}
                   className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
-                              border ${errors.title ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                              border ${
+                                errors.title
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : "border-white/10 focus:ring-white/30"
+                              }
                               focus:outline-none focus:ring-1`}
                   placeholder="Hans Wurst"
                 />
-                {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title}</p>}
+                {errors.title && (
+                  <p className="text-sm text-red-500 mt-1">{errors.title}</p>
+                )}
               </div>
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block mb-1 text-sm font-medium text-white">Artist Bio</label>
+                <label
+                  htmlFor="description"
+                  className="block mb-1 text-sm font-medium text-white"
+                >
+                  Artist Bio
+                </label>
                 <textarea
                   id="description"
                   value={auctionData.description}
-                  onChange={(e) => handleAuctionChange("description", e.target.value)}
+                  onChange={(e) =>
+                    handleAuctionChange("description", e.target.value)
+                  }
                   rows={4}
                   className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
-                              border ${errors.description ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                              border ${
+                                errors.description
+                                  ? "border-red-500 focus:ring-red-500"
+                                  : "border-white/10 focus:ring-white/30"
+                              }
                               focus:outline-none focus:ring-1`}
                   placeholder="Your Story about you"
                 />
-                {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
+                {errors.description && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.description}
+                  </p>
+                )}
               </div>
 
               {/* Avatar Upload */}
               <div>
-                <label className="block mb-1 text-sm font-medium text-white">Profile Picture</label>
+                <label className="block mb-1 text-sm font-medium text-white">
+                  Profile Picture
+                </label>
 
                 {avatarPreview && (
                   <div className="mb-3 flex justify-center">
                     <div className="relative">
-                      <img src={avatarPreview} alt="Avatar Preview" className="w-24 h-24 rounded-full object-cover bg-violetHeader/80 border-2 border-white/20" />
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar Preview"
+                        className="w-24 h-24 rounded-full object-cover bg-violetHeader/80 border-2 border-white/20"
+                      />
                       <button
                         type="button"
-                        onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
+                        onClick={() => {
+                          setAvatarFile(null);
+                          setAvatarPreview(null);
+                        }}
                         className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
                       >
                         <X size={14} />
@@ -389,9 +557,11 @@ const [showConfirm, setShowConfirm] = useState(false);
 
                 <div
                   className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
-                    avatarDragging ? "border-blue-500 bg-blue-50"
-                    : errors.avatar ? "border-red-500 bg-red-50"
-                    : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
+                    avatarDragging
+                      ? "border-blue-500 bg-blue-50"
+                      : errors.avatar
+                      ? "border-red-500 bg-red-50"
+                      : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                   }`}
                   onDragEnter={handleAvatarDragEnter}
                   onDragLeave={handleAvatarDragLeave}
@@ -401,21 +571,44 @@ const [showConfirm, setShowConfirm] = useState(false);
                   <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
                     <div className="flex flex-col items-center justify-center pointer-events-none">
                       <Upload className="w-8 h-8 mb-2 text-white/70" />
-                      <p className="mb-1 text-sm text-white/70"><span className="font-semibold">Click</span> or drag picture here</p>
-                      <p className="text-xs text-white/60">PNG, JPG, GIF, WebP (max. 5MB)</p>
+                      <p className="mb-1 text-sm text-white/70">
+                        <span className="font-semibold">Click</span> or drag
+                        picture here
+                      </p>
+                      <p className="text-xs text-white/60">
+                        PNG, JPG, GIF, WebP (max. 5MB)
+                      </p>
                     </div>
-                    <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={handleAvatarFileChange} />
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleAvatarFileChange}
+                    />
                   </label>
                 </div>
 
-                {avatarFile && <p className="mt-2 text-xs text-green-500">✓ {avatarFile.name} selected</p>}
-                {uploadingAvatar && <p className="mt-2 text-xs text-blue-400">Uploading...</p>}
-                {errors.avatar && <p className="mt-2 text-xs text-red-500">{errors.avatar}</p>}
+                {avatarFile && (
+                  <p className="mt-2 text-xs text-green-500">
+                    ✓ {avatarFile.name} selected
+                  </p>
+                )}
+                {uploadingAvatar && (
+                  <p className="mt-2 text-xs text-blue-400">Uploading...</p>
+                )}
+                {errors.avatar && (
+                  <p className="mt-2 text-xs text-red-500">{errors.avatar}</p>
+                )}
               </div>
 
               {/* End Date */}
               <div>
-                <label htmlFor="endDate" className="block mb-1 text-sm font-medium text-white">Auction-End</label>
+                <label
+                  htmlFor="endDate"
+                  className="block mb-1 text-sm font-medium text-white"
+                >
+                  Auction-End
+                </label>
                 <div className="relative">
                   <input
   type="datetime-local"
@@ -431,17 +624,38 @@ const [showConfirm, setShowConfirm] = useState(false);
 
                   <div
                     className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 cursor-pointer text-white/60 hover:text-white/80"
-                    onClick={() => document.getElementById("endDate").showPicker()}
+                    onClick={() =>
+                      document.getElementById("endDate").showPicker()
+                    }
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <rect
+                        x="3"
+                        y="4"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
                       <line x1="16" y1="2" x2="16" y2="6"></line>
                       <line x1="8" y1="2" x2="8" y2="6"></line>
                       <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
                   </div>
                 </div>
-                {errors.endDate && <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>}
+                {errors.endDate && (
+                  <p className="text-sm text-red-500 mt-1">{errors.endDate}</p>
+                )}
               </div>
             </div>
           )}
@@ -450,16 +664,29 @@ const [showConfirm, setShowConfirm] = useState(false);
           {currentStep === 2 && (
             <div>
               <div className="pb-4 mb-6 border-b border-white/10">
-                <h3 className="text-lg font-medium text-white">Art ({artworks.length}/10)</h3>
+                <h3 className="text-lg font-medium text-white">
+                  Art ({artworks.length}/10)
+                </h3>
               </div>
 
               <div className="space-y-6">
                 {artworks.map((artwork, index) => (
-                  <div key={index} className="min-w-0 border border-white/10 rounded-xl p-4 sm:p-5 bg-white/5 space-y-4 shadow-inner">
+                  <div
+                    key={index}
+                    className="min-w-0 border border-white/10 rounded-xl p-4 sm:p-5 bg-white/5 space-y-4 shadow-inner"
+                  >
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium text-white">Art {index + 1}</h4>
+                      <h4 className="font-medium text-white">
+                        Art {index + 1}
+                      </h4>
                       {artworks.length > 1 && (
-                        <button type="button" onClick={() => removeArtwork(index)} className="text-red-400 hover:text-red-500">✕</button>
+                        <button
+                          type="button"
+                          onClick={() => removeArtwork(index)}
+                          className="text-red-400 hover:text-red-500"
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
 
@@ -468,24 +695,44 @@ const [showConfirm, setShowConfirm] = useState(false);
                       type="text"
                       placeholder="Title"
                       value={artwork.title}
-                      onChange={(e) => handleArtworkChange(index, "title", e.target.value)}
+                      onChange={(e) =>
+                        handleArtworkChange(index, "title", e.target.value)
+                      }
                       className={`w-full px-4 py-2 rounded-lg bg_white/5 text-white placeholder-white/60
-                                  border ${errors[`artwork_${index}_title`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
-                                  focus:outline-none focus:ring-1`.replace("bg_white/5", "bg-white/5")}
+                                  border ${
+                                    errors[`artwork_${index}_title`]
+                                      ? "border-red-500 focus:ring-red-500"
+                                      : "border-white/10 focus:ring-white/30"
+                                  }
+                                  focus:outline-none focus:ring-1`.replace(
+                        "bg_white/5",
+                        "bg-white/5"
+                      )}
                     />
-                    {errors[`artwork_${index}_title`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_title`]}</p>}
+                    {errors[`artwork_${index}_title`] && (
+                      <p className="text-xs text-red-500">
+                        {errors[`artwork_${index}_title`]}
+                      </p>
+                    )}
 
                     {/* Image Upload */}
                     <div>
                       {imagePreviews[index] && (
                         <div className="mb-3 relative">
-                          <img src={imagePreviews[index]} alt="Preview" className="w-full h-36 sm:h-48 object-cover rounded-lg" />
+                          <img
+                            src={imagePreviews[index]}
+                            alt="Preview"
+                            className="w-full h-36 sm:h-48 object-cover rounded-lg"
+                          />
                           <button
                             type="button"
                             onClick={() => {
-                              const nf = { ...imageFiles }, np = { ...imagePreviews };
-                              delete nf[index]; delete np[index];
-                              setImageFiles(nf); setImagePreviews(np);
+                              const nf = { ...imageFiles },
+                                np = { ...imagePreviews };
+                              delete nf[index];
+                              delete np[index];
+                              setImageFiles(nf);
+                              setImagePreviews(np);
                             }}
                             className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
                           >
@@ -496,9 +743,11 @@ const [showConfirm, setShowConfirm] = useState(false);
 
                       <div
                         className={`flex items-center justify-center w-full border-2 border-dashed rounded-lg transition ${
-                          dragStates[index] ? "border-blue-500 bg-blue-50"
-                          : errors[`artwork_${index}_images`] ? "border-red-500 bg-red-50"
-                          : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
+                          dragStates[index]
+                            ? "border-blue-500 bg-blue-50"
+                            : errors[`artwork_${index}_images`]
+                            ? "border-red-500 bg-red-50"
+                            : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                         }`}
                         onDragEnter={(e) => handleDragEnter(index, e)}
                         onDragLeave={(e) => handleDragLeave(index, e)}
@@ -508,29 +757,65 @@ const [showConfirm, setShowConfirm] = useState(false);
                         <label className="flex flex-col items-center justify-center w-full py-8 cursor-pointer">
                           <div className="flex flex-col items-center justify-center pointer-events-none">
                             <Upload className="w-8 h-8 mb-2 text-white/70" />
-                            <p className="mb-1 text-sm text-white/70"><span className="font-semibold">Click</span> or drag picture here</p>
-                            <p className="text-xs text-white/60">PNG, JPG, GIF, WebP (max. 10MB)</p>
+                            <p className="mb-1 text-sm text-white/70">
+                              <span className="font-semibold">Click</span> or
+                              drag picture here
+                            </p>
+                            <p className="text-xs text-white/60">
+                              PNG, JPG, GIF, WebP (max. 10MB)
+                            </p>
                           </div>
-                          <input type="file" className="hidden" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" onChange={(e) => handleFileChange(index, e)} />
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            onChange={(e) => handleFileChange(index, e)}
+                          />
                         </label>
                       </div>
 
-                      {imageFiles[index] && <p className="mt-2 text-xs text-green-500">✓ {imageFiles[index].name} selected</p>}
-                      {uploadingImages[index] && <p className="mt-2 text-xs text-blue-400">Uploading...</p>}
-                      {errors[`artwork_${index}_images`] && <p className="mt-2 text-xs text-red-500">{errors[`artwork_${index}_images`]}</p>}
+                      {imageFiles[index] && (
+                        <p className="mt-2 text-xs text-green-500">
+                          ✓ {imageFiles[index].name} selected
+                        </p>
+                      )}
+                      {uploadingImages[index] && (
+                        <p className="mt-2 text-xs text-blue-400">
+                          Uploading...
+                        </p>
+                      )}
+                      {errors[`artwork_${index}_images`] && (
+                        <p className="mt-2 text-xs text-red-500">
+                          {errors[`artwork_${index}_images`]}
+                        </p>
+                      )}
                     </div>
 
                     {/* Description */}
                     <textarea
                       placeholder="Description"
                       value={artwork.description}
-                      onChange={(e) => handleArtworkChange(index, "description", e.target.value)}
+                      onChange={(e) =>
+                        handleArtworkChange(
+                          index,
+                          "description",
+                          e.target.value
+                        )
+                      }
                       rows={3}
                       className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
-                                  border ${errors[`artwork_${index}_description`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                  border ${
+                                    errors[`artwork_${index}_description`]
+                                      ? "border-red-500 focus:ring-red-500"
+                                      : "border-white/10 focus:ring-white/30"
+                                  }
                                   focus:outline-none focus:ring-1`}
                     />
-                    {errors[`artwork_${index}_description`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_description`]}</p>}
+                    {errors[`artwork_${index}_description`] && (
+                      <p className="text-xs text-red-500">
+                        {errors[`artwork_${index}_description`]}
+                      </p>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                       <input
@@ -539,14 +824,28 @@ const [showConfirm, setShowConfirm] = useState(false);
                         step="0.01"
                         placeholder="Start price (€)"
                         value={artwork.startPrice}
-                        onChange={(e) => handleArtworkChange(index, "startPrice", e.target.value)}
+                        onChange={(e) =>
+                          handleArtworkChange(
+                            index,
+                            "startPrice",
+                            e.target.value
+                          )
+                        }
                         className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
-                                    border ${errors[`artwork_${index}_startPrice`] ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+                                    border ${
+                                      errors[`artwork_${index}_startPrice`]
+                                        ? "border-red-500 focus:ring-red-500"
+                                        : "border-white/10 focus:ring-white/30"
+                                    }
                                     focus:outline-none focus:ring-1`}
                       />
                     </div>
 
-                    {errors[`artwork_${index}_startPrice`] && <p className="text-xs text-red-500">{errors[`artwork_${index}_startPrice`]}</p>}
+                    {errors[`artwork_${index}_startPrice`] && (
+                      <p className="text-xs text-red-500">
+                        {errors[`artwork_${index}_startPrice`]}
+                      </p>
+                    )}
                   </div>
                 ))}
 
