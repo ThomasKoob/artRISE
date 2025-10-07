@@ -186,18 +186,18 @@ const NavBar = () => {
             </a>
 
             {/* Desktop-Navigation */}
-            <div className="hidden md:flex items-center gap-6 ml-6 text-whiteLetter text-xl font-extralight">
+            <div className="hidden md:flex items-center gap-6 ml-6 text-whiteLetter text-xl font-sans font-extralight">
               <a
                 href="/"
                 className="hover:text-buttonPink/70 transition-colors"
               >
-                Home
+                HOME
               </a>
               <a
                 href="/auction"
                 className="hover:text-coldYellow transition-colors"
               >
-                Auctions
+                AUCTION
               </a>
             </div>
           </div>
@@ -226,7 +226,7 @@ const NavBar = () => {
             ) : (
               <>
                 <span className="hidden sm:inline-flex px-3 py-2 text-sm text-gray-200">
-                  Hallo, {user.userName || user.email}
+                  {user.userName || user.email}
                 </span>
 
                 <a
