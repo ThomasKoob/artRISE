@@ -102,7 +102,7 @@ const SignUp = () => {
 
   return (
     <>
-      <div className="flex justify-center px-4 pt-24 pb-8">
+      <div className="flex justify-center px-4 pt-10 pb-8">
         <div className="w-full bg-darkBackground/30 max-w-md border-1 border-coldYellow/40 shadow-md rounded-xl p-8">
           <h2 className="text-2xl font-light font-sans text-center text-whiteLetter mb-6">
             Create your account

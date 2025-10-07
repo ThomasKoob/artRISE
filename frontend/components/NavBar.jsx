@@ -4,153 +4,32 @@ import { createPortal } from "react-dom";
 import { Menu, LogOut, LogIn, UserPlus, User, X } from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
-/* DE: Mobiles Seitenmenü (Drawer) wird per Portal über <body> gerendert */
-function MobileDrawer({
-  open,
-  onClose,
-  user,
-  isInitializing,
-  openLogin,
-  logout,
-}) {
-  if (!open) return null;
-
-  const node = (
-    <div className="fixed inset-0 z-[9999] pointer-events-auto">
-      {/* DE: Overlay – deckt die gesamte Seite ab */}
-      <div
-        className={`fixed inset-0 bg-black/80 transition-opacity duration-200 ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
-        onClick={onClose}
-      />
-      {/* DE: Linkes Panel */}
-      <aside
-        className={`fixed left-0 top-0 h-screen w-80 max-w-[85%]
-                    bg-violetHeader/95 text-white border-r border-hellPink/40 shadow-2xl
-                    transition-transform duration-300 ease-out
-                    ${open ? "translate-x-0" : "-translate-x-full"}`}
-        role="dialog"
-        aria-modal="true"
-      >
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
-          <span className="text-xl">Menu</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-10 h-10 rounded-lg hover:bg-white/10"
-          >
-            <X size={20} className="text-coldYellow" />
-          </button>
-        </div>
-
-        {/* DE: Navigationslinks */}
-        <div className="p-4 space-y-2">
-          <a
-            href="/"
-            onClick={onClose}
-            className="block px-3 py-2 rounded-lg text-white hover:bg-white/10"
-          >
-            Home
-          </a>
-          <a
-            href="/auction"
-            onClick={onClose}
-            className="block px-3 py-2 rounded-lg text-white hover:bg-white/10"
-          >
-            Auctions
-          </a>
-        </div>
-
-        <div className="mx-4 my-3 border-t border-white/20" />
-
-        {/* DE: Auth-Bereich */}
-        <div className="p-4 space-y-2">
-          {!isInitializing && !user && (
-            <>
-              <a
-                href="/signup"
-                onClick={onClose}
-                className="block px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition"
-              >
-                <UserPlus size={16} className="inline mr-1" />
-                SignUp
-              </a>
-              <button
-                onClick={() => {
-                  onClose();
-                  openLogin();
-                }}
-                className="w-full text-left px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition"
-              >
-                <LogIn size={16} className="inline mr-1" />
-                LogIn
-              </button>
-            </>
-          )}
-
-          {!isInitializing && !!user && (
-            <>
-              <div className="px-3 py-2 text-sm text-white/85">
-                Eingeloggt als{" "}
-                <span className="font-medium">
-                  {user.userName || user.email}
-                </span>
-                <div className="text-xs opacity-80">Rolle: {user.role}</div>
-              </div>
-
-              <a
-                href="/dashboard"
-                onClick={onClose}
-                className="flex items-center justify-center h-10 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
-              >
-                <User size={18} />
-                <span className="sr-only">Dashboard</span>
-              </a>
-
-              <button
-                onClick={() => {
-                  onClose();
-                  logout();
-                }}
-                className="flex items-center justify-center h-10 w-full rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
-                aria-label="Log out"
-                title="Log out"
-              >
-                <LogOut size={18} />
-                <span className="sr-only">Log out</span>
-              </button>
-            </>
-          )}
-        </div>
-      </aside>
-    </div>
-  );
-
-  return createPortal(node, document.body);
-}
-
 const NavBar = () => {
   const { openLogin, user, logout, isInitializing } = useLoginModal();
 
-  // DE: Zustand für mobiles Menü
+  // Mobile-Menü (Hamburger) Zustand
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // DE: ESC schließt das Menü
+  // ESC schließt Mobile-Menü
   useEffect(() => {
-    const onEsc = (e) => e.key === "Escape" && setMobileOpen(false);
-    window.addEventListener("keydown", onEsc);
-    return () => window.removeEventListener("keydown", onEsc);
+    const closeOnEsc = (e) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEsc);
+    return () => window.removeEventListener("keydown", closeOnEsc);
   }, []);
 
-  // DE: Scroll-Lock für Body bei offenem Drawer
+  // ⬇️ NEU: Body-Scroll sperren, solange Drawer offen ist (iPhone UX)
   useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", mobileOpen);
-    return () => document.body.classList.remove("overflow-hidden");
+    const prev = document.body.style.overflow;
+    if (mobileOpen) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [mobileOpen]);
 
   return (
-    <nav className="bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-[60] shadow-md shadow-black/70">
+    <nav className="bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-50 shadow-md shadow-black/70 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-16 p-4 flex items-center justify-between">
           {/* DE: Links – Burger, Logo, Desktop-Links */}
@@ -174,11 +53,13 @@ const NavBar = () => {
             <a href="/" className="flex items-center">
               <div
                 className="
-      font-light text-3xl sm:text-4xl font-sans
-      text-lavenderViolett
-      transition-transform duration-200
-      hover:-translate-y-0.5 hover:text-coldYellow
-    "
+                  font-light text-3xl sm:text-4xl font-sans whitespace-nowrap
+                  text-lavenderViolett
+                  border border-transparent rounded-md px-1 
+                  transition-colors transition-shadow transition-transform
+                  transform-gpu
+                  hover:text-coldYellow hover:border-coldYellow hover:shadow-2xl hover:scale-[1.08]
+                "
               >
                 popAUC
               </div>
@@ -196,8 +77,8 @@ const NavBar = () => {
                 href="/auction"
                 className="hover:text-coldYellow transition-colors"
               >
-                Auctions
-              </a>
+                AUCTIONS{" "}
+              </Link>
             </div>
           </div>
 
@@ -227,14 +108,12 @@ const NavBar = () => {
                 <span className="hidden sm:inline-flex px-3 py-2 text-sm text-gray-200">
                   Hallo, {user.userName || user.email}
                 </span>
-
-                <a
-                  href="/dashboard"
-                  className="hidden sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
+                <Link
+                  to="/dashboard"
+                  className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
                 >
                   <User size={20} />
-                </a>
-
+                </Link>
                 <button
                   onClick={logout}
                   className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/60 text- hover:bg-buttonPink shadow-md transition"
@@ -249,15 +128,120 @@ const NavBar = () => {
         </div>
       </div>
 
-      {/* DE: Mobiler Drawer über Portal */}
-      <MobileDrawer
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        user={user}
-        isInitializing={isInitializing}
-        openLogin={openLogin}
-        logout={logout}
-      />
+      {/* MOBILE DRAWER */}
+      <div
+        className={`md:hidden fixed inset-0 z-[70] transition ${
+          /* ⬅️ NEU: höherer z-index */
+          mobileOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-hidden={!mobileOpen}
+      >
+        {/* Overlay */}
+        <div
+          className={`absolute inset-0 bg-black/60 transition-opacity ${
+            mobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        />
+        {/* Panel */}
+        <div
+          className={`absolute left-0 top-0 h-full w-72 max-w-[80%] bg-whiteWarm border-r border-darkBackground/40 transform transition-transform ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          } pt-[env(safe-area-inset-top)] overflow-y-auto`}
+        >
+          <div className="h-16 flex items-center justify-between px-4 border-b border-darkBackground/30">
+            <span className="text-xl text-whiteLetter">Menu</span>
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="w-10 h-10 rounded-lg hover:bg-white/10"
+              aria-label="Close menu"
+            >
+              <X size={20} className="text-coldYellow" />
+            </button>
+          </div>
+
+          {/* Links */}
+          <div className="p-4 space-y-2">
+            <Link
+              to="/"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2 rounded-lg text-whiteLetter hover:bg-white/10"
+            >
+              HOME
+            </Link>
+            <Link
+              to="/auction"
+              onClick={() => setMobileOpen(false)}
+              className="block px-3 py-2 rounded-lg text-whiteLetter hover:bg-white/10"
+            >
+              AUCTIONS{" "}
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-4 my-3 border-t border-white/10" />
+
+          {/* Auth-Bereich im Drawer */}
+          <div className="p-1 space-y-2 ">
+            {!isInitializing && !user && (
+              <>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition hover:shadow-2xl"
+                >
+                  <UserPlus size={16} className="inline mr-1" />
+                  SignUp
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    openLogin();
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg bg-coldYellow text-darkBackground hover:bg-buttonPink transition"
+                >
+                  <LogIn size={16} className="inline mr-1" />
+                  LogIn
+                </button>
+              </>
+            )}
+
+            {!isInitializing && user && (
+              <>
+                <div className="px-3 py-2 text-sm text-white/70">
+                  Eingeloggt als{" "}
+                  <span className="font-medium">
+                    {user.userName || user.email}
+                  </span>
+                  <div className="text-xs opacity-80">Rolle: {user.role}</div>
+                </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center h-10 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
+                >
+                  <User size={18} />
+                  <span className="sr-only">Dashboard</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    logout();
+                  }}
+                  className="flex items-center justify-center h-10 w-full text-white hover:bg-red-600 transition"
+                  aria-label="Log out"
+                  title="Log out"
+                >
+                  <LogOut size={18} />
+                  <span className="sr-only">Log out</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
     </nav>
   );
 };
