@@ -7,6 +7,7 @@ import ArtworkSlideshow from "../components/ArtworkSlideshow.jsx";
 import {
   getAllArtworks,
   getAllAuctions,
+  getArtworkOffers,
   listFromApi,
   formatDateTime,
   getTimeLeft,
@@ -25,7 +26,6 @@ const getFirstImageUrl = (obj) => {
     obj.bannerImageUrl ??
     obj.photo ??
     obj.picture ??
-    // common nested shapes
     obj.media?.[0]?.url ??
     obj.files?.[0]?.url ??
     null;
@@ -62,6 +62,9 @@ const Home = () => {
   const [allArtworks, setAllArtworks] = useState([]);
   const [allAuctions, setAllAuctions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offersMap, setOffersMap] = useState(new Map()); // 🆕 Map: artworkId -> offers[]
+  const [isShuffled, setIsShuffled] = useState(false); // 🆕 Shuffle State
+  const [shuffleKey, setShuffleKey] = useState(0); // 🆕 Für Animation Trigger
   const randomIndexMapRef = useRef(new Map());
 
   useEffect(() => {
@@ -71,11 +74,56 @@ const Home = () => {
         getAllArtworks(),
         getAllAuctions(),
       ]);
-      setAllArtworks(listFromApi(artsRaw));
-      setAllAuctions(listFromApi(auctionsRaw));
+      const artworks = listFromApi(artsRaw);
+      const auctions = listFromApi(auctionsRaw);
+
+      setAllArtworks(artworks);
+      setAllAuctions(auctions);
+
+      // 🆕 Lade Gebote für alle Artworks parallel
+      await loadAllOffers(artworks);
+
       setLoading(false);
     })();
   }, []);
+
+  // 🆕 Funktion zum Laden aller Gebote
+  const loadAllOffers = async (artworks) => {
+    if (!artworks || artworks.length === 0) return;
+
+    try {
+      // Lade Gebote für alle Artworks parallel
+      const offerPromises = artworks.map(async (artwork) => {
+        if (!artwork._id) return null;
+        try {
+          const data = await getArtworkOffers(artwork._id);
+          if (data.success && data.offers) {
+            return {
+              artworkId: toIdStr(artwork._id),
+              offers: data.offers || [],
+            };
+          }
+        } catch (error) {
+          console.error(`Error fetching offers for ${artwork._id}:`, error);
+        }
+        return null;
+      });
+
+      const results = await Promise.all(offerPromises);
+
+      // Erstelle Map: artworkId -> offers[]
+      const newOffersMap = new Map();
+      results.forEach((result) => {
+        if (result) {
+          newOffersMap.set(result.artworkId, result.offers);
+        }
+      });
+
+      setOffersMap(newOffersMap);
+    } catch (error) {
+      console.error("Error loading offers:", error);
+    }
+  };
 
   const normalizedArtworks = useMemo(() => {
     return allArtworks.map((a) => {
@@ -112,7 +160,7 @@ const Home = () => {
     return result;
   }, [allAuctions]);
 
-  // Set mit Live-Auktions-IDs (für Slideshow-Filter)
+  // Set mit Live-Auktions-IDs
   const liveAuctionIdSet = useMemo(() => {
     const s = new Set();
     for (const a of liveAuctions) {
@@ -123,7 +171,6 @@ const Home = () => {
   }, [liveAuctions]);
 
   // Slideshow: NUR Artworks aus laufenden Auktionen + random Reihenfolge
-  // Zusätzlich _priceLabel / _priceAmount: Top bid (falls offers>0) sonst Start Price
   const slideshowItems = useMemo(() => {
     const onlyLive = normalizedArtworks.filter((a) => {
       const hasAuction =
@@ -141,7 +188,8 @@ const Home = () => {
     });
 
     const mapped = onlyLive.map((a) => {
-      const offers = Array.isArray(a?.offers) ? a.offers : [];
+      const artworkId = toIdStr(a._id || a.id);
+      const offers = offersMap.get(artworkId) || [];
       const topBid = offers.length
         ? Math.max(...offers.map((o) => Number(o?.amount || 0)))
         : null;
@@ -159,39 +207,69 @@ const Home = () => {
 
     // randomize order
     return mapped.sort(() => Math.random() - 0.5);
-  }, [normalizedArtworks, liveAuctionIdSet]);
+  }, [normalizedArtworks, liveAuctionIdSet, offersMap]);
 
-  // 4. Latest 4 Live Auctions (unverändert — nur Anzeige unten erweitert)
+  // Latest 4 Live Auctions - sortiert nach frühestem Enddatum oder shuffled
   const latest4LiveAuctions = useMemo(() => {
-    const toTime = (x) => {
-      const c = x?.createdAt ? new Date(x.createdAt).getTime() : 0;
-      const e = x?.endDate ? new Date(x.endDate).getTime() : 0;
-      return Math.max(c, e);
-    };
-    return [...liveAuctions].sort((a, b) => toTime(b) - toTime(a)).slice(0, 4);
-  }, [liveAuctions]);
+    const filtered = [...liveAuctions].filter((a) => a.endDate);
+
+    if (isShuffled) {
+      // Fisher-Yates Shuffle für echte Zufälligkeit
+      const shuffled = [...filtered];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled.slice(0, 4);
+    }
+
+    // Standard: Nach frühestem Enddatum
+    return filtered
+      .sort((a, b) => {
+        const timeA = new Date(a.endDate).getTime();
+        const timeB = new Date(b.endDate).getTime();
+        return timeA - timeB; // Aufsteigend: frühestes Enddatum zuerst
+      })
+      .slice(0, 4);
+  }, [liveAuctions, isShuffled, shuffleKey]); // shuffleKey triggert Neuberechnung
+
+  // Shuffle-Funktion
+  const handleShuffle = () => {
+    setIsShuffled(true);
+    setShuffleKey((prev) => prev + 1); // Trigger re-calculation
+  };
+
+  // Reset zu Standard-Sortierung
+  const handleResetSort = () => {
+    setIsShuffled(false);
+    setShuffleKey((prev) => prev + 1);
+  };
 
   const handleSlideshowClick = (item) => {
     if (item?.auctionId) navigate(`/auction/${item.auctionId}`);
   };
 
-  // Hilfszähler für Cards: Anzahl Artworks + Summe der Bids (offers.length)
+  // 🆕 Hilfszähler für Cards: Anzahl Artworks + Summe der Bids (aus offersMap)
   const countForAuction = useMemo(() => {
     const map = new Map(); // idStr -> {artworks: n, bids: m}
+
     for (const aw of normalizedArtworks) {
       const aId = toIdStr(aw.auctionId);
       if (!aId) continue;
+
       const prev = map.get(aId) || { artworks: 0, bids: 0 };
       prev.artworks += 1;
-      if (Array.isArray(aw.offers)) {
-        prev.bids += aw.offers.length;
-      } else if (typeof aw.offersCount === "number") {
-        prev.bids += aw.offersCount;
-      }
+
+      // 🆕 Hole Gebote aus offersMap
+      const artworkId = toIdStr(aw._id || aw.id);
+      const offers = offersMap.get(artworkId) || [];
+      prev.bids += offers.length;
+
       map.set(aId, prev);
     }
+
     return map;
-  }, [normalizedArtworks]);
+  }, [normalizedArtworks, offersMap]);
 
   const AuctionCard = ({ auction }) => {
     const aIdStr = useMemo(
@@ -199,61 +277,143 @@ const Home = () => {
       [auction]
     );
 
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
     const relatedArtworks = useMemo(() => {
       if (!aIdStr) return [];
       return normalizedArtworks.filter(
         (aw) => toIdStr(aw.auctionId) === aIdStr
       );
-    }, [aIdStr, normalizedArtworks]);
+    }, [aIdStr]);
 
-    // choose one artwork deterministically and get its image
-    let chosenArtwork = null;
-    const map = randomIndexMapRef.current;
-    if (relatedArtworks.length) {
-      if (!map.has(aIdStr)) {
-        const baseIdx = Math.floor(Math.random() * relatedArtworks.length);
-        map.set(aIdStr, baseIdx);
+    // Sammle alle Bilder von allen Artworks dieser Auktion
+    const allImages = useMemo(() => {
+      const images = [];
+      for (const artwork of relatedArtworks) {
+        const img = getFirstImageUrl(artwork);
+        if (img) images.push(img);
       }
-      const baseIdx = map.get(aIdStr);
-      const idx = baseIdx % relatedArtworks.length;
-      chosenArtwork = relatedArtworks[idx];
-    }
-    const artworkImg = getFirstImageUrl(chosenArtwork);
+      // Fallback zu Auction Banner wenn keine Artwork-Bilder
+      if (images.length === 0) {
+        const fallback =
+          getFirstImageUrl(auction) ||
+          auction?.bannerImageUrl ||
+          auction?.banner ||
+          auction?.image ||
+          auction?.imageUrl ||
+          auction?.coverUrl ||
+          "https://via.placeholder.com/800x400?text=Auction+Banner";
+        images.push(fallback);
+      }
+      return images;
+    }, [relatedArtworks, auction]);
 
-    // fallback to auction banner if no artwork image
-    const cover =
-      artworkImg ||
-      getFirstImageUrl(auction) ||
-      auction?.bannerImageUrl ||
-      auction?.banner ||
-      auction?.image ||
-      auction?.imageUrl ||
-      auction?.coverUrl ||
-      "https://via.placeholder.com/800x400?text=Auction+Banner";
-
-    // Use helper from api.js
     const { label } = getTimeLeft(auction?.endDate);
 
-    // Zusatz: Anzahl Artworks + Gesamtbids
+    // Anzahl Artworks + Gesamtbids
     const stats = countForAuction.get(aIdStr) || { artworks: 0, bids: 0 };
 
+    const nextImage = (e) => {
+      e.stopPropagation();
+      setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+    };
+
+    const prevImage = (e) => {
+      e.stopPropagation();
+      setCurrentImageIndex(
+        (prev) => (prev - 1 + allImages.length) % allImages.length
+      );
+    };
+
     return (
-      <button
-        type="button"
+      <div
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="group relative hover:scale-[1.03] block w-full p-0 appearance-none shadow-md text-left overflow-hidden rounded-2xl border-2 border-black/10 hover:bg-violetHeader/ hover:shadow-lg hover:shadow-black/70 hover:border-black/70 transition-all duration-300 focus:outline-none"
-        title="Zur Auktion"
+        className="group relative hover:scale-[1.03] block w-full p-0 shadow-md text-left overflow-hidden rounded-2xl border-2 border-black/10 hover:bg-violetHeader/ hover:shadow-lg hover:shadow-black/70 hover:border-black/70 transition-all duration-300 cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate(`/auction/${auction._id || auction.id}`);
+          }
+        }}
+        aria-label={`Zur Auktion: ${auction?.title || "Ohne Titel"}`}
       >
-        <div className="relative aspect-[16/9] w-full">
-          <img
-            src={cover}
-            alt={auction?.title || "Auction banner"}
-            className="absolute inset-0 w-full h-full object-cover block"
-            onError={(e) => {
-              e.currentTarget.src =
-                "https://via.placeholder.com/800x400?text=Auction+Banner";
-            }}
-          />
+        <div className="relative aspect-[16/9] w-full overflow-hidden">
+          {/* Bild-Container mit Transition */}
+          <div className="relative w-full h-full">
+            <img
+              src={allImages[currentImageIndex]}
+              alt={auction?.title || "Auction banner"}
+              className="absolute inset-0 w-full h-full object-cover block transition-opacity duration-300"
+              onError={(e) => {
+                e.currentTarget.src =
+                  "https://via.placeholder.com/800x400?text=Auction+Banner";
+              }}
+            />
+          </div>
+
+          {/* Navigation Pfeile - nur wenn mehr als 1 Bild */}
+          {allImages.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center opacity-70 hover:opacity-100 transition-all duration-200 z-10 shadow-lg"
+                aria-label="Vorheriges Bild"
+                type="button"
+              >
+                ‹
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center opacity-70 hover:opacity-100 transition-all duration-200 z-10 shadow-lg"
+                aria-label="Nächstes Bild"
+                type="button"
+              >
+                ›
+              </button>
+
+              {/* Bild-Indikator Dots - IMMER sichtbar */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">
+                {allImages.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(idx);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                      idx === currentImageIndex
+                        ? "bg-white w-5 scale-110"
+                        : "bg-white/60 hover:bg-white/90 hover:scale-110"
+                    }`}
+                    aria-label={`Bild ${idx + 1}`}
+                    type="button"
+                  />
+                ))}
+              </div>
+
+              {/* Bilder-Counter Badge - NEU */}
+              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                {currentImageIndex + 1}/{allImages.length}
+              </div>
+            </>
+          )}
+
+          {/* Status Badge */}
           <span
             className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(
               auction?.status
@@ -282,7 +442,7 @@ const Home = () => {
             {auction?.endDate && <span>{formatDateTime(auction.endDate)}</span>}
           </div>
         </div>
-      </button>
+      </div>
     );
   };
 
@@ -328,7 +488,8 @@ const Home = () => {
               Live auctions
             </h2>
             <p className="text-sm text-gray-300">
-              {liveAuctions.length} live · {allAuctions.length} gesamt
+              {liveAuctions.length} live · {allAuctions.length} gesamt ·
+              {isShuffled ? " random order" : " ending soon first"}
             </p>
           </div>
         </div>
@@ -343,11 +504,63 @@ const Home = () => {
             ))}
           </div>
         ) : latest4LiveAuctions.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {latest4LiveAuctions.map((a) => (
-              <AuctionCard key={a._id || a.id || Math.random()} auction={a} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {latest4LiveAuctions.map((a) => (
+                <AuctionCard key={a._id || a.id || Math.random()} auction={a} />
+              ))}
+            </div>
+
+            {/* Shuffle Button Section */}
+            {liveAuctions.length > 4 && (
+              <div className="flex justify-center mt-8">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleShuffle}
+                    disabled={loading}
+                    className="group relative px-6 py-3 rounded-2xl bg-gradient-to-r from-buttonPink to-hellPink text-darkBackground font-medium shadow-lg hover:shadow-xl hover:shadow-buttonPink/50 transform hover:scale-105 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    <span>Discover random auctions</span>
+                  </button>
+
+                  {isShuffled && (
+                    <button
+                      onClick={handleResetSort}
+                      className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white text-sm font-light border border-white/20 hover:border-white/40 transition-all duration-300 flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Show ending soon
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <p className="text-gray-600">Zurzeit keine Live-Auktionen.</p>
         )}
