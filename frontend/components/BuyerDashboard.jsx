@@ -84,6 +84,21 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
     return artwork.auctionID || null;
   }
 
+  // 🔒 Helper: ist die zugehörige Auktion beendet?
+  const isAuctionEndedForOffer = (offer) => {
+    const aw = artworkDetails?.[offer.artworkId]?.artwork;
+    if (!aw) return false;
+    const statusEnded =
+      aw.status === "ended" ||
+      aw.status === "canceled" ||
+      aw.status === "sold" ||
+      aw.status === "unsold";
+    const timeEnded = aw.endDate
+      ? new Date(aw.endDate).getTime() <= Date.now()
+      : false;
+    return statusEnded || timeEnded || aw.status !== "live";
+  };
+
   // Load won auctions (shipping info)
   const fetchWonAuctions = async () => {
     setLoadingWon(true);
@@ -176,6 +191,13 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
   const [raiseSubmitting, setRaiseSubmitting] = useState(false);
 
   const openRaiseFor = (offer) => {
+    // 🚫 Neu: blocken, wenn Auktion beendet
+    if (isAuctionEndedForOffer(offer)) {
+      setRaiseError("This auction has ended. Raising is no longer possible.");
+      setRaisingOfferId(null);
+      setRaisingAmount("");
+      return;
+    }
     const min = computeMinBidForOffer(offer);
     setRaisingOfferId(offer._id);
     setRaisingAmount(String(min));
@@ -189,6 +211,12 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
   };
 
   const submitRaise = async (offer) => {
+    // 🚫 Neu: Sicherheit auch beim Submit
+    if (isAuctionEndedForOffer(offer)) {
+      setRaiseError("This auction has ended. Raising is no longer possible.");
+      return;
+    }
+
     const min = computeMinBidForOffer(offer);
     const amt = parseFloat(raisingAmount);
     if (isNaN(amt) || amt < min) {
@@ -387,7 +415,7 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
           <button
             onClick={fetchDetailedOffers}
             disabled={loading}
-            className="rounded-xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
+            className="rounded-2xl px-3 py-2 border border-buttonPink bg-greenButton/40 hover:bg-lightRedButton/40 transition text-sm"
             title="Refresh"
             type="button"
           >
@@ -417,6 +445,7 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
 
               const isRaising = raisingOfferId === offer._id;
               const minBid = computeMinBidForOffer(offer);
+              const ended = isAuctionEndedForOffer(offer);
 
               const img = Array.isArray(artwork?.images)
                 ? artwork.images[0]
@@ -447,6 +476,7 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
                           {artwork?.title ||
                             `Artwork #${String(offer.artworkId).slice(-6)}`}
                         </h3>
+
                         <p className="text-sm text-white/70">
                           My bid:{" "}
                           <span className="font-semibold text-white">
@@ -485,9 +515,18 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
                         )}
 
                         <button
-                          className="rounded-2xl px-3 py-2 bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink/80 text-sm inline-flex items-center gap-1 font-extralight transition"
-                          onClick={() => openRaiseFor(offer)}
-                          title="Raise bid"
+                          className={`rounded-2xl px-3 py-2 text-sm inline-flex items-center gap-1 font-extralight transition border ${
+                            ended
+                              ? "opacity-50 cursor-not-allowed border-white/10 text-white/40 bg-black/20"
+                              : "bg-coldYellow text-darkBackground border-darkBackground hover:bg-buttonPink/80"
+                          }`}
+                          onClick={() => !ended && openRaiseFor(offer)}
+                          title={
+                            ended
+                              ? "Auction ended — raising disabled"
+                              : "Raise bid"
+                          }
+                          disabled={ended}
                           type="button"
                         >
                           <ArrowUpRight size={16} />
@@ -496,7 +535,7 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
                       </div>
 
                       {/* Inline raise form */}
-                      {isRaising && (
+                      {isRaising && !ended && (
                         <div className="mt-2 w-full max-w-[280px]">
                           <label className="text-xs text-white/70">
                             New bid (min. {minBid} €)
@@ -537,6 +576,13 @@ const BuyerDashboard = ({ user, myOffers: initialOffers }) => {
                             </p>
                           )}
                         </div>
+                      )}
+
+                      {/* Falls der Inline-Form offen war und Auktion inzwischen endete */}
+                      {isRaising && ended && (
+                        <p className="text-xs text-buttonPink mt-1">
+                          This auction has ended. Raising is no longer possible.
+                        </p>
                       )}
                     </div>
                   </div>

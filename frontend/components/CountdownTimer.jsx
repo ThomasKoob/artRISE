@@ -58,11 +58,11 @@ const CountdownTimer = ({ endDate, onExpired }) => {
   return (
     <div className="flex gap-1 text-sm">
       <div className="flex items-center gap-1">
-        <span className="countdown-timer text-blue-500">
+        <span className="countdown-timer bg-lightRedButton border-1 border-lavenderViolett p-1 text-xs text-darkBackground  rounded-lg">
           {timeLeft.days > 0 && (
             <span className="text-xs">{timeLeft.days}d </span>
           )}
-          <span className="font-mono text-xs">
+          <span className="font-mono font-medium text-md">
             {String(timeLeft.hours).padStart(2, "0")}:
             {String(timeLeft.minutes).padStart(2, "0")}:
             {String(timeLeft.seconds).padStart(2, "0")}

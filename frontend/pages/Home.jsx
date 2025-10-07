@@ -461,7 +461,7 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="md:justify-self-end w-full border-1 border-black rounded-2xl shadow-lg shadow-black">
+          <div className="md:justify-self-end w-full border-1 border-darkBackground rounded-2xl shadow-lg shadow-black">
             {loading ? (
               <div className="h-40 md:h-48 rounded-xl bg-white/20 animate-pulse" />
             ) : slideshowItems.length ? (
