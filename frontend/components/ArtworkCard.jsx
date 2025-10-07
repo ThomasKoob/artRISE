@@ -429,7 +429,7 @@ export default function ArtworkCard({
                 <span className="text-[11px] sm:text-xs font-sans font-extralight text-white/80">
                   Start price
                 </span>
-                <span className="badge badge-ghost text-xs sm:text-sm">
+                <span className="badge badge-ghost  font-bold text-xs sm:text-sm">
                   {Number(startPrice || 0).toLocaleString("de-DE")}{" "}
                   {artwork.currency || "EUR"}
                 </span>
@@ -440,7 +440,7 @@ export default function ArtworkCard({
                 <span className="text-[11px] sm:text-xs font-sans font-extralight text-white">
                   Top bid
                 </span>
-                <span className="badge badge-outline font-bold text-xs sm:text-sm">
+                <span className="badge badge-outline  text-xs badge-ghost  sm:text-sm">
                   {topBidAmount != null
                     ? `${topBidAmount.toLocaleString("de-DE")} ${
                         artwork.currency || "EUR"
@@ -464,24 +464,18 @@ export default function ArtworkCard({
           <div className="flex mt-2 items-center justify-end gap-2">
             <button
               onClick={() => openModalAt(0)}
-              className="btn btn-outline  btn-xs sm:btn-sm font-sans font-extralight rounded-2xl"
+  className="btn btn-xs sm:btn-sm rounded-2xl bg-pink-50 text-pink-500 border border-pink-300 hover:bg-pink-400 hover:border-pink-400 hover:shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
             >
               View
             </button>
-            {isAuctionActive && (
+
+            {isAuctionActive && isBuyer && (
               <button
                 onClick={() => {
-                  // Zuerst prüfen ob eingeloggt
                   if (!user) {
                     openLogin();
                     return;
                   }
-                  // Dann prüfen ob Buyer
-                  if (!isBuyer) {
-                    setBidError("Only buyers can place bids.");
-                    return;
-                  }
-                  // Wenn alles OK → Bid Modal öffnen
                   setBidError("");
                   setBidAmount(
                     (displayPrice + (artwork.minIncrement || 5)).toString()

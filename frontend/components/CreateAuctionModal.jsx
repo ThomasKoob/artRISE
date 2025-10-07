@@ -1,10 +1,75 @@
 import React, { useState } from "react";
 import { Plus, X, Upload } from "lucide-react";
 
+
+// --- Confirm Dialog (Dark themed) ---
+const ConfirmDialog = ({
+  open,
+  onCancel,
+  onConfirm,
+  auctionData,
+  artworks,
+}) => {
+  if (!open) return null;
+
+  const endStr = auctionData?.endDate
+    ? new Date(auctionData.endDate).toLocaleString()
+    : "—";
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center">
+      {/* overlay */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      {/* dialog */}
+      <div className="relative w-[92%] max-w-md rounded-2xl border border-hellPink/70 bg-violetHeader/90 text-white shadow-2xl">
+        <div className="p-5">
+          <h3 className="text-lg font-semibold mb-3">Confirm Auction</h3>
+
+          <div className="text-sm space-y-2 mb-5">
+            <p>
+              <span className="text-white/70">Artist:</span>{" "}
+              <span className="font-medium">{auctionData.title || "—"}</span>
+            </p>
+            <p>
+              <span className="text-white/70">End date:</span>{" "}
+              <span className="font-medium">{endStr}</span>
+            </p>
+            <p>
+              <span className="text-white/70">Artworks:</span>{" "}
+              <span className="font-medium">{artworks?.length ?? 0}</span>
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/90 focus:outline-none focus:ring-2 focus:ring-buttonPink/40"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/40"
+            >
+              Confirm & Create
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
   const CLOUD_NAME = "dhomuf4kg";
   const UPLOAD_PRESET = "react_upload";
-
+const [showConfirm, setShowConfirm] = useState(false);
   const [auctionData, setAuctionData] = useState({
     title: "",
     description: "",
@@ -12,7 +77,6 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
     endDate: "",
   });
 
-  // نخلّي images string (باش منغيّرش اللوجيك متاع التحقق)
   const [artworks, setArtworks] = useState([
     { title: "", description: "", images: "", startPrice: "", price: "", currency: "EUR" },
   ]);
@@ -354,14 +418,17 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                 <label htmlFor="endDate" className="block mb-1 text-sm font-medium text-white">Auction-End</label>
                 <div className="relative">
                   <input
-                    type="datetime-local"
-                    id="endDate"
-                    value={auctionData.endDate}
-                    onChange={(e) => handleAuctionChange("endDate", e.target.value)}
-                    className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
-                                border ${errors.endDate ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
-                                focus:outline-none focus:ring-1`}
-                  />
+  type="datetime-local"
+  id="endDate"
+  value={auctionData.endDate}
+  onChange={(e) => handleAuctionChange("endDate", e.target.value)}
+  min={new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)}
+  step="60"
+  className={`w-full px-4 py-2 rounded-lg bg-white/5 text-white placeholder-white/60
+              border ${errors.endDate ? "border-red-500 focus:ring-red-500" : "border-white/10 focus:ring-white/30"}
+              focus:outline-none focus:ring-1`}
+/>
+
                   <div
                     className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 cursor-pointer text-white/60 hover:text-white/80"
                     onClick={() => document.getElementById("endDate").showPicker()}
@@ -483,13 +550,7 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
                   </div>
                 ))}
 
-                {artworks.length < 10 && (
-                  <div className="pt-2 flex justify-center">
-                    <button type="button" onClick={addArtwork} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2">
-                      <Plus size={18} /> Add
-                    </button>
-                  </div>
-                )}
+                
 
                 {errors.submit && (
                   <div className="p-4 bg-red-500/10 border border-red-500/40 text-red-300 rounded-lg">
@@ -502,50 +563,75 @@ const CreateAuctionModal = ({ isOpen, onClose, onSubmit }) => {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 left-0 right-0 z-30 px-4 sm:px-6 py-3 sm:py-4
-                        pb-[calc(env(safe-area-inset-bottom)+12px)]
-                        bg-violetHeader/70 backdrop-blur border-t border-white/10
-                        flex flex-col sm:flex-row sm:justify-between gap-2 sm:gap-3">
-          {currentStep === 2 && (
-            <button
-              type="button"
-              onClick={prevStep}
-              className="w-full sm:w-auto px-6 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/80"
-            >
-              Back
-            </button>
-          )}
+        <div
+  className="sticky bottom-0 left-0 right-0 z-30 px-4 sm:px-6 py-3 sm:py-4
+             pb-[calc(env(safe-area-inset-bottom)+12px)]
+             bg-violetHeader/70 backdrop-blur border-t border-white/10
+             flex items-center justify-between gap-2 sm:gap-3"
+>
+  {/* DE: Linke Seite – nur 'Back' auf Schritt 2 */}
+  <div className="flex-1">
+    {currentStep === 2 && (
+      <button
+        type="button"
+        onClick={prevStep}
+        className="px-6 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/80"
+      >
+        Back
+      </button>
+    )}
+  </div>
 
-          <div className="flex gap-2 sm:gap-3 sm:ml-auto w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full sm:w-auto px-6 py-2 rounded-2xl border border-buttonPink bg-buttonPink text-white hover:bg-buttonPink/80"
-            >
-              Cancel
-            </button>
+  {/* DE: Rechte Seite – Next (Schritt 1) ODER Add + Create (Schritt 2) */}
+  <div className="flex items-center gap-2 sm:gap-3">
+    {currentStep === 1 ? (
+      <button
+        type="button"
+        onClick={nextStep}
+        className="px-6 py-2 rounded-2xl bg-coldYellow/70 border border-coldYellow text-white hover:bg-coldYellow"
+      >
+        Next
+      </button>
+    ) : (
+      <>
+        {/* DE: Add neben Create */}
+        <button
+          type="button"
+          onClick={addArtwork}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2"
+        >
+          <Plus size={18} />
+          Add
+        </button>
 
-            {currentStep === 1 ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="w-full sm:w-auto px-6 py-2 rounded-2xl bg-coldYellow/70 border border-coldYellow text-white hover:bg-coldYellow"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading || uploadingAvatar || Object.values(uploadingImages).some(Boolean)}
-                className="w-full sm:w-auto px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-              >
-                {loading ? "Creating..." : "Create Auction"}
-              </button>
-            )}
-          </div>
+        {/* DE: Create Auction mit Bestätigungsdialog */}
+        <button
+          onClick={() => setShowConfirm(true)}
+          disabled={loading || uploadingAvatar || Object.values(uploadingImages).some(Boolean)}
+          className="px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+        >
+          {loading ? "Creating..." : "Create Auction"}
+        </button>
+      </>
+       )}
+  </div>
+</div>
+
+{/* Confirm Dialog */}
+<ConfirmDialog
+  open={showConfirm}
+  onCancel={() => setShowConfirm(false)}
+  onConfirm={() => {
+    setShowConfirm(false);
+    handleSubmit();
+  }}
+  auctionData={auctionData}
+  artworks={artworks}
+/>
+
         </div>
       </div>
-    </div>
+    
   );
 };
 
