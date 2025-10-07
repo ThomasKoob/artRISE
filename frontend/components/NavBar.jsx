@@ -4,32 +4,25 @@ import { createPortal } from "react-dom";
 import { Menu, LogOut, LogIn, UserPlus, User, X } from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
+/** DE: Kleine Hilfsfunktion zum Schließen per Klick außerhalb */
+
 const NavBar = () => {
   const { openLogin, user, logout, isInitializing } = useLoginModal();
 
-  // Mobile-Menü (Hamburger) Zustand
+  // DE: Mobile-Menü (Hamburger) Zustand
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // ESC schließt Mobile-Menü
+  // DE: Beim Navigieren das Mobile-Menü schließen (optional)
   useEffect(() => {
     const closeOnEsc = (e) => {
       if (e.key === "Escape") setMobileOpen(false);
     };
     window.addEventListener("keydown", closeOnEsc);
     return () => window.removeEventListener("keydown", closeOnEsc);
-  }, []);
-
-  // ⬇️ NEU: Body-Scroll sperren, solange Drawer offen ist (iPhone UX)
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    if (mobileOpen) document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mobileOpen]);
+  }, [setMobileOpen]);
 
   return (
-    <nav className="bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-50 shadow-md shadow-black/70 pt-[env(safe-area-inset-top)]">
+    <nav className=" bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-50 shadow-md shadow-black/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-16 p-4 flex items-center justify-between">
           {/* DE: Links – Burger, Logo, Desktop-Links */}
@@ -53,13 +46,13 @@ const NavBar = () => {
             <a href="/" className="flex items-center">
               <div
                 className="
-                  font-light text-3xl sm:text-4xl font-sans whitespace-nowrap
-                  text-lavenderViolett
-                  border border-transparent rounded-md px-1 
-                  transition-colors transition-shadow transition-transform
-                  transform-gpu
-                  hover:text-coldYellow hover:border-coldYellow hover:shadow-2xl hover:scale-[1.08]
-                "
+      font-light text-3xl sm:text-4xl font-sans whitespace-nowrap
+      text-lavenderViolett
+      border border-transparent rounded-md px-1 
+    
+      transform-gpu
+      hover:text-coldYellow hover:border-coldYellow hover:shadow-2xl hover:scale-[1.08]
+    "
               >
                 popAUC
               </div>
@@ -79,6 +72,7 @@ const NavBar = () => {
               >
                 AUCTIONS{" "}
               </Link>
+              {/* DE: ggf. mehr Links */}
             </div>
           </div>
 
@@ -87,6 +81,7 @@ const NavBar = () => {
             {isInitializing ? (
               <div className="px-3 py-2 text-gray-300 text-sm">Loading…</div>
             ) : !user ? (
+              // Nicht eingeloggt: Buttons + Kebab (optional)
               <>
                 <a
                   href="/signup"
@@ -104,16 +99,21 @@ const NavBar = () => {
                 </button>
               </>
             ) : (
+              // Eingeloggt
               <>
                 <span className="hidden sm:inline-flex px-3 py-2 text-sm text-gray-200">
                   Hallo, {user.userName || user.email}
                 </span>
+
+                {/* Dashboard (Desktop) */}
                 <Link
                   to="/dashboard"
                   className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink shadow-md transition"
                 >
                   <User size={20} />
                 </Link>
+
+                {/* LogOut (Desktop) — ICON ONLY, next to Dashboard */}
                 <button
                   onClick={logout}
                   className="hidden btn btn-sm sm:inline-flex items-center justify-center w-10 h-10 rounded-xl bg-buttonPink/60 text- hover:bg-buttonPink shadow-md transition"
@@ -130,15 +130,14 @@ const NavBar = () => {
 
       {/* MOBILE DRAWER */}
       <div
-        className={`md:hidden fixed inset-0 z-[70] transition ${
-          /* ⬅️ NEU: höherer z-index */
+        className={`md:hidden fixed inset-0 z-40 transition ${
           mobileOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!mobileOpen}
       >
         {/* Overlay */}
         <div
-          className={`absolute inset-0 bg-black/60 transition-opacity ${
+          className={`absolute inset-0 bg-black/50 transition-opacity ${
             mobileOpen ? "opacity-100" : "opacity-0"
           }`}
           onClick={() => setMobileOpen(false)}
@@ -147,7 +146,7 @@ const NavBar = () => {
         <div
           className={`absolute left-0 top-0 h-full w-72 max-w-[80%] bg-whiteWarm border-r border-darkBackground/40 transform transition-transform ${
             mobileOpen ? "translate-x-0" : "-translate-x-full"
-          } pt-[env(safe-area-inset-top)] overflow-y-auto`}
+          }`}
         >
           <div className="h-16 flex items-center justify-between px-4 border-b border-darkBackground/30">
             <span className="text-xl text-whiteLetter">Menu</span>
@@ -155,7 +154,6 @@ const NavBar = () => {
               type="button"
               onClick={() => setMobileOpen(false)}
               className="w-10 h-10 rounded-lg hover:bg-white/10"
-              aria-label="Close menu"
             >
               <X size={20} className="text-coldYellow" />
             </button>
