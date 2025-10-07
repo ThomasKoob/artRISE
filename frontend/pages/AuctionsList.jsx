@@ -217,7 +217,7 @@ const AuctionsList = () => {
                   <div className="card-actions justify-end mt-1">
                     <Link
                       to={`/auction/${auctionId}`}
-                      className="btn rounded-2xl text-whiteLetter border-1 border-whiteLetter/50  hover:bg-buttonPink hover:text-black/60 font-sans font-light hover:font-extralight btn-xs"
+                      className="btn rounded-2xl text-whiteLetter/80 bg-darkBackground/20 border-1 border-buttonPink/50  hover:bg-buttonPink/60 hover:text-black/60 font-sans font-light hover:font-extralight btn-xs"
                       onClick={(e) => e.stopPropagation()}
                     >
                       View
