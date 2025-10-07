@@ -358,6 +358,42 @@ export default function ArtworkCard({
 
   const isCompact = variant === "compact";
 
+  // =========================
+  // ✅ NEU: Intent-Flow-Helfer
+  // =========================
+  const startBidFlow = () => {
+    setBidError("");
+    setBidAmount((displayPrice + (artwork.minIncrement || 5)).toString());
+    setShowBidModal(true);
+  };
+
+  const triggerBidFlow = () => {
+    if (!isAuctionActive) return;
+
+    if (!user) {
+      openLogin({
+        // 👉 WICHTIG: auf der aktuellen Seite bleiben
+        redirectTo:
+          (typeof window !== "undefined" && window.location?.pathname) || "/",
+        afterLogin: (loggedInUser) => {
+          if (loggedInUser?.role !== "buyer") {
+            setBidError("Nur Käufer dürfen bieten.");
+            return;
+          }
+          startBidFlow();
+        },
+      });
+      return;
+    }
+
+    if (!isBuyer) {
+      setBidError("Nur Käufer dürfen bieten.");
+      return;
+    }
+
+    startBidFlow();
+  };
+
   return (
     <>
       {/* CARD — volle Breite; Bild 75% Höhe, Info 25% */}
@@ -464,27 +500,17 @@ export default function ArtworkCard({
           <div className="flex mt-2 items-center justify-end gap-2">
             <button
               onClick={() => openModalAt(0)}
-  className="btn btn-xs sm:btn-sm rounded-2xl bg-pink-50 text-pink-500 border border-pink-300 hover:bg-pink-400 hover:border-pink-400 hover:shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
+              className="btn btn-xs sm:btn-sm rounded-2xl bg-pink-50 text-pink-500 border border-pink-300 hover:bg-pink-400 hover:border-pink-400 hover:shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
             >
               View
             </button>
 
-            {isAuctionActive && isBuyer && (
+            {isAuctionActive && (
               <button
-                onClick={() => {
-                  if (!user) {
-                    openLogin();
-                    return;
-                  }
-                  setBidError("");
-                  setBidAmount(
-                    (displayPrice + (artwork.minIncrement || 5)).toString()
-                  );
-                  setShowBidModal(true);
-                }}
+                onClick={triggerBidFlow}
                 className="btn btn-primary font-medium btn-xs sm:btn-sm rounded-2xl bg-coldYellow text-darkBackground hover:bg-coldYellow/80"
               >
-                {userBid ? "Raise bid" : "Bid"}
+                {user && userBid ? "Raise bid" : "Bid"}
               </button>
             )}
           </div>

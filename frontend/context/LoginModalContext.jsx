@@ -1,5 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router"; // ✅ Import hinzufügen
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
+import { useNavigate } from "react-router";
 import { LoginModal } from "../components/LoginModal";
 import {
   login as apiLogin,
@@ -18,16 +24,18 @@ export const useLoginModal = () => {
 };
 
 export const LoginModalProvider = ({ children }) => {
-  const navigate = useNavigate(); // ✅ Hook hinzufügen
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
   const [needsVerification, setNeedsVerification] = useState(false);
-  const [redirectAfterLogin, setRedirectAfterLogin] = useState("/dashboard"); // ✅ NEU
+  const [redirectAfterLogin, setRedirectAfterLogin] = useState("/dashboard");
 
-  // User beim App-Start laden
+  // ✅ NEU: Intent nach Login
+  const afterLoginRef = useRef(null);
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -40,16 +48,23 @@ export const LoginModalProvider = ({ children }) => {
         setIsInitializing(false);
       }
     };
-
     loadUser();
   }, []);
 
-  // ✅ NEU: openLogin mit optionaler Redirect-URL
-  const openLogin = (redirectTo = "/dashboard") => {
+  const openLogin = (arg = "/dashboard") => {
     setIsOpen(true);
     setError("");
     setNeedsVerification(false);
-    setRedirectAfterLogin(redirectTo); // ✅ Redirect-Ziel speichern
+
+    if (typeof arg === "string") {
+      setRedirectAfterLogin(arg);
+      afterLoginRef.current = null;
+    } else if (arg && typeof arg === "object") {
+      const { redirectTo = "/dashboard", afterLogin = null } = arg;
+      setRedirectAfterLogin(redirectTo);
+      afterLoginRef.current =
+        typeof afterLogin === "function" ? afterLogin : null;
+    }
   };
 
   const closeLogin = () => {
@@ -69,9 +84,16 @@ export const LoginModalProvider = ({ children }) => {
       setUser(userData);
       setIsOpen(false);
 
-      // ✅ NEU: Automatische Weiterleitung nach erfolgreichem Login
       console.log("✅ Login successful, redirecting to:", redirectAfterLogin);
       navigate(redirectAfterLogin);
+
+      if (afterLoginRef.current) {
+        try {
+          afterLoginRef.current(userData);
+        } finally {
+          afterLoginRef.current = null; // aufräumen
+        }
+      }
 
       return userData;
     } catch (err) {
@@ -95,7 +117,7 @@ export const LoginModalProvider = ({ children }) => {
     try {
       await apiLogout();
       setUser(null);
-      navigate("/"); // ✅ Nach Logout zur Startseite
+      navigate("/");
     } catch (err) {
       console.error("Logout error:", err);
       setUser(null);
