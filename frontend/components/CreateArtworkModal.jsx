@@ -160,6 +160,7 @@ export default function CreateArtworkModal({ isOpen, onClose, onSubmit }) {
         }
       );
 
+
       const data = await response.json();
 
       if (!response.ok) {

@@ -1,6 +1,6 @@
 // components/NavBar.jsx
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { createPortal } from "react-dom";
 import { Menu, LogOut, LogIn, UserPlus, User, X } from "lucide-react";
 import { useLoginModal } from "../context/LoginModalContext.jsx";
 
@@ -32,16 +32,15 @@ const NavBar = () => {
     <nav className="bg-violetHeader/80 backdrop-blur border-b border-buttonPink/20 sticky top-0 z-50 shadow-md shadow-black/70 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-16 p-4 flex items-center justify-between">
-          {/* Left: Logo + Desktop Links */}
+          {/* DE: Links – Burger, Logo, Desktop-Links */}
           <div className="flex items-center gap-4">
-            {/* Hamburger (nur mobil) */}
+            {/* DE: Burger (nur mobil) */}
             <button
               type="button"
               onClick={() => setMobileOpen((s) => !s)}
               className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/10"
               aria-label="Open menu"
               aria-expanded={mobileOpen}
-              title="Menu"
             >
               {mobileOpen ? (
                 <X size={22} className="text-coldYellow" />
@@ -50,8 +49,8 @@ const NavBar = () => {
               )}
             </button>
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center">
+            {/* DE: Logo (normales <a>) */}
+            <a href="/" className="flex items-center">
               <div
                 className="
                   font-light text-3xl sm:text-4xl font-sans whitespace-nowrap
@@ -64,38 +63,38 @@ const NavBar = () => {
               >
                 popAUC
               </div>
-            </Link>
+            </a>
 
-            {/* Desktop Links */}
-            <div className="hidden items-center md:flex  gap-6 ml-6 text-e99f4c font-sans text-whiteLetter text-xl font-extralight">
-              <Link
-                to="/"
-                className="hover:text-buttonPink/70 rounded-xl transition-colors"
+            {/* Desktop-Navigation */}
+            <div className="hidden md:flex items-center gap-6 ml-6 text-whiteLetter text-xl font-extralight">
+              <a
+                href="/"
+                className="hover:text-buttonPink/70 transition-colors"
               >
-                HOME
-              </Link>
-              <Link
-                to="/auction"
-                className="hover:text-coldYellow rounded-xl transition-colors"
+                Home
+              </a>
+              <a
+                href="/auction"
+                className="hover:text-coldYellow transition-colors"
               >
                 AUCTIONS{" "}
               </Link>
             </div>
           </div>
 
-          {/* Right: Auth & User-Actions */}
-          <div className="flex  items-center gap-2 sm:gap-3">
+          {/* DE: Rechts – Auth / User */}
+          <div className="flex items-center gap-2 sm:gap-3">
             {isInitializing ? (
-              <div className="px-3 py-2 text-gray-400 text-sm">Laden…</div>
+              <div className="px-3 py-2 text-gray-300 text-sm">Loading…</div>
             ) : !user ? (
               <>
-                <Link
-                  to="/signup"
-                  className="hidden btn btn-sm sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border-2 border-darkBackground  hover:bg-buttonPink/80 font-extralight shadow-md transition"
+                <a
+                  href="/signup"
+                  className="hidden sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border-2 border-darkBackground hover:bg-buttonPink font-extralight shadow-md transition"
                 >
                   <UserPlus size={18} className="mr-1" />
                   SignUp
-                </Link>
+                </a>
                 <button
                   onClick={openLogin}
                   className="hidden btn btn-sm sm:inline-flex px-3 py-2 rounded-xl bg-coldYellow text-darkBackground border border-darkBackground hover:bg-buttonPink/70 font-extralight shadow-md transition"
@@ -106,8 +105,8 @@ const NavBar = () => {
               </>
             ) : (
               <>
-                <span className="hidden sm:inline-flex px-3 py-2 text-sm font-extralight font-sans text-whiteLetter">
-                  {user.userName || user.email}
+                <span className="hidden sm:inline-flex px-3 py-2 text-sm text-gray-200">
+                  Hallo, {user.userName || user.email}
                 </span>
                 <Link
                   to="/dashboard"
@@ -122,7 +121,6 @@ const NavBar = () => {
                   title="Log out"
                 >
                   <LogOut size={18} />
-                  <span className="sr-only">Log out</span>
                 </button>
               </>
             )}

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-
+import { Eye, EyeOff } from "lucide-react";
 export const LoginModal = ({
   onClose,
   onSubmit,
@@ -148,13 +148,16 @@ export const LoginModal = ({
                 }
                 autoComplete="current-password"
               />
-              <button
+             <button
                 type="button"
                 onClick={() => setShowPassword((s) => !s)}
                 className="px-3 py-2 text-sm text-whiteLetter/50"
-                aria-pressed={showPassword}
+                aria-label={
+                  showPassword ? "Passwort verbergen" : "Passwort anzeigen"
+                }
+                title={showPassword ? "Verbergen" : "Anzeigen"}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
             {errors.password && (
