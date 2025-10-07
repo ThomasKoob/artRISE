@@ -150,7 +150,7 @@ const AuctionsList = () => {
                     navigate(`/auction/${auctionId}`);
                   }
                 }}
-                className="card bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
+                className="card hover:scale-[1.03] bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
                h-[22rem] sm:h-[24rem] md:h-[26rem]
                grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
                 title={auction.title || "Auction"}

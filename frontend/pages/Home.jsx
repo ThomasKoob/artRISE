@@ -241,7 +241,7 @@ const Home = () => {
       <button
         type="button"
         onClick={() => navigate(`/auction/${auction._id || auction.id}`)}
-        className="group relative block w-full p-0 appearance-none shadow-md text-left overflow-hidden rounded-2xl border-2 border-black/10 hover:bg-violetHeader/ hover:shadow-lg hover:shadow-black/70 hover:border-black/70 transition-all duration-300 focus:outline-none"
+        className="group relative hover:scale-[1.03] block w-full p-0 appearance-none shadow-md text-left overflow-hidden rounded-2xl border-2 border-black/10 hover:bg-violetHeader/ hover:shadow-lg hover:shadow-black/70 hover:border-black/70 transition-all duration-300 focus:outline-none"
         title="Zur Auktion"
       >
         <div className="relative aspect-[16/9] w-full">
