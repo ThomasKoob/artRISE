@@ -150,7 +150,7 @@ const AuctionsList = () => {
                     navigate(`/auction/${auctionId}`);
                   }
                 }}
-                className="card hover:scale-[1.03] bg-modalGray/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
+                className="card hover:scale-[1.03] bg-black/10 rounded-lg group border-1 border-black hover:border-2 shadow-md shadow-black/70 overflow-hidden cursor-pointer
                h-[22rem] sm:h-[24rem] md:h-[26rem]
                grid grid-rows-[2fr_1fr] hover:shadow-lg hover:shadow-buttonPink/50"
                 title={auction.title || "Auction"}
@@ -205,22 +205,22 @@ const AuctionsList = () => {
                   </div>
 
                   {/* ✅ Anzahl der Artworks als kleine Fußnote */}
-                  <div className="mt-2 text-[11px] text-white/70">
+                  <div className="mt-2 text-[13px] text-white/70">
                     {artworksCount === 0
                       ? "No artworks"
                       : artworksCount === 1
-                      ? "1 artwork"
-                      : `${artworksCount} artworks`}
+                      ? "1 Artwork"
+                      : `${artworksCount} Artworks`}
                   </div>
 
                   {/* Optionaler Button bleibt – klick auf Karte bleibt aktiv */}
-                  <div className="card-actions justify-end mt-3">
+                  <div className="card-actions justify-end mt-1">
                     <Link
                       to={`/auction/${auctionId}`}
-                      className="btn rounded-2xl text-gruenOlive bg-hellPink hover:bg-buttonPink hover:text-darkBackground font-sans hover:font-extralight btn-xs"
+                      className="btn rounded-2xl text-whiteLetter border-1 border-whiteLetter/50  hover:bg-buttonPink hover:text-black/60 font-sans font-light hover:font-extralight btn-xs"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      View Auction
+                      View
                     </Link>
                   </div>
                 </div>
