@@ -452,10 +452,10 @@ const Home = () => {
       <section className="bg-darkBackground/90 rounded-2xl border border-black text-white p-6 md:p-10 shadow-lg shadow-black/50 hover:shadow-lg hover:shadow-buttonPink/30 hover:border-r-2 hover:border-b-2">
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 md:gap-10 items-center">
           <div>
-            <h1 className=" m-4 md:text-6xl gap-2 text-center font-sans font-extralight">
+            <h1 className=" m-10 ml-15 text-4xl md:text-6xl gap-2 text-justify  font-sans font-thin text-whiteLetter/90">
               YOUR ARTWORK. <br /> YOUR MOMENT. <br /> KEEP IT SIMPLE.
             </h1>
-            <p className="m-10 text-xl font-extralight text-white/90">
+            <p className="m-10 text-2xl font-sans text-justify  font-thin text-whiteLetter/90">
               Start a one-time pop-up auction and promote it where your
               community lives.
             </p>
